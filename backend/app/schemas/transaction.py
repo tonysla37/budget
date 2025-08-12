@@ -18,8 +18,8 @@ class TagUpdate(TagBase):
 
 
 class Tag(TagBase):
-    id: int
-    user_id: Optional[int] = None
+    id: str
+    user_id: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -42,8 +42,8 @@ class CategoryUpdate(CategoryBase):
 
 
 class Category(CategoryBase):
-    id: int
-    user_id: Optional[int] = None
+    id: str
+    user_id: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -57,13 +57,13 @@ class TransactionBase(BaseModel):
     merchant: Optional[str] = None
     is_expense: bool = True
     is_recurring: bool = False
-    category_id: Optional[int] = None
+    category_id: Optional[str] = None
     external_id: Optional[str] = None
     explanation: Optional[str] = None
 
 
 class TransactionCreate(TransactionBase):
-    tag_ids: Optional[List[int]] = None
+    tag_ids: Optional[List[str]] = None
 
 
 class TransactionUpdate(BaseModel):
@@ -73,13 +73,13 @@ class TransactionUpdate(BaseModel):
     merchant: Optional[str] = None
     is_expense: Optional[bool] = None
     is_recurring: Optional[bool] = None
-    category_id: Optional[int] = None
-    tag_ids: Optional[List[int]] = None
+    category_id: Optional[str] = None
+    tag_ids: Optional[List[str]] = None
 
 
 class Transaction(TransactionBase):
-    id: int
-    user_id: int
+    id: str
+    user_id: str
     created_at: datetime
     updated_at: Optional[datetime] = None
     category: Optional[Category] = None

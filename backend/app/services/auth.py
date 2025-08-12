@@ -1,57 +1,50 @@
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from bson import ObjectId
+import os
+from datetime import datetime, timedelta, UTC
+from typing import Dict, Optional, Union, List
 
+from bson import ObjectId
 from jose import jwt
 from passlib.context import CryptContext
+from pydantic import EmailStr
 
 from app.core.config import settings
-from app.db.mongodb import MongoDB
-from app.db.models import UserModel, USERS_COLLECTION
-from app.schemas.user import UserCreate, UserUpdate
+from app.models.user import User
 
-# Configurer le contexte de cryptage pour les mots de passe
+# Configuration de l'algorithme de hachage de mot de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Vérifie qu'un mot de passe en clair correspond au mot de passe hashé.
+    Vérifie si un mot de passe en clair correspond au mot de passe haché.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        print(f"Vérification du mot de passe: {plain_password}, hash: {hashed_password}")
+        result = pwd_context.verify(plain_password, hashed_password)
+        print(f"Résultat de la vérification: {result}")
+        return result
+    except Exception as e:
+        print(f"Erreur lors de la vérification du mot de passe: {e}")
+        return False
 
 
 def get_password_hash(password: str) -> str:
     """
-    Hash un mot de passe.
+    Génère un hash sécurisé à partir d'un mot de passe en clair.
     """
     return pwd_context.hash(password)
 
 
-async def authenticate_user(db: MongoDB, email: str, password: str) -> Optional[UserModel]:
+def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -> str:
     """
-    Authentifie un utilisateur par email et mot de passe.
-    """
-    user = await get_user_by_email(db, email)
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
-
-
-def create_access_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
-) -> str:
-    """
-    Crée un nouveau token JWT.
+    Crée un JWT (JSON Web Token) pour l'authentification.
     """
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -59,79 +52,81 @@ def create_access_token(
     return encoded_jwt
 
 
-async def get_user(db: MongoDB, user_id: str) -> Optional[UserModel]:
+async def get_user_by_email(email: str, db_session) -> Optional[Dict]:
     """
-    Récupère un utilisateur par ID.
+    Récupère un utilisateur par son adresse email.
     """
-    user_dict = await db.find_one(USERS_COLLECTION, {"_id": ObjectId(user_id)})
-    if user_dict:
-        return UserModel(**user_dict)
-    return None
+    user = await db_session.find_one("users", {"email": email})
+    return user
 
 
-async def get_user_by_email(db: MongoDB, email: str) -> Optional[UserModel]:
+async def get_user(user_id: str, db_session) -> Optional[Dict]:
     """
-    Récupère un utilisateur par email.
+    Récupère un utilisateur par son ID.
     """
-    user_dict = await db.find_one(USERS_COLLECTION, {"email": email})
-    if user_dict:
-        return UserModel(**user_dict)
-    return None
+    user = await db_session.find_one("users", {"_id": ObjectId(user_id)})
+    return user
 
 
-async def create_user(db: MongoDB, user: UserCreate) -> UserModel:
+async def authenticate_user(email: str, password: str, db_session) -> Optional[Dict]:
     """
-    Crée un nouvel utilisateur.
+    Authentifie un utilisateur en vérifiant son email et son mot de passe.
     """
-    hashed_password = get_password_hash(user.password)
-    
-    user_dict = {
-        "email": user.email,
-        "hashed_password": hashed_password,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "is_active": user.is_active,
-        "is_superuser": False,
-        "created_at": datetime.utcnow(),
-    }
-    
-    user_id = await db.insert_one(USERS_COLLECTION, user_dict)
-    user_dict["_id"] = user_id
-    
-    return UserModel(**user_dict)
-
-
-async def update_user(db: MongoDB, user_id: str, user_update: UserUpdate) -> Optional[UserModel]:
-    """
-    Met à jour un utilisateur.
-    """
-    user = await get_user(db, user_id)
+    user = await get_user_by_email(email, db_session)
     
     if not user:
         return None
     
-    update_data = user_update.model_dump(exclude_unset=True)
+    if not verify_password(password, user["hashed_password"]):
+        return None
     
-    if "password" in update_data:
-        update_data["hashed_password"] = get_password_hash(update_data["password"])
-        del update_data["password"]
+    return user
+
+
+async def create_user(user_data: Dict, db_session) -> Dict:
+    """
+    Crée un nouvel utilisateur.
+    """
+    hashed_password = get_password_hash(user_data["password"])
     
-    update_data["updated_at"] = datetime.utcnow()
+    user_dict = {
+        "email": user_data["email"],
+        "hashed_password": hashed_password,
+        "first_name": user_data.get("first_name"),
+        "last_name": user_data.get("last_name"),
+        "is_active": True,
+        "created_at": datetime.now(UTC),
+    }
     
-    modified_count = await db.update_one(
-        USERS_COLLECTION, 
-        {"_id": ObjectId(user_id)}, 
-        update_data
+    result = await db_session.insert_one("users", user_dict)
+    user_dict["id"] = str(result.inserted_id)
+    
+    return user_dict
+
+
+async def update_user(user_id: str, user_data: Dict, db_session) -> Optional[Dict]:
+    """
+    Met à jour un utilisateur existant.
+    """
+    update_data = {k: v for k, v in user_data.items() if v is not None and k != "password"}
+    
+    if "password" in user_data and user_data["password"]:
+        update_data["hashed_password"] = get_password_hash(user_data["password"])
+    
+    update_data["updated_at"] = datetime.now(UTC)
+    
+    await db_session.update_one(
+        "users",
+        {"_id": ObjectId(user_id)},
+        {"$set": update_data}
     )
     
-    if modified_count:
-        return await get_user(db, user_id)
-    return None
+    return await get_user(user_id, db_session)
 
 
-async def delete_user(db: MongoDB, user_id: str) -> bool:
+async def delete_user(user_id: str, db_session) -> bool:
     """
     Supprime un utilisateur.
     """
-    deleted_count = await db.delete_one(USERS_COLLECTION, {"_id": ObjectId(user_id)})
-    return deleted_count > 0 
+    result = await db_session.delete_one("users", {"_id": ObjectId(user_id)})
+    return result.deleted_count > 0

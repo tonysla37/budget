@@ -1,0 +1,140 @@
+[2025-07-25 14:28:30] === Démarrage du déploiement de test pour budget-app ===
+[2025-07-25 14:28:30] [DEBUG] Démarrage du script de déploiement
+[2025-07-25 14:28:30] [DEBUG] ------- INFORMATIONS SYSTÈME -------
+[2025-07-25 14:28:30] [DEBUG] OS: Darwin Mac 24.5.0 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:26 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8112 arm64
+[2025-07-25 14:28:30] [DEBUG] Python: Python 3.13.0
+[2025-07-25 14:28:30] [DEBUG] Espace disque: /dev/disk1s1     500Mi   5.6Mi   482Mi     2%      32  4.9M    0%   /System/Volumes/iSCPreboot
+[2025-07-25 14:28:30] [DEBUG] Mémoire: Pages free:                                4037.
+[2025-07-25 14:28:30] [DEBUG] MongoDB: db version v8.0.12
+[2025-07-25 14:28:30] [DEBUG] MongoDB status: running
+[2025-07-25 14:28:30] [DEBUG] ----------------------------------
+[2025-07-25 14:28:30] [DEBUG] Vérification de la structure du projet
+[2025-07-25 14:28:30] [DEBUG] BACKEND_DIR: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend
+[2025-07-25 14:28:30] [DEBUG] Contenu du répertoire backend:
+total 216
+drwxr-xr-x@  4 tonyauge  staff    128 Jul 24 13:59 __pycache__
+drwxr-xr-x@ 24 tonyauge  staff    768 Jul 25 14:27 .
+drwxr-xr-x@ 11 tonyauge  staff    352 Jul 25 14:28 ..
+-rw-r--r--@  1 tonyauge  staff    440 Jul 23 10:35 .env.example
+drwxr-xr-x@  6 tonyauge  staff    192 Jul 25 09:58 .pytest_cache
+drwxr-xr-x@ 14 tonyauge  staff    448 Jul 25 10:06 app
+-rw-r--r--@  1 tonyauge  staff   1091 Jul 25 14:28 backend_debug.log
+-rw-r--r--@  1 tonyauge  staff     81 Jul 25 14:28 backend_deploy.log
+-rw-r--r--@  1 tonyauge  staff  13754 Jul 25 11:08 backend_log.log
+-rw-r--r--@  1 tonyauge  staff    424 Jul 25 10:42 check_users.py
+-rw-r--r--@  1 tonyauge  staff   5650 Jul 25 10:43 create_transactions.py
+-rw-r--r--@  1 tonyauge  staff   1332 Jul 25 10:42 create_user.py
+-rw-r--r--@  1 tonyauge  staff     81 Jul 25 14:28 deploy_output.log
+-rw-r--r--@  1 tonyauge  staff    109 Jul 25 12:53 deploy_test.log
+-rwxr-xr-x@  1 tonyauge  staff  20066 Jul 25 12:37 deploy_test.sh
+-rw-r--r--@  1 tonyauge  staff   1363 Jul 25 10:44 fix_categories.py
+-rw-r--r--@  1 tonyauge  staff   1777 Jul 25 10:46 fix_dates.py
+-rw-r--r--@  1 tonyauge  staff   1116 Jul 25 10:45 fix_transactions.py
+-rw-r--r--@  1 tonyauge  staff    297 Jul 24 13:59 requirements.txt
+-rwxr-xr-x@  1 tonyauge  staff   1331 Jul 24 14:31 stop_test.sh
+-rw-r--r--@  1 tonyauge  staff   5398 Jul 24 12:33 test_data.json
+-rw-r--r--@  1 tonyauge  staff    942 Jul 24 12:28 test_password.py
+drwxr-xr-x@  7 tonyauge  staff    224 Jul 25 11:36 venv
+-rw-r--r--@  1 tonyauge  staff    416 Jul 25 10:42 view_users.py
+[2025-07-25 14:28:30] [DEBUG] Contenu du répertoire app:
+total 24
+-rw-r--r--@  1 tonyauge  staff   103 Jul 25 09:52 __init__.py
+drwxr-xr-x@  4 tonyauge  staff   128 Jul 25 09:58 __pycache__
+drwxr-xr-x@ 14 tonyauge  staff   448 Jul 25 10:06 .
+drwxr-xr-x@ 24 tonyauge  staff   768 Jul 25 14:27 ..
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 24 11:11 core
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 25 09:58 db
+drwxr-xr-x@  7 tonyauge  staff   224 Jul 24 14:06 interceptors
+-rw-r--r--@  1 tonyauge  staff  4837 Jul 25 09:42 main.py
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 25 10:04 models
+drwxr-xr-x@  9 tonyauge  staff   288 Jul 25 10:06 routers
+drwxr-xr-x@  6 tonyauge  staff   192 Jul 24 12:18 schemas
+drwxr-xr-x@  7 tonyauge  staff   224 Jul 24 14:39 services
+drwxr-xr-x@  3 tonyauge  staff    96 Jul 24 21:25 static
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 25 09:49 tests
+[2025-07-25 14:28:30] MongoDB est déjà installé
+[2025-07-25 14:28:30] Création de l'environnement virtuel...
+[2025-07-25 14:28:30] Environnement virtuel activé: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend/venv/bin/python
+[2025-07-25 14:28:30] Mise à jour de pip...
+[2025-07-25 14:28:30] Installation des dépendances...
+[2025-07-25 14:28:30] Installation des dépendances depuis requirements.txt...
+[2025-07-25 14:28:30] Vérification des modules installés...
+[2025-07-25 14:28:31] PYTHONPATH configuré: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend:
+[2025-07-25 14:28:31] Exécution des tests...
+[2025-07-25 14:28:32] ATTENTION: Les tests ont échoué. Vérifiez les erreurs dans le log.
+[2025-07-25 14:28:32] Chargement des données de test dans MongoDB...
+[2025-07-25 14:28:33] Arrêt des instances précédentes...
+[2025-07-25 14:28:33] Aucune instance précédente trouvée
+[2025-07-25 14:28:33] Démarrage de l'application...
+[2025-07-25 14:28:33] Répertoire courant: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend
+[2025-07-25 14:28:33] Contenu du répertoire courant: total 240
+drwxr-xr-x@  4 tonyauge  staff    128 Jul 24 13:59 __pycache__
+drwxr-xr-x@ 24 tonyauge  staff    768 Jul 25 14:27 .
+drwxr-xr-x@ 11 tonyauge  staff    352 Jul 25 14:28 ..
+-rw-r--r--@  1 tonyauge  staff    440 Jul 23 10:35 .env.example
+drwxr-xr-x@  6 tonyauge  staff    192 Jul 25 09:58 .pytest_cache
+drwxr-xr-x@ 14 tonyauge  staff    448 Jul 25 10:06 app
+-rw-r--r--@  1 tonyauge  staff   4666 Jul 25 14:28 backend_debug.log
+-rw-r--r--@  1 tonyauge  staff   7432 Jul 25 14:28 backend_deploy.log
+-rw-r--r--@  1 tonyauge  staff  13754 Jul 25 11:08 backend_log.log
+-rw-r--r--@  1 tonyauge  staff    424 Jul 25 10:42 check_users.py
+-rw-r--r--@  1 tonyauge  staff   5650 Jul 25 10:43 create_transactions.py
+-rw-r--r--@  1 tonyauge  staff   1332 Jul 25 10:42 create_user.py
+-rw-r--r--@  1 tonyauge  staff   7432 Jul 25 14:28 deploy_output.log
+-rw-r--r--@  1 tonyauge  staff    109 Jul 25 12:53 deploy_test.log
+-rwxr-xr-x@  1 tonyauge  staff  20066 Jul 25 12:37 deploy_test.sh
+-rw-r--r--@  1 tonyauge  staff   1363 Jul 25 10:44 fix_categories.py
+-rw-r--r--@  1 tonyauge  staff   1777 Jul 25 10:46 fix_dates.py
+-rw-r--r--@  1 tonyauge  staff   1116 Jul 25 10:45 fix_transactions.py
+-rw-r--r--@  1 tonyauge  staff    297 Jul 24 13:59 requirements.txt
+-rwxr-xr-x@  1 tonyauge  staff   1331 Jul 24 14:31 stop_test.sh
+-rw-r--r--@  1 tonyauge  staff   5398 Jul 24 12:33 test_data.json
+-rw-r--r--@  1 tonyauge  staff    942 Jul 24 12:28 test_password.py
+drwxr-xr-x@  7 tonyauge  staff    224 Jul 25 11:36 venv
+-rw-r--r--@  1 tonyauge  staff    416 Jul 25 10:42 view_users.py
+[2025-07-25 14:28:33] Contenu du répertoire app: total 24
+-rw-r--r--@  1 tonyauge  staff   103 Jul 25 09:52 __init__.py
+drwxr-xr-x@  4 tonyauge  staff   128 Jul 25 09:58 __pycache__
+drwxr-xr-x@ 14 tonyauge  staff   448 Jul 25 10:06 .
+drwxr-xr-x@ 24 tonyauge  staff   768 Jul 25 14:27 ..
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 24 11:11 core
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 25 09:58 db
+drwxr-xr-x@  7 tonyauge  staff   224 Jul 24 14:06 interceptors
+-rw-r--r--@  1 tonyauge  staff  4837 Jul 25 09:42 main.py
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 25 10:04 models
+drwxr-xr-x@  9 tonyauge  staff   288 Jul 25 10:06 routers
+drwxr-xr-x@  6 tonyauge  staff   192 Jul 24 12:18 schemas
+drwxr-xr-x@  7 tonyauge  staff   224 Jul 24 14:39 services
+drwxr-xr-x@  3 tonyauge  staff    96 Jul 24 21:25 static
+drwxr-xr-x@  5 tonyauge  staff   160 Jul 25 09:49 tests
+[2025-07-25 14:28:33] Contenu du répertoire app/main.py: from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import logging
+
+from app.core.config import settings
+from app.db.mongodb import mongodb, get_db
+from app.db.models import create_indexes
+from app.routers import auth, users, transactions, categories, reports
+from app.interceptors import setup_interceptors
+
+# Configuration du logger
+logger = logging.getLogger("budget-api")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Gestionnaire de cycle de vie de l'application.
+    Se connecte à MongoDB au démarrage et ferme la connexion à l'arrêt.
+    """
+[2025-07-25 14:28:33] PYTHONPATH avant lancement: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend:
+[2025-07-25 14:28:33] Uvicorn démarré avec PID 80540 et PYTHONPATH=/Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend:
+[2025-07-25 14:28:36] Application démarrée avec PID 80540
+[2025-07-25 14:28:36] Vous pouvez accéder à l'API à http://localhost:8000
+[2025-07-25 14:28:36] Documentation Swagger disponible à http://localhost:8000/docs
+[2025-07-25 14:28:36] Surveillance du démarrage de l'application pendant 5 secondes...
+[2025-07-25 14:28:41] Vérification de la réponse de l'API...
+[2025-07-25 14:28:41] L'API répond correctement
+[2025-07-25 14:28:41] Pour arrêter l'application manuellement, exécutez: kill 80540
+[2025-07-25 14:28:41] Le fichier stop_test.sh existe déjà, pas de modification
+[2025-07-25 14:28:41] Déploiement de test terminé avec succès

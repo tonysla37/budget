@@ -2,7 +2,7 @@ import json
 import logging
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
@@ -45,7 +45,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             "path": request.url.path,
             "query_params": dict(request.query_params),
             "user_agent": request.headers.get("User-Agent", "Unknown"),
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Ajout du header X-Correlation-ID

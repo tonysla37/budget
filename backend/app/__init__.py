@@ -1,0 +1,1 @@
+# Package app - Ce fichier est nécessaire pour que Python reconnaisse le répertoire comme un package 

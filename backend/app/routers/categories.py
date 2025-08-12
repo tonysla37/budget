@@ -1,84 +1,90 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
+from datetime import datetime, UTC
+from bson import ObjectId
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.user import User
-from app.models.transaction import Category, Tag
-from app.schemas import (
-    Category as CategorySchema,
-    CategoryCreate,
-    CategoryUpdate,
-    Tag as TagSchema,
-    TagCreate,
-    TagUpdate
-)
 from app.routers.auth import get_current_active_user
+from app.routers.transactions import prepare_mongodb_document_for_response
 
 router = APIRouter()
 
 
 # ------ Catégories ------
 
-@router.get("/categories", response_model=List[CategorySchema])
+@router.get("/categories", response_model=List[Dict])
 async def get_categories(
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Récupérer toutes les catégories disponibles pour l'utilisateur.
     Inclut les catégories système et les catégories personnelles.
     """
-    # Récupérer les catégories système (user_id == NULL) et les catégories de l'utilisateur
-    categories = db.query(Category).filter(
-        (Category.user_id.is_(None)) | (Category.user_id == current_user.id)
-    ).offset(skip).limit(limit).all()
+    collection = await db.get_collection("categories")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
     
-    return categories
+    # Récupérer les catégories système (user_id == NULL) et les catégories de l'utilisateur
+    cursor = collection.find({
+        "$or": [
+            {"user_id": None},
+            {"user_id": user_id}
+        ]
+    }).skip(skip).limit(limit)
+    
+    categories = await cursor.to_list(length=limit)
+    return [prepare_mongodb_document_for_response(cat) for cat in categories]
 
 
-@router.post("/categories", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
+@router.post("/categories", response_model=Dict, status_code=status.HTTP_201_CREATED)
 async def create_category(
-    category: CategoryCreate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    category: Dict,
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Créer une nouvelle catégorie personnelle.
     """
-    db_category = Category(
-        name=category.name,
-        description=category.description,
-        color=category.color,
-        icon=category.icon,
-        user_id=current_user.id
-    )
+    collection = await db.get_collection("categories")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
     
-    db.add(db_category)
-    db.commit()
-    db.refresh(db_category)
+    new_category = {
+        "name": category["name"],
+        "description": category.get("description", ""),
+        "color": category.get("color", "#000000"),
+        "icon": category.get("icon", "default"),
+        "user_id": user_id,
+        "created_at": datetime.now(UTC)
+    }
     
-    return db_category
+    result = await collection.insert_one(new_category)
+    created_category = await collection.find_one({"_id": result.inserted_id})
+    
+    return prepare_mongodb_document_for_response(created_category)
 
 
-@router.put("/categories/{category_id}", response_model=CategorySchema)
+@router.put("/categories/{category_id}", response_model=Dict)
 async def update_category(
-    category_id: int,
-    category_update: CategoryUpdate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    category_id: str,
+    category_update: Dict,
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Mettre à jour une catégorie existante.
     Seules les catégories créées par l'utilisateur peuvent être modifiées.
     """
-    db_category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == current_user.id  # Vérifier que c'est une catégorie de l'utilisateur
-    ).first()
+    collection = await db.get_collection("categories")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
+    
+    # Vérifier que la catégorie existe et appartient à l'utilisateur
+    db_category = await collection.find_one({
+        "_id": ObjectId(category_id),
+        "user_id": user_id
+    })
     
     if not db_category:
         raise HTTPException(
@@ -86,32 +92,40 @@ async def update_category(
             detail="Catégorie non trouvée ou non modifiable"
         )
     
-    update_data = category_update.dict(exclude_unset=True)
+    # Préparer les données de mise à jour
+    update_data = {k: v for k, v in category_update.items() if k in ["name", "description", "color", "icon"]}
+    update_data["updated_at"] = datetime.now(UTC)
     
-    for key, value in update_data.items():
-        setattr(db_category, key, value)
+    # Mettre à jour la catégorie
+    await collection.update_one(
+        {"_id": ObjectId(category_id)},
+        {"$set": update_data}
+    )
     
-    db.add(db_category)
-    db.commit()
-    db.refresh(db_category)
+    # Récupérer la catégorie mise à jour
+    updated_category = await collection.find_one({"_id": ObjectId(category_id)})
     
-    return db_category
+    return prepare_mongodb_document_for_response(updated_category)
 
 
 @router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_category(
-    category_id: int,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    category_id: str,
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Supprimer une catégorie.
     Seules les catégories créées par l'utilisateur peuvent être supprimées.
     """
-    db_category = db.query(Category).filter(
-        Category.id == category_id,
-        Category.user_id == current_user.id  # Vérifier que c'est une catégorie de l'utilisateur
-    ).first()
+    collection = await db.get_collection("categories")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
+    
+    # Vérifier que la catégorie existe et appartient à l'utilisateur
+    db_category = await collection.find_one({
+        "_id": ObjectId(category_id),
+        "user_id": user_id
+    })
     
     if not db_category:
         raise HTTPException(
@@ -119,71 +133,85 @@ async def delete_category(
             detail="Catégorie non trouvée ou non supprimable"
         )
     
-    db.delete(db_category)
-    db.commit()
+    # Supprimer la catégorie
+    await collection.delete_one({"_id": ObjectId(category_id)})
     
     return None
 
 
 # ------ Tags ------
 
-@router.get("/tags", response_model=List[TagSchema])
+@router.get("/tags", response_model=List[Dict])
 async def get_tags(
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Récupérer tous les tags disponibles pour l'utilisateur.
     Inclut les tags système et les tags personnels.
     """
-    # Récupérer les tags système (user_id == NULL) et les tags de l'utilisateur
-    tags = db.query(Tag).filter(
-        (Tag.user_id.is_(None)) | (Tag.user_id == current_user.id)
-    ).offset(skip).limit(limit).all()
+    collection = await db.get_collection("tags")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
     
-    return tags
+    # Récupérer les tags système (user_id == NULL) et les tags de l'utilisateur
+    cursor = collection.find({
+        "$or": [
+            {"user_id": None},
+            {"user_id": user_id}
+        ]
+    }).skip(skip).limit(limit)
+    
+    tags = await cursor.to_list(length=limit)
+    return [prepare_mongodb_document_for_response(tag) for tag in tags]
 
 
-@router.post("/tags", response_model=TagSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/tags", response_model=Dict, status_code=status.HTTP_201_CREATED)
 async def create_tag(
-    tag: TagCreate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    tag: Dict,
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Créer un nouveau tag personnel.
     """
-    db_tag = Tag(
-        name=tag.name,
-        description=tag.description,
-        color=tag.color,
-        user_id=current_user.id
-    )
+    collection = await db.get_collection("tags")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
     
-    db.add(db_tag)
-    db.commit()
-    db.refresh(db_tag)
+    new_tag = {
+        "name": tag["name"],
+        "description": tag.get("description", ""),
+        "color": tag.get("color", "#000000"),
+        "user_id": user_id,
+        "created_at": datetime.now(UTC)
+    }
     
-    return db_tag
+    result = await collection.insert_one(new_tag)
+    created_tag = await collection.find_one({"_id": result.inserted_id})
+    
+    return prepare_mongodb_document_for_response(created_tag)
 
 
-@router.put("/tags/{tag_id}", response_model=TagSchema)
+@router.put("/tags/{tag_id}", response_model=Dict)
 async def update_tag(
-    tag_id: int,
-    tag_update: TagUpdate,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    tag_id: str,
+    tag_update: Dict,
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Mettre à jour un tag existant.
     Seuls les tags créés par l'utilisateur peuvent être modifiés.
     """
-    db_tag = db.query(Tag).filter(
-        Tag.id == tag_id,
-        Tag.user_id == current_user.id  # Vérifier que c'est un tag de l'utilisateur
-    ).first()
+    collection = await db.get_collection("tags")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
+    
+    # Vérifier que le tag existe et appartient à l'utilisateur
+    db_tag = await collection.find_one({
+        "_id": ObjectId(tag_id),
+        "user_id": user_id
+    })
     
     if not db_tag:
         raise HTTPException(
@@ -191,32 +219,40 @@ async def update_tag(
             detail="Tag non trouvé ou non modifiable"
         )
     
-    update_data = tag_update.dict(exclude_unset=True)
+    # Préparer les données de mise à jour
+    update_data = {k: v for k, v in tag_update.items() if k in ["name", "description", "color"]}
+    update_data["updated_at"] = datetime.now(UTC)
     
-    for key, value in update_data.items():
-        setattr(db_tag, key, value)
+    # Mettre à jour le tag
+    await collection.update_one(
+        {"_id": ObjectId(tag_id)},
+        {"$set": update_data}
+    )
     
-    db.add(db_tag)
-    db.commit()
-    db.refresh(db_tag)
+    # Récupérer le tag mis à jour
+    updated_tag = await collection.find_one({"_id": ObjectId(tag_id)})
     
-    return db_tag
+    return prepare_mongodb_document_for_response(updated_tag)
 
 
 @router.delete("/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tag(
-    tag_id: int,
-    current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    tag_id: str,
+    current_user: Dict = Depends(get_current_active_user),
+    db = Depends(get_db)
 ):
     """
     Supprimer un tag.
     Seuls les tags créés par l'utilisateur peuvent être supprimés.
     """
-    db_tag = db.query(Tag).filter(
-        Tag.id == tag_id,
-        Tag.user_id == current_user.id  # Vérifier que c'est un tag de l'utilisateur
-    ).first()
+    collection = await db.get_collection("tags")
+    user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
+    
+    # Vérifier que le tag existe et appartient à l'utilisateur
+    db_tag = await collection.find_one({
+        "_id": ObjectId(tag_id),
+        "user_id": user_id
+    })
     
     if not db_tag:
         raise HTTPException(
@@ -224,7 +260,7 @@ async def delete_tag(
             detail="Tag non trouvé ou non supprimable"
         )
     
-    db.delete(db_tag)
-    db.commit()
+    # Supprimer le tag
+    await collection.delete_one({"_id": ObjectId(tag_id)})
     
     return None 

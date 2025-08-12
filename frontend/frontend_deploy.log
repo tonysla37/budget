@@ -1,0 +1,19 @@
+
+> budget-app-frontend@1.0.0 start
+> expo start --web
+
+Starting project at /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/frontend
+Some dependencies are incompatible with the installed expo version:
+  react-native@0.71.8 - expected version: 0.71.14
+Your project may not work correctly until you install the correct versions of the packages.
+Install individual packages by running npx expo install react-native@0.71.14
+Starting Metro Bundler
+Starting Webpack on port 19006 in development mode.
+Waiting on http://localhost:19000
+Logs for your project will appear below.
+(node:4400) [DEP_WEBPACK_DEV_SERVER_CONSTRUCTOR] DeprecationWarning: Using 'compiler' as the first argument is deprecated. Please use 'options' as the first argument and 'compiler' as the second argument.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:4400) [DEP_WEBPACK_DEV_SERVER_LISTEN] DeprecationWarning: 'listen' is deprecated. Please use the async 'start' or 'startCallback' method.
+ERROR in Could not find MIME for Buffer <null>
+
+web compiled with 1 error

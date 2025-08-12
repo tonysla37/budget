@@ -1,0 +1,33 @@
+[2025-08-11 20:38:21] === Démarrage du déploiement de test pour budget-app-frontend ===
+[2025-08-11 20:38:21] [DEBUG] Démarrage du script de déploiement
+[2025-08-11 20:38:21] [DEBUG] ------- INFORMATIONS SYSTÈME -------
+[2025-08-11 20:38:21] [DEBUG] OS: Darwin Mac 24.6.0 Darwin Kernel Version 24.6.0: Mon Jul 14 11:30:51 PDT 2025; root:xnu-11417.140.69~1/RELEASE_ARM64_T8112 arm64
+[2025-08-11 20:38:22] [DEBUG] Node: v24.4.1
+[2025-08-11 20:38:23] [DEBUG] NPM: 11.4.2
+[2025-08-11 20:38:23] [DEBUG] Espace disque: /dev/disk1s1     500Mi   5.6Mi   482Mi     2%      32  4.9M    0%   /System/Volumes/iSCPreboot
+[2025-08-11 20:38:23] [DEBUG] Mémoire: Pages free:                                4709.
+[2025-08-11 20:38:23] [DEBUG] ----------------------------------
+[2025-08-11 20:38:23] Node.js est déjà installé: v24.4.1
+[2025-08-11 20:38:23] NPM est déjà installé: 11.4.2
+[2025-08-11 20:38:23] Installation des dépendances...
+
+up to date in 5m
+npm notice
+npm notice New minor version of npm available! 11.4.2 -> 11.5.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.2
+npm notice To update run: npm install -g npm@11.5.2
+npm notice
+[2025-08-11 20:43:52] Installation des dépendances pour le support web...
+
+up to date in 1s
+[2025-08-11 20:43:53] Vérification de la disponibilité du backend...
+[2025-08-11 20:43:53] Backend non disponible, attention cela peut poser des problèmes
+[2025-08-11 20:43:53] Arrêt des instances précédentes...
+[2025-08-11 20:43:53] Aucune instance expo précédente trouvée
+[2025-08-11 20:43:53] Démarrage de l'application en mode développement...
+[2025-08-11 20:43:56] Application démarrée avec PID 4334
+[2025-08-11 20:43:56] Vous pouvez accéder à l'application à http://localhost:19006
+[2025-08-11 20:43:56] Surveillance du démarrage de l'application pendant 10 secondes...
+[2025-08-11 20:44:01] Attente de l'initialisation de l'interface web...
+[2025-08-11 20:44:07] Déploiement de test terminé avec succès
+[2025-08-11 20:44:07] Pour arrêter l'application, exécutez: ./stop_test.sh

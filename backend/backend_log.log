@@ -1,0 +1,85 @@
+/Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'orm_mode' has been renamed to 'from_attributes'
+  warnings.warn(message, UserWarning)
+INFO:     Started server process [20582]
+INFO:     Waiting for application startup.
+2025-07-25 10:36:18,639 - budget-api - INFO - Démarrage de l'application - Connexion à MongoDB...
+2025-07-25 10:36:18,639 - budget-api - INFO - Tentative de connexion à MongoDB: mongodb://localhost:27017
+2025-07-25 10:36:18,653 - budget-api - INFO - Vérification de la connexion MongoDB avec ping...
+2025-07-25 10:36:18,673 - budget-api - INFO - ✅ Connecté à MongoDB - Base de données: budget_db
+2025-07-25 10:36:18,673 - budget-api - INFO - Création des index pour les collections MongoDB...
+2025-07-25 10:36:18,681 - budget-api - INFO - Index créés avec succès.
+2025-07-25 10:36:18,725 - budget-api - INFO - Ajout de 7 catégories par défaut
+2025-07-25 10:36:18,731 - budget-api - INFO - Vérification des collections terminée avec succès
+2025-07-25 10:36:18,731 - budget-api - INFO - Application démarrée avec succès - MongoDB connecté
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+2025-07-25 10:36:30,649 - budget-api - INFO - {"correlation_id": "5b0a4192-5d0b-4a17-9907-80057ae6197e", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/health", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:36:30.648771+00:00", "status_code": 200, "processing_time_ms": 0.81, "level": "INFO"}
+Connecté à MongoDB - budget_db
+INFO:     127.0.0.1:50396 - "GET /api/health HTTP/1.1" 200 OK
+2025-07-25 10:36:36,069 - budget-api - INFO - {"correlation_id": "da23072b-7db7-4205-bde2-33167c4ea9e7", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/health/db", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:36:36.068503+00:00", "status_code": 200, "processing_time_ms": 1.33, "level": "INFO"}
+INFO:     127.0.0.1:50398 - "GET /api/health/db HTTP/1.1" 200 OK
+2025-07-25 10:36:43,169 - budget-api - WARNING - {"correlation_id": "5f28b7f2-4294-4d74-92e9-ca45b1f0f86e", "client_ip": "127.0.0.1", "method": "POST", "path": "/api/auth/token", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:36:43.165413+00:00", "status_code": 401, "processing_time_ms": 4.57, "level": "WARNING"}
+Vérification du mot de passe: password123, hash: b2/tBBq
+Erreur lors de la vérification du mot de passe: hash could not be identified
+INFO:     127.0.0.1:50403 - "POST /api/auth/token HTTP/1.1" 401 Unauthorized
+2025-07-25 10:36:43,180 - budget-api - WARNING - {"correlation_id": "ce320dc5-fc2a-4366-9b25-bd9ed6d1b7a5", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/transactions/", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:36:43.180293+00:00", "status_code": 401, "processing_time_ms": 0.34, "level": "WARNING"}
+INFO:     127.0.0.1:50405 - "GET /api/transactions/ HTTP/1.1" 401 Unauthorized
+2025-07-25 10:36:50,621 - budget-api - WARNING - {"correlation_id": "5f0b5693-9309-4b1c-833e-368f70e24930", "client_ip": "127.0.0.1", "method": "POST", "path": "/api/auth/token", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:36:50.619871+00:00", "status_code": 401, "processing_time_ms": 1.73, "level": "WARNING"}
+Vérification du mot de passe: password123, hash: b2/tBBq
+Erreur lors de la vérification du mot de passe: hash could not be identified
+INFO:     127.0.0.1:50408 - "POST /api/auth/token HTTP/1.1" 401 Unauthorized
+2025-07-25 10:37:36,975 - budget-api - WARNING - {"correlation_id": "0efc2102-a75b-469c-b3e4-a9ab374d4ee4", "client_ip": "127.0.0.1", "method": "POST", "path": "/api/auth/token", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:37:36.969250+00:00", "status_code": 401, "processing_time_ms": 6.3, "level": "WARNING"}
+Vérification du mot de passe: password123, hash: b2/tBBq
+Erreur lors de la vérification du mot de passe: hash could not be identified
+INFO:     127.0.0.1:50425 - "POST /api/auth/token HTTP/1.1" 401 Unauthorized
+2025-07-25 10:39:59,726 - budget-api - INFO - {"correlation_id": "c064e075-1f05-4492-a23f-7dcf4829109e", "client_ip": "127.0.0.1", "method": "GET", "path": "/docs", "query_params": {}, "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15", "timestamp": "2025-07-25T08:39:59.724645+00:00", "status_code": 200, "processing_time_ms": 8.65, "level": "INFO"}
+INFO:     127.0.0.1:50490 - "GET /docs HTTP/1.1" 200 OK
+2025-07-25 10:40:00,066 - budget-api - INFO - {"correlation_id": "96218714-d1e9-4c0c-a013-bdc8c3f8e1ec", "client_ip": "127.0.0.1", "method": "GET", "path": "/openapi.json", "query_params": {}, "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15", "timestamp": "2025-07-25T08:40:00.021256+00:00", "status_code": 200, "processing_time_ms": 45.17, "level": "INFO"}
+INFO:     127.0.0.1:50490 - "GET /openapi.json HTTP/1.1" 200 OK
+2025-07-25 10:42:59,850 - passlib.handlers.bcrypt - WARNING - (trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/venv/lib/python3.13/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+2025-07-25 10:43:00,102 - budget-api - INFO - {"correlation_id": "01c54619-1a05-41b5-91fa-5e2ca3a606bd", "client_ip": "127.0.0.1", "method": "POST", "path": "/api/auth/token", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:42:59.845955+00:00", "status_code": 200, "processing_time_ms": 256.51, "level": "INFO"}
+Vérification du mot de passe: password123, hash: $2b$12$iFit9y/wN77cVSR77lgcbODoKzMbpTAVwyiaoKeMVY3rUfD1rXdha
+Résultat de la vérification: True
+INFO:     127.0.0.1:50572 - "POST /api/auth/token HTTP/1.1" 200 OK
+2025-07-25 10:43:08,934 - budget-api - INFO - {"correlation_id": "0950838f-d3a6-4459-9cee-09bad3f7e09b", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/transactions/", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:43:08.926389+00:00", "status_code": 200, "processing_time_ms": 8.31, "level": "INFO"}
+INFO:     127.0.0.1:50576 - "GET /api/transactions/ HTTP/1.1" 200 OK
+2025-07-25 10:44:02,120 - budget-api - INFO - {"correlation_id": "bec248ae-eb92-4e6e-9d44-462680855b6d", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/transactions/", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:44:02.098511+00:00", "status_code": 200, "processing_time_ms": 22.33, "level": "INFO"}
+INFO:     127.0.0.1:50607 - "GET /api/transactions/ HTTP/1.1" 200 OK
+2025-07-25 10:44:11,659 - budget-api - INFO - {"correlation_id": "9df108a2-7586-413c-9a0d-20a78a69ddf9", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/categories/categories", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:44:11.656707+00:00", "status_code": 200, "processing_time_ms": 2.46, "level": "INFO"}
+INFO:     127.0.0.1:50613 - "GET /api/categories/categories HTTP/1.1" 200 OK
+2025-07-25 10:44:59,809 - budget-api - INFO - {"correlation_id": "eb0c9b9e-d5ba-4d55-944d-b3a7e2fbc102", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/categories/categories", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:44:59.801904+00:00", "status_code": 200, "processing_time_ms": 7.21, "level": "INFO"}
+INFO:     127.0.0.1:50632 - "GET /api/categories/categories HTTP/1.1" 200 OK
+2025-07-25 10:45:07,152 - budget-api - INFO - {"correlation_id": "2bf55310-d710-454c-a4c3-603299c93360", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/reports/trends", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:45:07.149138+00:00", "status_code": 200, "processing_time_ms": 2.91, "level": "INFO"}
+INFO:     127.0.0.1:50637 - "GET /api/reports/trends HTTP/1.1" 200 OK
+2025-07-25 10:45:48,022 - budget-api - INFO - {"correlation_id": "2f7bb5cc-7a61-47ab-8e98-4d06cf654b12", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/reports/trends", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:45:48.020016+00:00", "status_code": 200, "processing_time_ms": 2.58, "level": "INFO"}
+INFO:     127.0.0.1:50652 - "GET /api/reports/trends HTTP/1.1" 200 OK
+2025-07-25 10:45:57,220 - budget-api - INFO - {"correlation_id": "ff1ab97c-c782-4a3d-b166-5fa3048ee577", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/reports/monthly/2025/7", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:45:57.218547+00:00", "status_code": 200, "processing_time_ms": 2.03, "level": "INFO"}
+INFO:     127.0.0.1:50656 - "GET /api/reports/monthly/2025/7 HTTP/1.1" 200 OK
+2025-07-25 10:46:26,939 - budget-api - INFO - {"correlation_id": "cec5dd7e-e332-4adf-bdd7-ef6a9432cec4", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/reports/monthly/2025/7", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:46:26.935836+00:00", "status_code": 200, "processing_time_ms": 3.49, "level": "INFO"}
+INFO:     127.0.0.1:50671 - "GET /api/reports/monthly/2025/7 HTTP/1.1" 200 OK
+2025-07-25 10:46:33,589 - budget-api - INFO - {"correlation_id": "f8b6ec90-390e-40f8-9239-9a9c0faed4d4", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/reports/trends", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:46:33.586152+00:00", "status_code": 200, "processing_time_ms": 2.84, "level": "INFO"}
+INFO:     127.0.0.1:50675 - "GET /api/reports/trends HTTP/1.1" 200 OK
+2025-07-25 10:50:51,498 - budget-api - INFO - {"correlation_id": "8a20f1fa-8310-40e7-8165-eb466a1713eb", "client_ip": "127.0.0.1", "method": "GET", "path": "/docs", "query_params": {}, "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15", "timestamp": "2025-07-25T08:50:51.497239+00:00", "status_code": 200, "processing_time_ms": 1.45, "level": "INFO"}
+INFO:     127.0.0.1:50793 - "GET /docs HTTP/1.1" 200 OK
+2025-07-25 10:50:51,666 - budget-api - INFO - {"correlation_id": "f51c510a-389c-4c43-b1aa-88e01c5883c6", "client_ip": "127.0.0.1", "method": "GET", "path": "/openapi.json", "query_params": {}, "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Safari/605.1.15", "timestamp": "2025-07-25T08:50:51.665414+00:00", "status_code": 200, "processing_time_ms": 1.47, "level": "INFO"}
+INFO:     127.0.0.1:50793 - "GET /openapi.json HTTP/1.1" 200 OK
+2025-07-25 10:51:14,619 - budget-api - INFO - {"correlation_id": "7c9d23c0-002a-424b-993e-39816d4336e9", "client_ip": "127.0.0.1", "method": "GET", "path": "/docs", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:51:14.619279+00:00", "status_code": 200, "processing_time_ms": 0.53, "level": "INFO"}
+INFO:     127.0.0.1:50813 - "GET /docs HTTP/1.1" 200 OK
+2025-07-25 10:54:20,098 - budget-api - INFO - {"correlation_id": "97f3fc22-b63f-45bf-aafc-afb0e891ffe1", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/health", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T08:54:20.097405+00:00", "status_code": 200, "processing_time_ms": 0.7, "level": "INFO"}
+INFO:     127.0.0.1:50888 - "GET /api/health HTTP/1.1" 200 OK
+2025-07-25 11:03:39,125 - budget-api - INFO - {"correlation_id": "89dc5b49-171b-44c8-b068-84ef77f41101", "client_ip": "127.0.0.1", "method": "GET", "path": "/docs", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T09:03:39.124295+00:00", "status_code": 200, "processing_time_ms": 0.94, "level": "INFO"}
+INFO:     127.0.0.1:51136 - "GET /docs HTTP/1.1" 200 OK
+2025-07-25 11:06:28,306 - budget-api - INFO - {"correlation_id": "7a6ee9f3-565a-4010-bbb3-fe32aaadc2a3", "client_ip": "127.0.0.1", "method": "GET", "path": "/docs", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T09:06:28.305600+00:00", "status_code": 200, "processing_time_ms": 0.82, "level": "INFO"}
+INFO:     127.0.0.1:51219 - "GET /docs HTTP/1.1" 200 OK
+2025-07-25 11:07:00,469 - budget-api - INFO - {"correlation_id": "60e36c1e-7dc6-4943-a32b-495ba361dd68", "client_ip": "127.0.0.1", "method": "GET", "path": "/docs", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T09:07:00.469213+00:00", "status_code": 200, "processing_time_ms": 0.18, "level": "INFO"}
+INFO:     127.0.0.1:51229 - "GET /docs HTTP/1.1" 200 OK
+2025-07-25 11:08:36,499 - budget-api - WARNING - {"correlation_id": "7df15c32-cbb9-403c-b772-c6432d9af41e", "client_ip": "127.0.0.1", "method": "HEAD", "path": "/api/health", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T09:08:36.495909+00:00", "status_code": 405, "processing_time_ms": 2.63, "level": "WARNING"}
+INFO:     127.0.0.1:51277 - "HEAD /api/health HTTP/1.1" 405 Method Not Allowed
+2025-07-25 11:08:41,733 - budget-api - INFO - {"correlation_id": "b5dbfc97-8929-46f9-9d42-f758662bb1b8", "client_ip": "127.0.0.1", "method": "GET", "path": "/api/health", "query_params": {}, "user_agent": "curl/8.7.1", "timestamp": "2025-07-25T09:08:41.732665+00:00", "status_code": 200, "processing_time_ms": 0.38, "level": "INFO"}
+INFO:     127.0.0.1:51279 - "GET /api/health HTTP/1.1" 200 OK

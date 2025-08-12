@@ -1,135 +1,175 @@
+import base64
 import os
-import json
-import time
-import datetime
+from datetime import datetime, timedelta, UTC
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import date, timedelta
 
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
 from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from bson import ObjectId
 
 from app.core.config import settings
-from app.models.user import User
-from app.models.transaction import Transaction
 
 
 class BoursoramaService:
     """
-    Service pour interagir avec Boursorama Banque.
-    Ce service utilise du web scraping puisque Boursorama ne fournit pas d'API publique 
-    facilement accessible pour les particuliers.
+    Service pour l'interaction avec Boursorama.
+    Pour le moment, cette classe est un mock qui simule
+    l'authentification et le chiffrement des identifiants.
     """
-
+    
     def __init__(self):
-        self.session = requests.Session()
-        self.base_url = "https://clients.boursorama.com"
-        self.logged_in = False
+        """
+        Initialise le service Boursorama.
+        """
+        self.key = self._get_encryption_key()
         
-        # Configuration du chiffrement pour les identifiants
+    def _get_encryption_key(self):
+        """
+        Génère une clé de chiffrement à partir de la clé secrète.
+        """
+        # Dérivation de clé à partir du secret
         encryption_key = os.getenv("ENCRYPTION_KEY", settings.SECRET_KEY)
-        self.cipher = Fernet(Fernet.generate_key() if len(encryption_key) < 32 else encryption_key.encode()[:32])
-
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=b'boursorama_salt',  # Salt fixe pour la démonstration
+            iterations=100000,
+        )
+        key = base64.urlsafe_b64encode(kdf.derive(encryption_key.encode()))
+        return key
+        
+    def login(self, username: str, password: str) -> bool:
+        """
+        Simule une authentification à Boursorama.
+        Pour la démonstration, tout utilisateur dont le mot de passe
+        ne commence pas par 'invalid_' est considéré comme valide.
+        """
+        # Simulation d'authentification
+        if password.startswith('invalid_'):
+            return False
+        return True
+    
     def encrypt_credentials(self, username: str, password: str) -> Tuple[str, str]:
         """
         Chiffre les identifiants Boursorama.
         """
-        encrypted_username = self.cipher.encrypt(username.encode()).decode()
-        encrypted_password = self.cipher.encrypt(password.encode()).decode()
+        f = Fernet(self.key)
+        encrypted_username = f.encrypt(username.encode()).decode()
+        encrypted_password = f.encrypt(password.encode()).decode()
         return encrypted_username, encrypted_password
-
+        
     def decrypt_credentials(self, encrypted_username: str, encrypted_password: str) -> Tuple[str, str]:
         """
         Déchiffre les identifiants Boursorama.
         """
-        username = self.cipher.decrypt(encrypted_username.encode()).decode()
-        password = self.cipher.decrypt(encrypted_password.encode()).decode()
+        f = Fernet(self.key)
+        username = f.decrypt(encrypted_username.encode()).decode()
+        password = f.decrypt(encrypted_password.encode()).decode()
         return username, password
-
-    def login(self, username: str, password: str) -> bool:
-        """
-        Connexion à Boursorama Banque.
-        Note: Dans une implémentation réelle, il faudrait gérer les captchas et 
-        l'authentification à deux facteurs.
-        """
-        # Simulation de login pour le moment
-        self.logged_in = True
-        return self.logged_in
         
-        # TODO: Implémentation réelle du login
-        # login_url = f"{self.base_url}/connexion"
-        # ...
-
+    def sync_accounts(self, username: str, password: str) -> List[Dict[str, Any]]:
+        """
+        Simule la synchronisation des comptes Boursorama.
+        Renvoie une liste de comptes fictifs.
+        """
+        # Simulation de comptes
+        return [
+            {
+                'id': 'acc1',
+                'name': 'Compte courant',
+                'balance': 1250.45,
+                'currency': 'EUR'
+            },
+            {
+                'id': 'acc2',
+                'name': 'Livret A',
+                'balance': 4500.00,
+                'currency': 'EUR'
+            }
+        ]
+        
+    def sync_transactions(self, username: str, password: str, account_id: str = None) -> List[Dict[str, Any]]:
+        """
+        Simule la récupération des transactions Boursorama.
+        Renvoie une liste de transactions fictives.
+        """
+        # Simulation de transactions
+        now = datetime.now(UTC)
+        
+        return [
+            {
+                'id': 'tr1',
+                'date': (now - timedelta(days=1)).isoformat(),
+                'amount': -25.40,
+                'label': 'CARREFOUR CITY',
+                'category': 'Alimentation'
+            },
+            {
+                'id': 'tr2',
+                'date': (now - timedelta(days=3)).isoformat(),
+                'amount': -42.00,
+                'label': 'SNCF',
+                'category': 'Transport'
+            },
+            {
+                'id': 'tr3',
+                'date': (now - timedelta(days=7)).isoformat(),
+                'amount': 1200.00,
+                'label': 'VIREMENT SALAIRE',
+                'category': 'Revenus'
+            }
+        ]
+        
     def get_accounts(self) -> List[Dict[str, Any]]:
         """
         Récupère la liste des comptes.
         """
-        if not self.logged_in:
-            raise Exception("Non connecté à Boursorama")
-        
-        # Données de test (à remplacer par une implémentation réelle)
+        # This method is now a mock, so it will return dummy data.
         return [
             {
-                "id": "account1",
+                "id": "cc123456",
+                "type": "COMPTE_COURANT",
                 "name": "Compte Courant",
-                "balance": 1500.75,
-                "currency": "EUR",
-                "type": "checking"
+                "balance": 1250.45
             },
             {
-                "id": "account2",
+                "id": "la789012",
+                "type": "LIVRET_A",
                 "name": "Livret A",
-                "balance": 5000.00,
-                "currency": "EUR",
-                "type": "savings"
+                "balance": 4500.00
             }
         ]
-
-    def get_transactions(
-        self, 
-        account_id: str, 
-        start_date: Optional[date] = None, 
-        end_date: Optional[date] = None
-    ) -> List[Dict[str, Any]]:
+        
+    def get_transactions(self, account_id: str = None, start_date: datetime = None, end_date: datetime = None) -> List[Dict[str, Any]]:
         """
         Récupère les transactions d'un compte sur une période donnée.
         """
-        if not self.logged_in:
-            raise Exception("Non connecté à Boursorama")
-            
-        # Définir la période par défaut (dernier mois)
-        if not end_date:
-            end_date = date.today()
-        if not start_date:
-            # Par défaut, on récupère les transactions du mois dernier
-            start_date = end_date - timedelta(days=30)
-            
-        # Données de test (à remplacer par une implémentation réelle)
+        # This method is now a mock, so it will return dummy data.
         return [
             {
-                "id": "tx1",
-                "date": "2023-05-27",
-                "description": "PAIEMENT CB CARREFOUR",
-                "amount": -85.32,
-                "merchant": "CARREFOUR",
+                "id": "tx123",
+                "date": "2023-07-15",
+                "amount": -42.50,
+                "label": "SUPERMARCHE CARREFOUR",
+                "category": "Alimentation"
             },
             {
-                "id": "tx2",
-                "date": "2023-05-25",
-                "description": "VIREMENT SALAIRE",
+                "id": "tx456",
+                "date": "2023-07-10",
+                "amount": -29.90,
+                "label": "SNCF",
+                "category": "Transport"
+            },
+            {
+                "id": "tx789",
+                "date": "2023-07-01",
                 "amount": 2500.00,
-                "merchant": "ENTREPRISE XYZ",
-            },
-            {
-                "id": "tx3",
-                "date": "2023-05-20",
-                "description": "PRLV FREE MOBILE",
-                "amount": -19.99,
-                "merchant": "FREE MOBILE",
+                "label": "VIREMENT SALAIRE",
+                "category": "Revenus"
             }
         ]
-
+        
     def process_transactions(self, transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Traite les transactions brutes pour normaliser et enrichir les données.
@@ -138,14 +178,14 @@ class BoursoramaService:
         
         for tx in transactions:
             # Convertir la date
-            tx_date = datetime.datetime.strptime(tx["date"], "%Y-%m-%d").date()
+            tx_date = datetime.strptime(tx["date"], "%Y-%m-%d").date() if isinstance(tx["date"], str) else tx["date"]
             
             # Déterminer s'il s'agit d'une dépense ou d'un revenu
             is_expense = tx["amount"] < 0
             
             # Essayer de déterminer si c'est une transaction récurrente
-            # Ceci nécessiterait plus d'analyse dans une implémentation réelle
-            is_recurring = "PRLV" in tx["description"] or "VIREMENT" in tx["description"]
+            description = tx.get("description", tx.get("label", ""))
+            is_recurring = "PRLV" in description or "VIREMENT" in description
             
             # Normaliser le montant (toujours positif)
             amount = abs(tx["amount"])
@@ -153,73 +193,57 @@ class BoursoramaService:
             processed.append({
                 "external_id": tx["id"],
                 "date": tx_date,
-                "description": tx["description"],
+                "description": description,
                 "amount": amount,
-                "merchant": tx["merchant"],
+                "merchant": tx.get("merchant", ""),
                 "is_expense": is_expense,
                 "is_recurring": is_recurring,
             })
             
         return processed
-
-    def synchronize_user_transactions(self, user: User, db_session) -> int:
+        
+    async def synchronize_user_transactions(self, user, db) -> int:
         """
-        Synchronise les transactions d'un utilisateur.
+        Synchronise les transactions d'un utilisateur avec MongoDB.
         Retourne le nombre de nouvelles transactions.
+        Cette méthode est un mock et simule l'ajout de transactions.
         """
-        if not user.bourso_username_encrypted or not user.bourso_password_encrypted:
+        # Vérifier que l'utilisateur a configuré ses identifiants Boursorama
+        if not hasattr(user, 'bourso_username_encrypted') or not hasattr(user, 'bourso_password_encrypted'):
             raise Exception("Identifiants Boursorama non configurés")
-            
-        username, password = self.decrypt_credentials(
-            user.bourso_username_encrypted, 
-            user.bourso_password_encrypted
-        )
         
-        if not self.login(username, password):
-            raise Exception("Échec de la connexion à Boursorama")
-            
-        accounts = self.get_accounts()
-        new_transactions_count = 0
+        # Simuler la récupération de transactions
+        mock_transactions = [
+            {
+                "external_id": f"tx{i}",
+                "date": datetime.now(UTC) - timedelta(days=i),
+                "description": f"Transaction {i}",
+                "amount": 50.0 * (i % 3 + 1),
+                "merchant": f"Merchant {i}",
+                "is_expense": i % 2 == 0,
+                "is_recurring": i % 5 == 0,
+                "user_id": user.id,
+                "created_at": datetime.now(UTC)
+            }
+            for i in range(1, 6)  # 5 transactions
+        ]
         
-        for account in accounts:
-            # Déterminer la période à synchroniser
-            end_date = datetime.date.today()
-            
-            # Si c'est la première synchronisation, on récupère les 3 derniers mois
-            # Sinon, on récupère depuis la dernière synchronisation
-            if user.last_sync:
-                start_date = user.last_sync.date()
-            else:
-                start_date = end_date - timedelta(days=90)
-                
-            raw_transactions = self.get_transactions(account["id"], start_date, end_date)
-            processed_transactions = self.process_transactions(raw_transactions)
-            
-            for tx_data in processed_transactions:
-                # Vérifier si la transaction existe déjà
-                existing = db_session.query(Transaction).filter(
-                    Transaction.external_id == tx_data["external_id"],
-                    Transaction.user_id == user.id
-                ).first()
-                
-                if not existing:
-                    # Créer la nouvelle transaction
-                    new_tx = Transaction(
-                        user_id=user.id,
-                        external_id=tx_data["external_id"],
-                        date=tx_data["date"],
-                        description=tx_data["description"],
-                        amount=tx_data["amount"],
-                        merchant=tx_data["merchant"],
-                        is_expense=tx_data["is_expense"],
-                        is_recurring=tx_data["is_recurring"],
-                    )
-                    
-                    db_session.add(new_tx)
-                    new_transactions_count += 1
+        # Simuler l'insertion dans MongoDB
+        transactions_collection = await db.get_collection("transactions")
         
-        # Mettre à jour la date de dernière synchronisation
-        user.last_sync = datetime.datetime.utcnow()
-        db_session.commit()
+        # Vérifier quelles transactions existent déjà (par external_id)
+        existing_external_ids = []
+        for tx in mock_transactions:
+            existing = await transactions_collection.find_one({"external_id": tx["external_id"], "user_id": user.id})
+            if existing:
+                existing_external_ids.append(tx["external_id"])
         
-        return new_transactions_count 
+        # Filtrer les nouvelles transactions
+        new_transactions = [tx for tx in mock_transactions if tx["external_id"] not in existing_external_ids]
+        
+        # Insérer les nouvelles transactions
+        if new_transactions:
+            await transactions_collection.insert_many(new_transactions)
+        
+        # Retourner le nombre de nouvelles transactions
+        return len(new_transactions)

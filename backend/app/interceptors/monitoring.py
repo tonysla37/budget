@@ -6,6 +6,7 @@ import logging
 from fastapi import FastAPI, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
+from contextlib import asynccontextmanager
 
 # Configuration du logging
 logger = logging.getLogger("budget-api-monitoring")
@@ -220,15 +221,35 @@ def setup_monitoring(app: FastAPI) -> MetricsCollector:
     # Collecteur de métriques système
     system_collector = SystemMetricsCollector(collector)
     
-    # Démarre la collecte de métriques système
-    @app.on_event("startup")
-    async def startup_metrics():
-        system_collector.start()
+    # Utilisation du gestionnaire de cycle de vie pour les métriques
+    @app.middleware("http")
+    async def metrics_middleware(request: Request, call_next):
+        # Cette fonction sera appelée pour chaque requête HTTP
+        # et permet d'accéder au collecteur de métriques
+        request.state.metrics_collector = collector
+        response = await call_next(request)
+        return response
     
-    # Arrête la collecte de métriques système
-    @app.on_event("shutdown")
-    async def shutdown_metrics():
-        system_collector.stop()
+    # Ajout des gestionnaires de cycle de vie à l'application
+    old_lifespan = getattr(app, 'router').lifespan_context
+    
+    @asynccontextmanager
+    async def lifespan_with_metrics(app):
+        # Démarre la collecte de métriques système
+        system_collector.start()
+        try:
+            # Exécute le gestionnaire de cycle de vie original s'il existe
+            if old_lifespan:
+                async with old_lifespan(app):
+                    yield
+            else:
+                yield
+        finally:
+            # Arrête la collecte de métriques système
+            system_collector.stop()
+    
+    # Remplace le gestionnaire de cycle de vie de l'application
+    getattr(app, 'router').lifespan_context = lifespan_with_metrics
     
     # Endpoint pour exposer les métriques (pour Prometheus ou autre)
     @app.get("/metrics")

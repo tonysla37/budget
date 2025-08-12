@@ -1,0 +1,24 @@
+[2025-07-25 14:49:03] === Démarrage du déploiement complet pour budget-app ===
+[2025-07-25 14:49:03] Répertoire du script: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/scripts
+[2025-07-25 14:49:03] Répertoire racine du projet: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget
+[2025-07-25 14:49:03] Répertoire backend: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/backend
+[2025-07-25 14:49:03] Répertoire frontend: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/frontend
+[2025-07-25 14:49:03] Arrêt des instances précédentes...
+[2025-07-25 14:49:03] === Arrêt de l'application Budget ===
+[2025-07-25 14:49:03] Arrêt du backend...
+[2025-07-25 14:49:03] Arrêt des processus Backend uvicorn (PID: 80540)...
+[0;32m[Backend uvicorn] Tous les processus arrêtés[0m
+[2025-07-25 14:49:05] Aucun processus Script de déploiement backend trouvé
+[2025-07-25 14:49:05] Arrêt du frontend...
+[2025-07-25 14:49:05] Arrêt des processus Expo (PID: 80696)...
+[0;32m[Expo] Tous les processus arrêtés[0m
+[2025-07-25 14:49:07] Aucun processus React Native trouvé
+[2025-07-25 14:49:07] Aucun processus NPM Start trouvé
+[2025-07-25 14:49:07] Aucun processus Script de déploiement frontend trouvé
+[2025-07-25 14:49:07] Arrêt des scripts de déploiement globaux...
+[2025-07-25 14:49:07] Aucun processus Script de déploiement principal trouvé
+[2025-07-25 14:49:07] === Arrêt terminé ===
+[2025-07-25 14:49:07] Pour redémarrer l'application: bash /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/scripts/deploy.sh
+[2025-07-25 14:49:07] Attente de l'arrêt complet des processus...
+[2025-07-25 14:49:10] ERREUR: Le port 19006 est déjà utilisé. Impossible de démarrer le frontend.
+[2025-07-25 14:49:10] Déploiement échoué. Consultez le fichier log pour plus de détails: /Users/tonyauge/Library/Mobile Documents/com~apple~CloudDocs/Code/budget/logs/deploy.log
