@@ -1,117 +1,128 @@
-// Configuration de l'API générée automatiquement par le script de déploiement
-export const API_URL = "http://127.0.0.1:8000";
-export const API_TIMEOUT = 30000; // 30 secondes
-export const DEFAULT_HEADERS = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-};
-export const DEBUG_API_CALLS = true; // Activer les logs de debugging pour les appels API
-
-// Mode hors-ligne - DÉCONSEILLÉ
-// Désactivé par défaut car le mode hors-ligne n'est pas recommandé
-export const DEBUG_IGNORE_BACKEND_FAILURE = false;
-
-// Variable pour suivre l'état de la connexion au backend
-let isBackendAvailable = null;
-let isDatabaseAvailable = null;
-
-/**
- * Fonction pour vérifier si le backend est disponible
- * @param {boolean} force - Force une nouvelle vérification même si le statut est déjà connu
- * @returns {Promise<boolean>} - true si le backend est disponible, false sinon
- */
-export const checkBackendStatus = async (force = false) => {
-    // Si on a déjà vérifié et qu'on ne force pas une nouvelle vérification
-    if (isBackendAvailable !== null && !force) {
-        console.log(`🔄 Utilisation du statut backend en cache: ${isBackendAvailable ? 'Disponible' : 'Indisponible'}`);
-        return isBackendAvailable;
-    }
-    
-    try {
-        console.log('🔍 Vérification de la connexion au backend...');
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
-        
-        const response = await fetch(`${API_URL}/api/health`, {
-            method: 'GET',
-            headers: DEFAULT_HEADERS,
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-            console.log('✅ Connexion au backend établie');
-            isBackendAvailable = true;
-            return true;
-        } else {
-            console.error(`❌ Erreur de connexion au backend: ${response.status} ${response.statusText}`);
-            isBackendAvailable = false;
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Impossible de se connecter au backend:', error.message);
-        console.error('⚠️ Le mode hors-ligne n\'est pas recommandé. Veuillez démarrer le backend.');
-        
-        isBackendAvailable = false;
-        return false;
-    }
+// Configuration de l'API
+export const API_CONFIG = {
+  BASE_URL: 'http://localhost:8000',
+  TIMEOUT: 10000, // 10 secondes
+  RETRY_ATTEMPTS: 3,
 };
 
-/**
- * Fonction pour vérifier si MongoDB est disponible via le backend
- * @param {boolean} force - Force une nouvelle vérification même si le statut est déjà connu
- * @returns {Promise<boolean>} - true si la base de données est disponible, false sinon
- */
-export const checkDatabaseStatus = async (force = false) => {
-    // Si on a déjà vérifié et qu'on ne force pas une nouvelle vérification
-    if (isDatabaseAvailable !== null && !force) {
-        console.log(`🔄 Utilisation du statut de la base de données en cache: ${isDatabaseAvailable ? 'Disponible' : 'Indisponible'}`);
-        return isDatabaseAvailable;
+// Headers par défaut
+export const getDefaultHeaders = () => ({
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+});
+
+// Gestion des erreurs API
+export class ApiError extends Error {
+  constructor(message, status, data = null) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+// Fonction utilitaire pour les appels API
+export const apiCall = async (endpoint, options = {}) => {
+  const url = `${API_CONFIG.BASE_URL}${endpoint}`;
+  
+  const config = {
+    method: 'GET',
+    headers: {
+      ...getDefaultHeaders(),
+      ...options.headers,
+    },
+    timeout: API_CONFIG.TIMEOUT,
+    ...options,
+  };
+
+  // Ajouter le token d'authentification si disponible
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      let errorMessage = `Erreur ${response.status}`;
+      let errorData = null;
+      
+      try {
+        const errorResponse = await response.json();
+        errorMessage = errorResponse.detail || errorResponse.message || errorMessage;
+        errorData = errorResponse;
+      } catch (e) {
+        // Si on ne peut pas parser la réponse d'erreur
+      }
+      
+      throw new ApiError(errorMessage, response.status, errorData);
     }
     
-    try {
-        console.log('🔍 Vérification de la connexion à la base de données...');
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // Timeout de 5 secondes
-        
-        const response = await fetch(`${API_URL}/api/health/db`, {
-            method: 'GET',
-            headers: DEFAULT_HEADERS,
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-            console.log('✅ Connexion à la base de données établie');
-            isDatabaseAvailable = true;
-            return true;
-        } else {
-            console.error(`❌ Erreur de connexion à la base de données: ${response.status} ${response.statusText}`);
-            isDatabaseAvailable = false;
-            return false;
-        }
-    } catch (error) {
-        console.error('❌ Impossible de vérifier le statut de la base de données:', error.message);
-        console.error('⚠️ La connexion à la base de données est obligatoire. Veuillez vérifier MongoDB.');
-        
-        isDatabaseAvailable = false;
-        return false;
+    // Pour les réponses vides (DELETE, etc.)
+    if (response.status === 204) {
+      return null;
     }
-}; 
+    
+    return await response.json();
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // Erreurs de réseau
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new ApiError('Erreur de connexion au serveur', 0);
+    }
+    
+    throw new ApiError('Erreur inattendue', 0);
+  }
+};
 
-/**
- * Fonction utilitaire pour basculer le mode hors-ligne
- * @param {boolean} enableOfflineMode - True pour activer le mode hors-ligne, false pour le désactiver
- */
-export const toggleOfflineMode = (enableOfflineMode) => {
-    // Cette fonction peut être appelée par le script de déploiement pour modifier le mode hors-ligne
-    console.log(`${enableOfflineMode ? '🔌 Activation' : '🔌 Désactivation'} du mode hors-ligne`);
-    window.DEBUG_IGNORE_BACKEND_FAILURE = enableOfflineMode;
-    // Reset des états pour forcer une nouvelle vérification
-    isBackendAvailable = null;
-    isDatabaseAvailable = null;
+// Stockage local pour l'authentification (utilise localStorage au lieu d'AsyncStorage)
+const AUTH_TOKEN_KEY = 'auth_token';
+const USER_DATA_KEY = 'user_data';
+
+export const setAuthToken = (token) => {
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch (error) {
+    console.error('Erreur lors du stockage du token:', error);
+  }
+};
+
+export const getAuthToken = () => {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch (error) {
+    console.error('Erreur lors de la récupération du token:', error);
+    return null;
+  }
+};
+
+export const removeAuthToken = () => {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(USER_DATA_KEY);
+  } catch (error) {
+    console.error('Erreur lors de la suppression du token:', error);
+  }
+};
+
+export const setUserData = (userData) => {
+  try {
+    localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+  } catch (error) {
+    console.error('Erreur lors du stockage des données utilisateur:', error);
+  }
+};
+
+export const getUserData = () => {
+  try {
+    const userData = localStorage.getItem(USER_DATA_KEY);
+    return userData ? JSON.parse(userData) : null;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des données utilisateur:', error);
+    return null;
+  }
 }; 

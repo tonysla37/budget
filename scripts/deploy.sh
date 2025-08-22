@@ -3,6 +3,9 @@
 # Script de déploiement principal pour l'application Budget
 # Ce script déploie le backend et le frontend
 
+# Définir le nom du script AVANT de charger common.sh
+SCRIPT_NAME="deploy"
+
 # Charger les fonctions communes
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
@@ -17,6 +20,12 @@ BACKEND_READY=false
 FRONTEND_READY=false
 BACKEND_PID=""
 FRONTEND_PID=""
+API_HOST="localhost"
+API_PORT=8000
+API_BASE_URL="http://$API_HOST:$API_PORT"
+FRONTEND_HOST="localhost"
+FRONTEND_PORT=19006
+FRONTEND_URL="http://$FRONTEND_HOST:$FRONTEND_PORT"
 
 # Fonction pour arrêter les services existants
 stop_existing_services() {
@@ -26,9 +35,8 @@ stop_existing_services() {
     kill_process_by_pattern "uvicorn app.main:app" "Backend uvicorn"
     
     # Arrêt du frontend
-    kill_process_by_pattern "expo start" "Expo"
-    kill_process_by_pattern "react-native start" "React Native"
-    kill_process_by_pattern "npm.*start" "NPM Start"
+    kill_process_by_pattern "vite" "Vite"
+    kill_process_by_pattern "node.*frontend" "Node frontend"
     
     # Attendre que tous les processus soient arrêtés
     sleep 3
@@ -59,13 +67,13 @@ start_backend() {
     
     # Démarrer l'application
     log "Démarrage de l'application backend..."
-    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port $API_PORT &
     BACKEND_PID=$!
     
     # Attendre que le backend soit disponible
     log "Attente du démarrage du backend..."
     for i in {1..30}; do
-        if curl -s -f "http://localhost:8000/api/health" > /dev/null 2>&1; then
+        if curl -s -f "$API_BASE_URL/api/health" > /dev/null 2>&1; then
             log_success "Backend prêt !"
             BACKEND_READY=true
             break
@@ -90,31 +98,36 @@ start_frontend() {
     
     # Vérifier si Node.js est installé
     if ! command -v node &> /dev/null; then
-        log "Node.js n'est pas installé. Installation..."
-        curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-        sudo apt-get install -y nodejs
+        handle_error "Node.js n'est pas installé"
     fi
     
-    # Installer les dépendances
-    log "Installation des dépendances Node.js..."
-    npm install
+    # Vérifier si npm est installé
+    if ! command -v npm &> /dev/null; then
+        handle_error "npm n'est pas installé"
+    fi
     
-    # Démarrer l'application
+    # Installer les dépendances si nécessaire
+    if [ ! -d "node_modules" ]; then
+        log "Installation des dépendances Node.js..."
+        npm install || handle_error "Échec de l'installation des dépendances"
+    fi
+    
+    # Démarrer le frontend
     log "Démarrage de l'application frontend..."
-    CI=1 npx expo start --port 19006 --non-interactive &
+    npm run dev &
     FRONTEND_PID=$!
     
     # Attendre que le frontend soit disponible
     log "Attente du démarrage du frontend..."
     for i in {1..30}; do
-        if curl -s -f "http://localhost:19006" > /dev/null 2>&1; then
+        if curl -s -f "$FRONTEND_URL" > /dev/null 2>&1; then
             log_success "Frontend prêt !"
             FRONTEND_READY=true
             break
         fi
         
         if [ $i -eq 30 ]; then
-            log_error "Le frontend n'est pas prêt après 30 secondes."
+            log_warning "Le frontend n'est pas prêt après 30 secondes."
             FRONTEND_READY=false
         fi
         
@@ -124,31 +137,39 @@ start_frontend() {
     cd "$SCRIPT_DIR"
 }
 
-# Arrêter les services existants
-stop_existing_services
+# Fonction pour afficher les URLs
+display_urls() {
+    log "URLs d'accès :"
+    log "   - Frontend: $FRONTEND_URL"
+    log "   - Backend API: $API_BASE_URL"
+    log "   - Documentation: $API_BASE_URL/docs"
+    log "   - Health check: $API_BASE_URL/api/health"
+    log ""
+    log "Pour arrêter l'application, exécutez: $SCRIPT_DIR/stop.sh"
+    log ""
+    log "Consultez les fichiers de log pour plus d'informations:"
+    log "   - Log de déploiement: $LOG_FILE"
+}
 
-# Démarrer le backend
-start_backend
+# Exécution principale
+main() {
+    stop_existing_services
+    start_backend
+    start_frontend
+    display_urls
+    
+    if [ "$BACKEND_READY" = true ] && [ "$FRONTEND_READY" = true ]; then
+        log_success "✅ Déploiement terminé avec succès"
+    else
+        log_warning "⚠️ Déploiement terminé avec des avertissements"
+        if [ "$BACKEND_READY" = false ]; then
+            log_warning "   - Backend non prêt"
+        fi
+        if [ "$FRONTEND_READY" = false ]; then
+            log_warning "   - Frontend non prêt"
+        fi
+    fi
+}
 
-# Démarrer le frontend
-start_frontend
-
-# Résumé du déploiement
-log "=== Déploiement terminé ==="
-log "Statut du backend: $(if [ "$BACKEND_READY" = true ]; then echo "DISPONIBLE"; else echo "INDISPONIBLE"; fi)"
-log "Statut du frontend: $(if [ "$FRONTEND_READY" = true ]; then echo "DISPONIBLE"; else echo "INDISPONIBLE"; fi)"
-log ""
-log "URLs:"
-if [ "$BACKEND_READY" = true ]; then
-    log "- Backend API: http://localhost:8000/"
-    log "- Documentation Swagger: http://localhost:8000/docs"
-    log "- Health check: http://localhost:8000/api/health"
-fi
-if [ "$FRONTEND_READY" = true ]; then
-    log "- Frontend: http://localhost:19006"
-fi
-log ""
-log "Pour arrêter l'application, exécutez: $SCRIPT_DIR/stop.sh"
-log ""
-log "Consultez les fichiers de log pour plus d'informations:"
-log "- Log de déploiement: $(get_log_file)"
+# Exécuter la fonction principale
+main

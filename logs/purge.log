@@ -1,0 +1,34 @@
+[0;32m[2025-08-22 17:44:55] [purge] SUCCÈS: Fichiers de logs supprimés[0m
+[2025-08-22 17:44:55] [purge] 6. Suppression des fichiers de déploiement...
+[2025-08-22 17:44:55] [purge] 7. Suppression des fichiers temporaires...
+[2025-08-22 17:44:56] [purge] 8. Suppression des fichiers de lock...
+[2025-08-22 17:44:56] [purge] Suppression de package-lock.json...
+[2025-08-22 17:44:56] [purge] 9. Nettoyage des bases de données de test...
+[2025-08-22 17:44:56] [purge] Suppression des données de test MongoDB...
+[0;32m[2025-08-22 17:44:56] [purge] SUCCÈS: Base de données de test supprimée[0m
+[2025-08-22 17:44:56] [purge] 10. Vérification de la purge...
+[2025-08-22 17:44:56] [purge] Vérification des processus restants...
+[0;32m[2025-08-22 17:44:56] [purge] SUCCÈS: Aucun processus restant[0m
+[2025-08-22 17:44:56] [purge] Vérification des ports...
+[0;32m[2025-08-22 17:44:56] [purge] SUCCÈS: Port 8000 libre[0m
+[0;32m[2025-08-22 17:44:56] [purge] SUCCÈS: Port 19006 libre[0m
+[2025-08-22 17:44:56] [purge] === RÉSUMÉ DE LA PURGE ===
+[0;32m[2025-08-22 17:44:56] [purge] SUCCÈS: Purge terminée avec succès ![0m
+[2025-08-22 17:44:56] [purge] 
+[2025-08-22 17:44:56] [purge] Éléments supprimés :
+[2025-08-22 17:44:56] [purge]   ✓ Environnements virtuels Python
+[2025-08-22 17:44:56] [purge]   ✓ Caches Python (__pycache__, .pytest_cache)
+[2025-08-22 17:44:56] [purge]   ✓ node_modules et cache Expo
+[2025-08-22 17:44:56] [purge]   ✓ Fichiers de logs (répertoire conservé)
+[2025-08-22 17:44:56] [purge]   ✓ Fichiers de déploiement
+[2025-08-22 17:44:57] [purge]   ✓ Fichiers temporaires
+[2025-08-22 17:44:57] [purge]   ✓ package-lock.json
+[2025-08-22 17:44:57] [purge]   ✓ Base de données de test MongoDB
+[2025-08-22 17:44:57] [purge] 
+[2025-08-22 17:44:57] [purge] Pour redémarrer l'application proprement :
+[2025-08-22 17:44:57] [purge]   1. ./scripts/deploy.sh
+[2025-08-22 17:44:57] [purge] 
+[2025-08-22 17:44:57] [purge] Pour exécuter les tests :
+[2025-08-22 17:44:57] [purge]   1. ./scripts/test_all.sh
+[2025-08-22 17:44:57] [purge] 
+[2025-08-22 17:44:57] [purge] Consultez le fichier de log pour plus de détails : /home/tonya/Code/budget/logs/purge.log

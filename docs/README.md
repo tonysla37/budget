@@ -1,17 +1,36 @@
-# Application Budget
+# Application Budget - Documentation Complète
 
-## Documentation et Guide de Démarrage
+##  Table des matières
+1. [Vue d'ensemble](#vue-densemble)
+2. [Architecture](#architecture)
+3. [Prérequis](#prérequis)
+4. [Installation et démarrage](#installation-et-démarrage)
+5. [Utilisation](#utilisation)
+6. [API Backend](#api-backend)
+7. [Frontend](#frontend)
+8. [Tests et déploiement](#tests-et-déploiement)
+9. [Dépannage](#dépannage)
+10. [Structure du projet](#structure-du-projet)
 
-### Vue d'ensemble
-Cette application de gestion de budget est composée d'un backend FastAPI connecté à une base de données MongoDB, et d'un frontend React Native. Elle permet aux utilisateurs de gérer leurs transactions financières, de les catégoriser et d'obtenir des statistiques sur leurs dépenses.
+##  Vue d'ensemble
 
-### Prérequis
-- **Python 3.9+** pour le backend
-- **Node.js et npm** pour le frontend
-- **MongoDB** pour la base de données
-- **curl** pour les tests d'API (optionnel)
+L'**Application Budget** est une solution complète de gestion de finances personnelles développée avec :
+- **Backend** : FastAPI (Python) + MongoDB
+- **Frontend** : React Native avec Expo
+- **Base de données** : MongoDB
+- **Authentification** : JWT tokens
 
-### Structure du projet
+### Fonctionnalités principales
+- ✅ **Authentification sécurisée** avec JWT
+- ✅ **Gestion des transactions** (revenus/dépenses)
+- ✅ **Catégorisation** des transactions avec couleurs
+- ✅ **Tableaux de bord** avec statistiques
+- ✅ **Filtres et recherche** avancés
+- ✅ **Périodes personnalisées** (fin de mois)
+- ✅ **Interface responsive** (mobile/web)
+
+## 🏗️ Architecture
+
 ```
 budget/
 ├── backend/             # Code source du backend (FastAPI)
@@ -63,7 +82,14 @@ budget/
     └── transactions.yaml # Transactions de test
 ```
 
-## Démarrage rapide
+## Prérequis
+
+- **Python 3.9+** pour le backend
+- **Node.js et npm** pour le frontend
+- **MongoDB** pour la base de données
+- **curl** pour les tests d'API (optionnel)
+
+## Installation et démarrage
 
 ### Méthode 1 : Tests et déploiement complet
 
@@ -100,7 +126,7 @@ cd backend && source venv/bin/activate && python -m uvicorn app.main:app --reloa
 cd frontend && npm start
 ```
 
-## URLs d'accès
+## Utilisation
 
 ### Backend (FastAPI)
 - **Page d'accueil** : http://localhost:8000/
@@ -117,7 +143,7 @@ cd frontend && npm start
 - **Email** : test@example.com
 - **Mot de passe** : password123
 
-## Journal des logs et débogage
+## Tests et déploiement
 
 ### Logs des tests
 - **Tests de base de données** : `logs/test_database.log`
@@ -129,15 +155,7 @@ cd frontend && npm start
 - **Backend** : `backend/deploy_output.log`
 - **Frontend** : `frontend/deploy_output.log`
 
-## Arrêt de l'application
-
-Pour arrêter tous les composants de l'application :
-
-```bash
-./scripts/stop.sh
-```
-
-## Résolution des problèmes courants
+## Dépannage
 
 ### Problème : "Non connecté" dans le frontend
 **Symptômes :** Le frontend affiche "Statut du backend: Non connecté"
@@ -166,3 +184,179 @@ Pour arrêter tous les composants de l'application :
 ---
 
 Développé par Tony Auge. Pour toute question ou support, consultez la documentation détaillée dans le répertoire `docs/`. 
+
+## 1. Création de l'application web avec Vite
+
+```bash
+# Aller à la racine du projet
+cd /home/tonya/Code/budget
+
+# Créer l'application web
+npm create vite@latest budget-web -- --template react
+cd budget-web
+npm install
+```
+
+## 2. Configuration de l'application web
+
+```javascript:budget-web/src/App.jsx
+import React from 'react';
+import './App.css';
+
+function App() {
+  return (
+    <div className="app">
+      <div className="container">
+        <h1>Budget App</h1>
+        
+        <div className="status">
+          ✅ Application web fonctionne correctement
+        </div>
+        
+        <p className="description">
+          Application de gestion de budget
+        </p>
+        
+        <div className="features">
+          <h3>Fonctionnalités :</h3>
+          <ul>
+            <li>Gestion des transactions</li>
+            <li>Catégorisation</li>
+            <li>Tableaux de bord</li>
+            <li>Statistiques</li>
+          </ul>
+        </div>
+        
+        <button className="start-button">
+          Commencer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+## 3. Styles CSS
+
+```css:budget-web/src/App.css
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+.container {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 500px;
+}
+
+h1 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+}
+
+.status {
+  background-color: #27ae60;
+  color: white;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.description {
+  color: #7f8c8d;
+  margin-bottom: 15px;
+}
+
+.features {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.features h3 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.features ul {
+  color: #7f8c8d;
+  padding-left: 20px;
+}
+
+.features li {
+  margin-bottom: 5px;
+}
+
+.start-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.start-button:hover {
+  background-color: #2980b9;
+}
+```
+
+## 4. Configuration du serveur de développement
+
+```javascript:budget-web/vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 19006,
+    host: true
+  }
+})
+```
+
+## 5. Script de démarrage
+
+```bash:scripts/start_web.sh
+#!/bin/bash
+
+echo "🌐 Démarrage de l'application web..."
+
+cd budget-web
+
+# Installer les dépendances si nécessaire
+if [ ! -d "node_modules" ]; then
+    echo "Installation des dépendances..."
+    npm install
+fi
+
+# Démarrer l'application
+echo "Démarrage sur http://localhost:19006"
+npm run dev
+```
+
+## 6. Mise à jour de la documentation
+
+```markdown:docs/README.md
+<code_block_to_apply_changes_from>
+```
+budget-web/
+├── src/
+│   ├── App.jsx          # Composant principal
+│   ├── App.css          # Styles
+│   └── main.jsx         # Point d'entrée
+├── 
