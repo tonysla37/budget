@@ -1,0 +1,99 @@
+transactions:
+  - _id: "68833617fe0fd7afbb170f46"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-07-05T07:45:27.536350+00:00"
+    amount: 2500.0
+    description: "Salaire"
+    merchant: "Entreprise XYZ"
+    is_expense: false
+    category_id: "68833617fe0fd7afbb170f45"
+    created_at: "2025-07-05T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f47"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-07-10T07:45:27.536350+00:00"
+    amount: -85.3
+    description: "Carrefour"
+    merchant: "Carrefour"
+    explanation: "Courses hebdomadaires"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f42"
+    created_at: "2025-07-10T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f48"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-07-15T07:45:27.536350+00:00"
+    amount: -42.5
+    description: "SNCF"
+    merchant: "SNCF"
+    explanation: "Billet de train Paris-Lyon"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f43"
+    created_at: "2025-07-15T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f49"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-07-20T07:45:27.536350+00:00"
+    amount: -65.9
+    description: "Restaurant Le Gourmet"
+    merchant: "Restaurant Le Gourmet"
+    explanation: "Sortie restaurant avec amis"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f44"
+    created_at: "2025-07-20T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f4a"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-07-25T07:45:27.536350+00:00"
+    amount: -35.2
+    description: "Total"
+    merchant: "Total"
+    explanation: "Essence pour la voiture"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f43"
+    created_at: "2025-07-25T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f4b"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-06-05T07:45:27.536350+00:00"
+    amount: 2500.0
+    description: "Salaire"
+    merchant: "Entreprise XYZ"
+    is_expense: false
+    category_id: "68833617fe0fd7afbb170f45"
+    created_at: "2025-06-05T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f4c"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-06-10T07:45:27.536350+00:00"
+    amount: -120.45
+    description: "Auchan"
+    merchant: "Auchan"
+    explanation: "Courses mensuelles"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f42"
+    created_at: "2025-06-10T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f4d"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-06-15T07:45:27.536350+00:00"
+    amount: -75.0
+    description: "Navigo"
+    merchant: "Navigo"
+    explanation: "Abonnement transport"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f43"
+    created_at: "2025-06-15T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f4e"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-06-20T07:45:27.536350+00:00"
+    amount: -28.5
+    description: "UGC Ciné"
+    merchant: "UGC Ciné"
+    explanation: "Cinéma"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f44"
+    created_at: "2025-06-20T07:45:27.536350+00:00"
+  - _id: "68833617fe0fd7afbb170f4f"
+    user_id: "68833617fe0fd7afbb170f41"
+    date: "2025-06-25T07:45:27.536350+00:00"
+    amount: -45.8
+    description: "Shell"
+    merchant: "Shell"
+    explanation: "Carburant"
+    is_expense: true
+    category_id: "68833617fe0fd7afbb170f43"
+    created_at: "2025-06-25T07:45:27.536350+00:00"

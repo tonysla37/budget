@@ -24,9 +24,8 @@ budget/
 │   │   ├── services/    # Services métier
 │   │   └── main.py      # Point d'entrée de l'application
 │   ├── tests/           # Tests unitaires et d'intégration
-│   ├── deploy_test.sh   # Script de déploiement pour le backend
 │   ├── requirements.txt # Dépendances Python
-│   └── stop_test.sh     # Script d'arrêt pour le backend
+│   └── venv/            # Environnement virtuel Python
 │
 ├── docs/                # Documentation du projet
 │   ├── README.md        # Documentation principale
@@ -40,145 +39,129 @@ budget/
 │   │   ├── config/      # Configuration de l'API
 │   │   ├── screens/     # Écrans de l'application
 │   │   └── services/    # Services pour les appels API
-│   ├── deploy_test.sh   # Script de déploiement pour le frontend
+│   ├── deploy.sh        # Script de déploiement pour le frontend
 │   └── stop_test.sh     # Script d'arrêt pour le frontend
 │
 ├── logs/                # Fichiers de logs
-│   └── deploy_test.log  # Journal de déploiement
+│   ├── test_database.log    # Logs des tests de base de données
+│   ├── test_backend.log     # Logs des tests du backend
+│   ├── test_frontend.log    # Logs des tests du frontend
+│   └── test_all.log         # Logs des tests d'ensemble
 │
 ├── scripts/             # Scripts globaux
 │   ├── deploy.sh        # Script de déploiement global
-│   └── stop_deploy.sh   # Script d'arrêt global
+│   ├── stop.sh          # Script d'arrêt global
+│   ├── test_all.sh      # Script de test d'ensemble
+│   ├── test_backend.sh  # Script de test du backend
+│   ├── test_frontend.sh # Script de test du frontend
+│   ├── test_database.sh # Script de test de la base de données
+│   └── common.sh        # Fonctions communes
 │
-├── shared/              # Ressources partagées entre backend et frontend
-│   └── core/            # Configuration commune
-│
-└── test_data.json       # Données de test pour MongoDB
+└── test_data/           # Données de test
+    ├── users.yaml       # Utilisateurs de test
+    ├── categories.yaml  # Catégories de test
+    └── transactions.yaml # Transactions de test
 ```
 
 ## Démarrage rapide
 
-### Méthode 1 : Déploiement complet (backend + frontend)
+### Méthode 1 : Tests et déploiement complet
 
-Pour déployer l'application complète (backend et frontend), exécutez :
+Pour tester et déployer l'application complète :
 
 ```bash
-# Arrêter toute instance précédente
-./scripts/stop_deploy.sh
+# Exécuter tous les tests
+./scripts/test_all.sh
 
-# Démarrer l'application complète (backend et frontend)
+# Déployer l'application complète
 ./scripts/deploy.sh
 ```
 
-### Méthode 2 : Déploiement séparé
+### Méthode 2 : Tests individuels
+
+```bash
+# Test de la base de données
+./scripts/test_database.sh
+
+# Test du backend
+./scripts/test_backend.sh
+
+# Test du frontend
+./scripts/test_frontend.sh
+```
+
+### Méthode 3 : Déploiement séparé
 
 ```bash
 # Démarrer le backend
-cd backend && ./deploy_test.sh
+cd backend && source venv/bin/activate && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Dans un nouveau terminal, démarrer le frontend
-cd frontend && ./deploy_test.sh
+cd frontend && npm start
 ```
 
-## Documentation supplémentaire
+## URLs d'accès
 
-- [Architecture du projet](./ARCHITECTURE.md) - Vue d'ensemble de l'architecture et des décisions techniques
-- [Guide de déploiement et débogage](./DEPLOYMENT.md) - Instructions détaillées pour le déploiement et la résolution des problèmes
-- [Documentation du frontend](./FRONTEND.md) - Détails sur l'implémentation et l'architecture du frontend
-- [Guide de dépannage](./backend_troubleshooting_guide.md) - Solutions aux problèmes courants
+### Backend (FastAPI)
+- **Page d'accueil** : http://localhost:8000/
+- **Documentation Swagger** : http://localhost:8000/docs
+- **Documentation ReDoc** : http://localhost:8000/redoc
+- **Health check** : http://localhost:8000/api/health
+- **Health check DB** : http://localhost:8000/api/health/db
 
-## Guide détaillé du déploiement
+### Frontend (React Native/Expo)
+- **Application web** : http://localhost:19006
+- **QR Code Expo** : Affiché dans le terminal lors du démarrage
 
-Pour des instructions détaillées sur le déploiement et le débogage, consultez le [Guide de déploiement et débogage](./DEPLOYMENT.md).
-
-### Déploiement du backend
-
-Le backend est une API FastAPI qui se connecte à une base de données MongoDB.
-
-```bash
-cd backend
-./deploy_test.sh
-```
-
-Ce script effectue les opérations suivantes :
-1. Création d'un environnement virtuel Python
-2. Installation des dépendances depuis `requirements.txt`
-3. Vérification/démarrage de MongoDB
-4. Chargement des données de test
-5. Démarrage du serveur FastAPI avec uvicorn
-
-Une fois démarré, le backend est accessible à :
-- API : http://localhost:8000/api
-- Documentation Swagger : http://localhost:8000/docs
-
-#### Informations de connexion pour les tests :
-- Email : test@example.com
-- Mot de passe : password123
-
-### Déploiement du frontend
-
-Le frontend est une application React Native qui peut être exécutée dans un navigateur web.
-
-```bash
-cd frontend
-./deploy_test.sh
-```
-
-Ce script effectue les opérations suivantes :
-1. Installation des dépendances npm
-2. Configuration de l'URL du backend
-3. Démarrage du serveur de développement
-
-Une fois démarré, le frontend est accessible à :
-- http://localhost:19006
+## Informations de connexion pour les tests
+- **Email** : test@example.com
+- **Mot de passe** : password123
 
 ## Journal des logs et débogage
 
-### Logs du backend
-- Journal principal : `logs/deploy_test.log` et `backend/backend_deploy.log`
-- Logs détaillés : `backend/backend_debug.log`
+### Logs des tests
+- **Tests de base de données** : `logs/test_database.log`
+- **Tests du backend** : `logs/test_backend.log`
+- **Tests du frontend** : `logs/test_frontend.log`
+- **Tests d'ensemble** : `logs/test_all.log`
 
-### Logs du frontend
-- Journal principal : `frontend/frontend_deploy.log`
-- Logs détaillés : `frontend/frontend_debug.log`
-
-## Résolution des problèmes courants
-
-Pour un guide complet de dépannage, consultez [le guide de dépannage](budget_app_troubleshooting_guide.md).
-
-### Problème : "Impossible de se connecter au serveur"
-**Symptômes :** Le frontend affiche "Impossible de se connecter au serveur. Veuillez vérifier qu'il est bien démarré."
-
-**Solutions :**
-1. Vérifiez que le backend est démarré : `ps aux | grep uvicorn`
-2. Vérifiez que MongoDB est démarré : `ps aux | grep mongod`
-3. Vérifiez la connectivité avec : `curl http://localhost:8000/api/health`
-
-### Problème : "Impossible de charger les données"
-**Symptômes :** Le frontend affiche "Impossible de charger les données. Veuillez réessayer."
-
-**Solutions :**
-1. Vérifiez la connexion au backend
-2. Vérifiez les logs du backend pour les erreurs
-3. Assurez-vous d'être authentifié (le token JWT peut être expiré)
+### Logs de déploiement
+- **Backend** : `backend/deploy_output.log`
+- **Frontend** : `frontend/deploy_output.log`
 
 ## Arrêt de l'application
 
 Pour arrêter tous les composants de l'application :
 
 ```bash
-./scripts/stop_deploy.sh
+./scripts/stop.sh
 ```
 
-Ou pour arrêter les composants individuellement :
+## Résolution des problèmes courants
 
-```bash
-# Arrêter le backend
-cd backend && ./stop_test.sh
+### Problème : "Non connecté" dans le frontend
+**Symptômes :** Le frontend affiche "Statut du backend: Non connecté"
 
-# Arrêter le frontend
-cd frontend && ./stop_test.sh
-```
+**Solutions :**
+1. Vérifiez que le backend est démarré : `curl http://localhost:8000/api/health`
+2. Vérifiez la configuration CORS dans `backend/app/core/config.py`
+3. Redémarrez le backend après modification de la config CORS
+
+### Problème : Erreur CORS
+**Symptômes :** Erreur "OPTIONS /api/health HTTP/1.1" 400 Bad Request
+
+**Solutions :**
+1. Vérifiez que le port 19006 est dans `CORS_ORIGINS`
+2. Redémarrez le backend
+3. Videz le cache du navigateur
+
+### Problème : MongoDB non accessible
+**Symptômes :** Erreur de connexion à la base de données
+
+**Solutions :**
+1. Vérifiez que MongoDB est démarré : `sudo systemctl status mongod`
+2. Démarrez MongoDB : `sudo systemctl start mongod`
+3. Vérifiez la connexion : `mongosh --eval "db.runCommand('ping')"`
 
 ---
 

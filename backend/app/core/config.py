@@ -27,14 +27,18 @@ class Settings(BaseSettings):
     # Encryption
     ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY", SECRET_KEY[:32].ljust(32, "x"))
     
-    # CORS
+    # CORS - Ajout du port 19006 pour Expo
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:8000",
         "http://localhost:8080",
+        "http://localhost:19006",  # Port Expo par défaut
         "http://127.0.0.1:3000",
         "http://127.0.0.1:8000",
         "http://127.0.0.1:8080",
+        "http://127.0.0.1:19006",  # Port Expo par défaut
+        "exp://localhost:19000",   # Expo dev server
+        "exp://127.0.0.1:19000",   # Expo dev server
     ]
     
     class Config:

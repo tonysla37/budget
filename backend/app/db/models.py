@@ -4,6 +4,41 @@ from pymongo.errors import PyMongoError
 # Configuration du logger
 logger = logging.getLogger("budget-api")
 
+# Stubs pour les modèles (pour compatibilité avec les tests)
+# Ces classes acceptent les arguments et simulent le comportement Pydantic
+class UserModel:
+    """Stub pour UserModel - utilisé uniquement pour les tests"""
+    def __init__(self, **kwargs):
+        # Stocke tous les arguments comme attributs pour compatibilité
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def model_dump(self):
+        """Simule la méthode model_dump() de Pydantic"""
+        return {key: value for key, value in self.__dict__.items()}
+
+class CategoryModel:
+    """Stub pour CategoryModel - utilisé uniquement pour les tests"""
+    def __init__(self, **kwargs):
+        # Stocke tous les arguments comme attributs pour compatibilité
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def model_dump(self):
+        """Simule la méthode model_dump() de Pydantic"""
+        return {key: value for key, value in self.__dict__.items()}
+
+class TransactionModel:
+    """Stub pour TransactionModel - utilisé uniquement pour les tests"""
+    def __init__(self, **kwargs):
+        # Stocke tous les arguments comme attributs pour compatibilité
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+    
+    def model_dump(self):
+        """Simule la méthode model_dump() de Pydantic"""
+        return {key: value for key, value in self.__dict__.items()}
+
 async def create_indexes(mongodb):
     """
     Crée les index nécessaires pour les collections MongoDB.

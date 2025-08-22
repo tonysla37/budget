@@ -1,7 +1,6 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.user import User
@@ -24,7 +23,7 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
 async def update_user_me(
     user_update: UserUpdate,
     current_user: User = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db = Depends(get_db)
 ):
     """
     Mettre à jour les informations de l'utilisateur connecté.
