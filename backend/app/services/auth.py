@@ -1,36 +1,36 @@
-import os
-from datetime import datetime, timedelta, UTC
-from typing import Dict, Optional, Union, List
-
-from bson import ObjectId
-from jose import jwt
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Dict, Optional
 from passlib.context import CryptContext
-from pydantic import EmailStr
+from jose import JWTError, jwt
+from bson import ObjectId
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.models.user import User
 
-# Configuration de l'algorithme de hachage de mot de passe
+# Configuration du logger
+logger = logging.getLogger(__name__)
+
+# Configuration du hachage des mots de passe
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Configuration OAuth2
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    Vérifie si un mot de passe en clair correspond au mot de passe haché.
+    Vérifie si le mot de passe en clair correspond au hash.
     """
-    try:
-        print(f"Vérification du mot de passe: {plain_password}, hash: {hashed_password}")
-        result = pwd_context.verify(plain_password, hashed_password)
-        print(f"Résultat de la vérification: {result}")
-        return result
-    except Exception as e:
-        print(f"Erreur lors de la vérification du mot de passe: {e}")
-        return False
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """
-    Génère un hash sécurisé à partir d'un mot de passe en clair.
+    Génère un hash du mot de passe.
     """
     return pwd_context.hash(password)
 
@@ -42,14 +42,39 @@ def create_access_token(data: Dict, expires_delta: Optional[timedelta] = None) -
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     
     return encoded_jwt
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> Dict:
+    """
+    Récupère l'utilisateur actuel à partir du token JWT.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Impossible de valider les identifiants",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = await get_user(user_id, db)
+    if user is None:
+        raise credentials_exception
+    
+    return user
 
 
 async def get_user_by_email(email: str, db_session) -> Optional[Dict]:
@@ -83,23 +108,27 @@ async def authenticate_user(email: str, password: str, db_session) -> Optional[D
     return user
 
 
-async def create_user(user_data: Dict, db_session) -> Dict:
+async def create_user(user_data, db_session) -> Dict:
     """
     Crée un nouvel utilisateur.
     """
-    hashed_password = get_password_hash(user_data["password"])
+    # Convertir l'objet Pydantic en dictionnaire
+    user_dict = user_data.model_dump()
+    
+    hashed_password = get_password_hash(user_dict["password"])
     
     user_dict = {
-        "email": user_data["email"],
+        "email": user_dict["email"],
         "hashed_password": hashed_password,
-        "first_name": user_data.get("first_name"),
-        "last_name": user_data.get("last_name"),
+        "first_name": user_dict.get("first_name"),
+        "last_name": user_dict.get("last_name"),
         "is_active": True,
-        "created_at": datetime.now(UTC),
+        "created_at": datetime.now(timezone.utc),
     }
     
     result = await db_session.insert_one("users", user_dict)
-    user_dict["id"] = str(result.inserted_id)
+    # result est directement un ObjectId, pas un objet avec inserted_id
+    user_dict["_id"] = result
     
     return user_dict
 
@@ -113,7 +142,7 @@ async def update_user(user_id: str, user_data: Dict, db_session) -> Optional[Dic
     if "password" in user_data and user_data["password"]:
         update_data["hashed_password"] = get_password_hash(user_data["password"])
     
-    update_data["updated_at"] = datetime.now(UTC)
+    update_data["updated_at"] = datetime.now(timezone.utc)
     
     await db_session.update_one(
         "users",

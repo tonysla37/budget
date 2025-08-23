@@ -1,41 +1,39 @@
-[2025-08-22 17:45:00] [deploy] === Démarrage du script deploy ===
-[2025-08-22 17:45:00] [deploy] Répertoire du projet: /home/tonya/Code/budget
-[2025-08-22 17:45:00] [deploy] Fichier de log: /home/tonya/Code/budget/logs/deploy.log
-[2025-08-22 17:45:00] [deploy] [DEBUG] ------- INFORMATIONS SYSTÈME -------
-[2025-08-22 17:45:00] [deploy] [DEBUG] OS: Linux LAPTOP-SHL6ULTM 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
-[2025-08-22 17:45:00] [deploy] [DEBUG] Python: Python 3.12.3
-[2025-08-22 17:45:00] [deploy] [DEBUG] Node: v20.19.4
-[2025-08-22 17:45:00] [deploy] [DEBUG] NPM: 10.8.2
-[2025-08-22 17:45:00] [deploy] [DEBUG] MongoDB: db version v7.0.23
-[2025-08-22 17:45:00] [deploy] [DEBUG] MongoDB status: running
-[2025-08-22 17:45:00] [deploy] [DEBUG] Espace disque: /dev/sdd       1007G  5.3G  951G   1% /
-[2025-08-22 17:45:00] [deploy] [DEBUG] Mémoire: Mem:           7.6Gi       2.9Gi       1.4Gi       3.4Mi       3.6Gi       4.7Gi
-[2025-08-22 17:45:00] [deploy] [DEBUG] ----------------------------------
-[2025-08-22 17:45:00] [deploy] Répertoire des scripts: /home/tonya/Code/budget/scripts
-[2025-08-22 17:45:00] [deploy] Date et heure: Fri Aug 22 17:45:00 CEST 2025
-[2025-08-22 17:45:00] [deploy] Arrêt des services existants...
-[2025-08-22 17:45:00] [deploy] Aucun processus Backend uvicorn trouvé
-[2025-08-22 17:45:00] [deploy] Aucun processus Vite trouvé
-[2025-08-22 17:45:00] [deploy] Aucun processus Node frontend trouvé
-[2025-08-22 17:45:03] [deploy] Démarrage du backend...
-[2025-08-22 17:45:03] [deploy] Création de l'environnement virtuel Python...
-[2025-08-22 17:45:08] [deploy] Installation des dépendances Python...
-[2025-08-22 17:45:18] [deploy] Démarrage de l'application backend...
-[2025-08-22 17:45:18] [deploy] Attente du démarrage du backend...
-[0;32m[2025-08-22 17:45:20] [deploy] SUCCÈS: Backend prêt ![0m
-[2025-08-22 17:45:20] [deploy] Démarrage du frontend...
-[2025-08-22 17:45:20] [deploy] Installation des dépendances Node.js...
-[2025-08-22 17:45:52] [deploy] Démarrage de l'application frontend...
-[2025-08-22 17:45:52] [deploy] Attente du démarrage du frontend...
-[0;32m[2025-08-22 17:45:55] [deploy] SUCCÈS: Frontend prêt ![0m
-[2025-08-22 17:45:55] [deploy] URLs d'accès :
-[2025-08-22 17:45:55] [deploy]    - Frontend: http://localhost:19006
-[2025-08-22 17:45:55] [deploy]    - Backend API: http://localhost:8000
-[2025-08-22 17:45:55] [deploy]    - Documentation: http://localhost:8000/docs
-[2025-08-22 17:45:55] [deploy]    - Health check: http://localhost:8000/api/health
-[2025-08-22 17:45:55] [deploy] 
-[2025-08-22 17:45:55] [deploy] Pour arrêter l'application, exécutez: /home/tonya/Code/budget/scripts/stop.sh
-[2025-08-22 17:45:55] [deploy] 
-[2025-08-22 17:45:55] [deploy] Consultez les fichiers de log pour plus d'informations:
-[2025-08-22 17:45:55] [deploy]    - Log de déploiement: 
-[0;32m[2025-08-22 17:45:55] [deploy] SUCCÈS: ✅ Déploiement terminé avec succès[0m
+[2025-08-23 23:29:43] [deploy] === Démarrage du script deploy ===
+[2025-08-23 23:29:43] [deploy] Répertoire du projet: /home/tonya/Code/budget
+[2025-08-23 23:29:43] [deploy] Fichier de log: /home/tonya/Code/budget/logs/deploy.log
+[2025-08-23 23:29:43] [deploy] [DEBUG] ------- INFORMATIONS SYSTÈME -------
+[2025-08-23 23:29:43] [deploy] [DEBUG] OS: Linux LAPTOP-SHL6ULTM 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+[2025-08-23 23:29:43] [deploy] [DEBUG] Python: Python 3.12.3
+[2025-08-23 23:29:43] [deploy] [DEBUG] Node: v20.19.4
+[2025-08-23 23:29:43] [deploy] [DEBUG] NPM: 10.8.2
+[2025-08-23 23:29:43] [deploy] [DEBUG] MongoDB: db version v7.0.23
+[2025-08-23 23:29:43] [deploy] [DEBUG] MongoDB status: running
+[2025-08-23 23:29:44] [deploy] [DEBUG] Espace disque: /dev/sdd       1007G  5.6G  951G   1% /
+[2025-08-23 23:29:44] [deploy] [DEBUG] Mémoire: Mem:           7.6Gi       3.0Gi       993Mi       3.7Mi       3.9Gi       4.6Gi
+[2025-08-23 23:29:44] [deploy] [DEBUG] ----------------------------------
+[2025-08-23 23:29:44] [deploy] Répertoire des scripts: /home/tonya/Code/budget/scripts
+[2025-08-23 23:29:44] [deploy] Date et heure: Sat Aug 23 23:29:44 CEST 2025
+[2025-08-23 23:29:44] [deploy] Arrêt des services existants...
+[2025-08-23 23:29:44] [deploy] Aucun processus Backend uvicorn trouvé
+[2025-08-23 23:29:44] [deploy] Aucun processus Vite trouvé
+[2025-08-23 23:29:44] [deploy] Aucun processus Node frontend trouvé
+[2025-08-23 23:29:47] [deploy] Démarrage du backend...
+[2025-08-23 23:29:47] [deploy] Installation des dépendances Python...
+[2025-08-23 23:29:49] [deploy] Démarrage de l'application backend...
+[2025-08-23 23:29:49] [deploy] Attente du démarrage du backend...
+[0;32m[2025-08-23 23:29:51] [deploy] SUCCÈS: Backend prêt ![0m
+[2025-08-23 23:29:51] [deploy] Démarrage du frontend...
+[2025-08-23 23:29:51] [deploy] Démarrage de l'application frontend...
+[2025-08-23 23:29:51] [deploy] Attente du démarrage du frontend...
+[0;32m[2025-08-23 23:29:53] [deploy] SUCCÈS: Frontend prêt ![0m
+[2025-08-23 23:29:53] [deploy] URLs d'accès :
+[2025-08-23 23:29:53] [deploy]    - Frontend: http://localhost:19006
+[2025-08-23 23:29:53] [deploy]    - Backend API: http://localhost:8000
+[2025-08-23 23:29:53] [deploy]    - Documentation: http://localhost:8000/docs
+[2025-08-23 23:29:53] [deploy]    - Health check: http://localhost:8000/api/health
+[2025-08-23 23:29:53] [deploy] 
+[2025-08-23 23:29:53] [deploy] Pour arrêter l'application, exécutez: /home/tonya/Code/budget/scripts/stop.sh
+[2025-08-23 23:29:53] [deploy] 
+[2025-08-23 23:29:53] [deploy] Consultez les fichiers de log pour plus d'informations:
+[2025-08-23 23:29:53] [deploy]    - Log de déploiement: 
+[0;32m[2025-08-23 23:29:53] [deploy] SUCCÈS: ✅ Déploiement terminé avec succès[0m

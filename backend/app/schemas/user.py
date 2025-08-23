@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
+from bson import ObjectId
 
 
 class Token(BaseModel):
@@ -12,6 +13,12 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     """Schema for the token data."""
     email: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    """Schema for login request."""
+    email: EmailStr
+    password: str
 
 
 class UserBase(BaseModel):
@@ -39,6 +46,15 @@ class User(UserBase):
 
     class Config:
         from_attributes = True
+        json_encoders = {ObjectId: str}
+        populate_by_name = True
+
+    @field_validator('id', mode='before')
+    @classmethod
+    def validate_id(cls, v):
+        if isinstance(v, ObjectId):
+            return str(v)
+        return v
 
 
 class UserInDB(User):

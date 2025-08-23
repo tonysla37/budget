@@ -1,312 +1,267 @@
-from typing import Optional, Dict, Any
-from datetime import date, datetime, timedelta
-from calendar import monthrange
+from typing import List, Dict, Optional
+from datetime import datetime, date
 from bson import ObjectId
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import get_db
-from app.routers.auth import get_current_active_user
+from app.schemas import MonthlyReport, PeriodReport
+from app.services.auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(prefix="/api/reports", tags=["reports"])
 
 
-@router.get("/monthly/{year}/{month}")
+@router.get("/monthly/{year}/{month}", response_model=MonthlyReport)
 async def get_monthly_report(
     year: int,
     month: int,
-    current_user: Dict = Depends(get_current_active_user),
+    current_user: Dict = Depends(get_current_user),
     db = Depends(get_db)
 ):
     """
-    Obtenir un rapport financier pour un mois spécifique.
+    Récupérer le rapport mensuel pour une année et un mois donnés.
     """
-    try:
-        user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
-        
-        # Définir les limites du mois
-        first_day = datetime(year, month, 1)
-        last_day = datetime(year, month, monthrange(year, month)[1], 23, 59, 59, 999999)
-        
-        # Récupérer les transactions du mois
-        transactions_collection = await db.get_collection("transactions")
-        transactions_cursor = transactions_collection.find({
-            "user_id": user_id,
-            "date": {
-                "$gte": first_day,
-                "$lte": last_day
-            }
-        })
-        transactions = await transactions_cursor.to_list(length=1000)
-        
-        # Calculer les totaux
-        total_income = 0
-        total_expenses = 0
-        
-        # Regrouper par catégorie
-        categories = {}
-        
-        for tx in transactions:
-            amount = abs(float(tx.get("amount", 0)))
-            
-            if tx.get("is_expense", True):
-                total_expenses += amount
-                
-                # Ajouter aux statistiques de catégorie
-                category_id = tx.get("category_id")
-                if category_id:
-                    if category_id not in categories:
-                        categories[category_id] = {
-                            "total": 0,
-                            "count": 0
-                        }
-                    categories[category_id]["total"] += amount
-                    categories[category_id]["count"] += 1
-            else:
-                total_income += amount
-        
-        # Récupérer les noms des catégories
-        category_details = []
-        if categories:
-            categories_collection = await db.get_collection("categories")
-            for cat_id, stats in categories.items():
-                try:
-                    cat = await categories_collection.find_one({"_id": ObjectId(cat_id)})
-                    if cat:
-                        category_details.append({
-                            "id": str(cat["_id"]),
-                            "name": cat.get("name", "Inconnu"),
-                            "color": cat.get("color", "#000000"),
-                            "total": stats["total"],
-                            "count": stats["count"],
-                            "percentage": (stats["total"] / total_expenses) * 100 if total_expenses > 0 else 0
-                        })
-                except Exception:
-                    # Ignorer les catégories avec IDs invalides
-                    pass
-        
-        # Trier les catégories par total décroissant
-        category_details.sort(key=lambda x: x["total"], reverse=True)
-        
-        return {
-            "year": year,
-            "month": month,
-            "total_income": total_income,
-            "total_expenses": total_expenses,
-            "balance": total_income - total_expenses,
-            "categories": category_details,
-            "transaction_count": len(transactions)
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la génération du rapport mensuel: {str(e)}"
-        )
-
-
-@router.get("/salary-based")
-async def get_salary_based_report(
-    reference_date: Optional[date] = None,
-    salary_day: int = Query(25, ge=1, le=31),
-    current_user: Dict = Depends(get_current_active_user),
-    db = Depends(get_db)
-):
-    """
-    Obtenir un rapport financier basé sur le mois budgétaire (d'un salaire à l'autre).
-    Si reference_date n'est pas fourni, utilise la date actuelle.
-    """
-    try:
-        user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
-        
-        if not reference_date:
-            reference_date = date.today()
-            
-        # Déterminer la période entre deux salaires
-        current_year = reference_date.year
-        current_month = reference_date.month
-        current_day = reference_date.day
-        
-        if current_day < salary_day:
-            # Nous sommes avant le jour de salaire du mois courant
-            end_date = datetime(current_year, current_month, salary_day - 1, 23, 59, 59, 999999)
-            
-            # Le début est le jour du salaire du mois précédent
-            if current_month == 1:
-                start_date = datetime(current_year - 1, 12, salary_day)
-            else:
-                start_date = datetime(current_year, current_month - 1, salary_day)
-        else:
-            # Nous sommes après ou le jour même du jour de salaire
-            start_date = datetime(current_year, current_month, salary_day)
-            
-            # La fin est le jour avant le prochain salaire
-            if current_month == 12:
-                end_date = datetime(current_year + 1, 1, salary_day - 1, 23, 59, 59, 999999)
-            else:
-                end_date = datetime(current_year, current_month + 1, salary_day - 1, 23, 59, 59, 999999)
-        
-        # Récupérer les transactions de la période
-        transactions_collection = await db.get_collection("transactions")
-        transactions_cursor = transactions_collection.find({
-            "user_id": user_id,
-            "date": {
-                "$gte": start_date,
-                "$lte": end_date
-            }
-        })
-        transactions = await transactions_cursor.to_list(length=1000)
-        
-        # Même logique de traitement que pour le rapport mensuel
-        total_income = 0
-        total_expenses = 0
-        categories = {}
-        
-        for tx in transactions:
-            amount = abs(float(tx.get("amount", 0)))
-            
-            if tx.get("is_expense", True):
-                total_expenses += amount
-                
-                category_id = tx.get("category_id")
-                if category_id:
-                    if category_id not in categories:
-                        categories[category_id] = {
-                            "total": 0,
-                            "count": 0
-                        }
-                    categories[category_id]["total"] += amount
-                    categories[category_id]["count"] += 1
-            else:
-                total_income += amount
-        
-        # Récupérer les noms des catégories
-        category_details = []
-        if categories:
-            categories_collection = await db.get_collection("categories")
-            for cat_id, stats in categories.items():
-                try:
-                    cat = await categories_collection.find_one({"_id": ObjectId(cat_id)})
-                    if cat:
-                        category_details.append({
-                            "id": str(cat["_id"]),
-                            "name": cat.get("name", "Inconnu"),
-                            "color": cat.get("color", "#000000"),
-                            "total": stats["total"],
-                            "count": stats["count"],
-                            "percentage": (stats["total"] / total_expenses) * 100 if total_expenses > 0 else 0
-                        })
-                except Exception:
-                    # Ignorer les catégories avec IDs invalides
-                    pass
-        
-        category_details.sort(key=lambda x: x["total"], reverse=True)
-        
-        return {
-            "period": {
-                "start_date": start_date.isoformat(),
-                "end_date": end_date.isoformat(),
-                "salary_day": salary_day
+    # Calculer les dates de début et fin du mois
+    start_date = datetime(year, month, 1)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1)
+    else:
+        end_date = datetime(year, month + 1, 1)
+    
+    # Agréger les données mensuelles
+    pipeline = [
+        {"$match": {
+            "user_id": current_user["_id"],
+            "date": {"$gte": start_date, "$lt": end_date}
+        }},
+        {"$group": {
+            "_id": {
+                "is_expense": "$is_expense",
+                "category_id": "$category_id"
             },
-            "total_income": total_income,
-            "total_expenses": total_expenses,
-            "balance": total_income - total_expenses,
-            "categories": category_details,
-            "transaction_count": len(transactions)
-        }
+            "total_amount": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"total_amount": -1}}
+    ]
+    
+    collection = await db.get_collection("transactions")
+    results = await collection.aggregate(pipeline).to_list(length=None)
+    
+    # Organiser les données par type (revenus/dépenses)
+    income_by_category = {}
+    expenses_by_category = {}
+    
+    for result in results:
+        category_id = str(result["_id"]["category_id"]) if result["_id"]["category_id"] else "uncategorized"
+        amount = result["total_amount"]
+        count = result["count"]
         
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la génération du rapport entre salaires: {str(e)}"
-        )
+        if result["_id"]["is_expense"]:
+            expenses_by_category[category_id] = {
+                "amount": amount,
+                "count": count
+            }
+        else:
+            income_by_category[category_id] = {
+                "amount": amount,
+                "count": count
+            }
+    
+    # Récupérer les détails des catégories
+    categories = await db.find_many("categories", {"user_id": current_user["_id"]})
+    category_map = {str(cat["_id"]): cat["name"] for cat in categories}
+    
+    # Calculer les totaux
+    total_income = sum(data["amount"] for data in income_by_category.values())
+    total_expenses = sum(data["amount"] for data in expenses_by_category.values())
+    net_amount = total_income - total_expenses
+    
+    # Préparer la réponse
+    report = {
+        "year": year,
+        "month": month,
+        "total_income": total_income,
+        "total_expenses": total_expenses,
+        "net_amount": net_amount,
+        "income_by_category": [
+            {
+                "category_id": cat_id,
+                "category_name": category_map.get(cat_id, "Non catégorisé"),
+                "amount": data["amount"],
+                "count": data["count"]
+            }
+            for cat_id, data in income_by_category.items()
+        ],
+        "expenses_by_category": [
+            {
+                "category_id": cat_id,
+                "category_name": category_map.get(cat_id, "Non catégorisé"),
+                "amount": data["amount"],
+                "count": data["count"]
+            }
+            for cat_id, data in expenses_by_category.items()
+        ]
+    }
+    
+    return report
+
+
+@router.get("/period", response_model=PeriodReport)
+async def get_period_report(
+    start_date: date = Query(..., description="Date de début (YYYY-MM-DD)"),
+    end_date: date = Query(..., description="Date de fin (YYYY-MM-DD)"),
+    current_user: Dict = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Récupérer le rapport pour une période donnée.
+    """
+    # Convertir les dates
+    start_datetime = datetime.combine(start_date, datetime.min.time())
+    end_datetime = datetime.combine(end_date, datetime.max.time())
+    
+    # Agréger les données pour la période
+    pipeline = [
+        {"$match": {
+            "user_id": current_user["_id"],
+            "date": {"$gte": start_datetime, "$lte": end_datetime}
+        }},
+        {"$group": {
+            "_id": {
+                "is_expense": "$is_expense",
+                "category_id": "$category_id"
+            },
+            "total_amount": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"total_amount": -1}}
+    ]
+    
+    collection = await db.get_collection("transactions")
+    results = await collection.aggregate(pipeline).to_list(length=None)
+    
+    # Organiser les données
+    income_by_category = {}
+    expenses_by_category = {}
+    
+    for result in results:
+        category_id = str(result["_id"]["category_id"]) if result["_id"]["category_id"] else "uncategorized"
+        amount = result["total_amount"]
+        count = result["count"]
+        
+        if result["_id"]["is_expense"]:
+            expenses_by_category[category_id] = {
+                "amount": amount,
+                "count": count
+            }
+        else:
+            income_by_category[category_id] = {
+                "amount": amount,
+                "count": count
+            }
+    
+    # Récupérer les détails des catégories
+    categories = await db.find_many("categories", {"user_id": current_user["_id"]})
+    category_map = {str(cat["_id"]): cat["name"] for cat in categories}
+    
+    # Calculer les totaux
+    total_income = sum(data["amount"] for data in income_by_category.values())
+    total_expenses = sum(data["amount"] for data in expenses_by_category.values())
+    net_amount = total_income - total_expenses
+    
+    # Préparer la réponse
+    report = {
+        "start_date": start_date,
+        "end_date": end_date,
+        "total_income": total_income,
+        "total_expenses": total_expenses,
+        "net_amount": net_amount,
+        "income_by_category": [
+            {
+                "category_id": cat_id,
+                "category_name": category_map.get(cat_id, "Non catégorisé"),
+                "amount": data["amount"],
+                "count": data["count"]
+            }
+            for cat_id, data in income_by_category.items()
+        ],
+        "expenses_by_category": [
+            {
+                "category_id": cat_id,
+                "category_name": category_map.get(cat_id, "Non catégorisé"),
+                "amount": data["amount"],
+                "count": data["count"]
+            }
+            for cat_id, data in expenses_by_category.items()
+        ]
+    }
+    
+    return report
 
 
 @router.get("/trends")
-async def get_trends(
-    months: int = Query(6, ge=1, le=24),
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    current_user: Dict = Depends(get_current_active_user),
+async def get_trends_report(
+    months: int = Query(6, description="Nombre de mois à analyser"),
+    current_user: Dict = Depends(get_current_user),
     db = Depends(get_db)
 ):
     """
-    Obtenir les données de tendance pour les graphiques.
-    
-    - months: Nombre de mois à inclure dans l'analyse
-    - start_date: Date de début pour les données (optionnel)
-    - end_date: Date de fin pour les données (optionnel)
+    Récupérer les tendances sur plusieurs mois.
     """
-    try:
-        user_id = current_user["id"] if "id" in current_user else str(current_user["_id"])
+    # Calculer la date de début
+    end_date = datetime.now()
+    start_date = datetime(end_date.year, end_date.month - months + 1, 1)
+    
+    # Agréger les données par mois
+    pipeline = [
+        {"$match": {
+            "user_id": current_user["_id"],
+            "date": {"$gte": start_date, "$lte": end_date}
+        }},
+        {"$group": {
+            "_id": {
+                "year": {"$year": "$date"},
+                "month": {"$month": "$date"},
+                "is_expense": "$is_expense"
+            },
+            "total_amount": {"$sum": "$amount"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id.year": 1, "_id.month": 1}}
+    ]
+    
+    collection = await db.get_collection("transactions")
+    results = await collection.aggregate(pipeline).to_list(length=None)
+    
+    # Organiser les données par mois
+    monthly_data = {}
+    
+    for result in results:
+        year = result["_id"]["year"]
+        month = result["_id"]["month"]
+        key = f"{year}-{month:02d}"
         
-        # Définir la période
-        if not end_date:
-            end_date = datetime.now().date()
-            
-        if not start_date:
-            # Par défaut, prendre les X derniers mois
-            start_date = (end_date - timedelta(days=30 * months))
-        
-        start_datetime = datetime.combine(start_date, datetime.min.time())
-        end_datetime = datetime.combine(end_date, datetime.max.time())
-        
-        # Récupérer les transactions de la période
-        transactions_collection = await db.get_collection("transactions")
-        transactions_cursor = transactions_collection.find({
-            "user_id": user_id,
-            "date": {
-                "$gte": start_datetime,
-                "$lte": end_datetime
+        if key not in monthly_data:
+            monthly_data[key] = {
+                "year": year,
+                "month": month,
+                "income": 0,
+                "expenses": 0,
+                "net": 0
             }
-        })
-        transactions = await transactions_cursor.to_list(length=None)
         
-        # Regrouper les transactions par mois
-        monthly_data = {}
-        for tx in transactions:
-            tx_date = tx.get("date")
-            if not tx_date:
-                continue
-                
-            # Clé pour le mois: "2023-01"
-            month_key = f"{tx_date.year}-{tx_date.month:02d}"
-            
-            if month_key not in monthly_data:
-                monthly_data[month_key] = {
-                    "total_income": 0,
-                    "total_expenses": 0,
-                    "transaction_count": 0
-                }
-            
-            amount = abs(float(tx.get("amount", 0)))
-            if tx.get("is_expense", True):
-                monthly_data[month_key]["total_expenses"] += amount
-            else:
-                monthly_data[month_key]["total_income"] += amount
-                
-            monthly_data[month_key]["transaction_count"] += 1
+        if result["_id"]["is_expense"]:
+            monthly_data[key]["expenses"] = result["total_amount"]
+        else:
+            monthly_data[key]["income"] = result["total_amount"]
         
-        # Calculer le solde mensuel
-        for month_key, data in monthly_data.items():
-            data["balance"] = data["total_income"] - data["total_expenses"]
-        
-        # Trier les mois chronologiquement
-        sorted_months = sorted(monthly_data.keys())
-        
-        return {
-            "monthly_data": monthly_data,
-            "months": sorted_months,
-            "summary": {
-                "total_income": sum(data["total_income"] for data in monthly_data.values()),
-                "total_expenses": sum(data["total_expenses"] for data in monthly_data.values()),
-                "average_monthly_income": sum(data["total_income"] for data in monthly_data.values()) / len(monthly_data) if monthly_data else 0,
-                "average_monthly_expenses": sum(data["total_expenses"] for data in monthly_data.values()) / len(monthly_data) if monthly_data else 0,
-            }
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de la génération des tendances: {str(e)}"
-        ) 
+        monthly_data[key]["net"] = monthly_data[key]["income"] - monthly_data[key]["expenses"]
+    
+    # Convertir en liste triée
+    trends = sorted(monthly_data.values(), key=lambda x: (x["year"], x["month"]))
+    
+    return {
+        "period_months": months,
+        "trends": trends
+    } 
