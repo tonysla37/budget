@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserProfile, updateUserProfile } from '../services/authService';
+import { getSettings, updateSettings } from '../services/settingsService';
 import { Save, Calendar, User, Mail, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,7 +24,7 @@ export default function SettingsScreen() {
   const loadProfile = async () => {
     setIsLoading(true);
     try {
-      const data = await getUserProfile();
+      const data = await getSettings();
       setProfile({
         email: data.email || '',
         first_name: data.first_name || '',
@@ -44,7 +44,7 @@ export default function SettingsScreen() {
     setMessage({ type: '', text: '' });
     
     try {
-      await updateUserProfile({
+      await updateSettings({
         first_name: profile.first_name,
         last_name: profile.last_name,
         billing_cycle_day: profile.billing_cycle_day

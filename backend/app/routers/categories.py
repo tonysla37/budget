@@ -187,7 +187,8 @@ async def delete_category(
         )
     
     # Vérifier si la catégorie est utilisée dans des transactions
-    transaction_count = await db.count_documents("transactions", {
+    database = db.db
+    transaction_count = await database.transactions.count_documents({
         "category_id": ObjectId(category_id)
     })
     
