@@ -69,12 +69,24 @@ async def get_budgets(
         if not category:
             continue
         
-        # Calculer les dépenses pour cette catégorie dans la période
+        # Récupérer les IDs des sous-catégories si c'est une catégorie parente
+        category_ids = [budget["category_id"]]
+        
+        # Chercher les sous-catégories
+        subcategories = await categories_collection.find({
+            "parent_id": str(budget["category_id"])
+        }).to_list(length=None)
+        
+        # Ajouter les IDs des sous-catégories
+        for subcat in subcategories:
+            category_ids.append(subcat["_id"])
+        
+        # Calculer les dépenses pour cette catégorie ET ses sous-catégories dans la période
         pipeline = [
             {
                 "$match": {
                     "user_id": current_user["_id"],
-                    "category_id": budget["category_id"],
+                    "category_id": {"$in": category_ids},
                     "is_expense": True,
                     "date": {"$gte": start_date, "$lt": end_date}
                 }

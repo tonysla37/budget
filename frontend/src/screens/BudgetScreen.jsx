@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { getBudgets, createBudget, updateBudget, deleteBudget } from '../services/budgetService';
 import { getCategories } from '../services/categoryService';
-import { formatCurrency } from '../utils/formatters';
-import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle } from 'lucide-react';
+import { getTransactions } from '../services/transactionService';
+import { formatCurrency, formatDate } from '../utils/formatters';
+import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function BudgetScreen() {
   const [budgets, setBudgets] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [expandedBudgets, setExpandedBudgets] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
@@ -24,12 +27,14 @@ export default function BudgetScreen() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [budgetsData, categoriesData] = await Promise.all([
+      const [budgetsData, categoriesData, transactionsData] = await Promise.all([
         getBudgets(periodType),
-        getCategories()
+        getCategories(),
+        getTransactions()
       ]);
       setBudgets(budgetsData);
       setCategories(categoriesData.filter(cat => cat.type === 'expense'));
+      setTransactions(transactionsData);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
     } finally {
@@ -87,10 +92,71 @@ export default function BudgetScreen() {
     return { color: 'green', icon: CheckCircle2, text: 'OK' };
   };
 
+  const toggleBudgetExpansion = (budgetId) => {
+    setExpandedBudgets(prev => ({
+      ...prev,
+      [budgetId]: !prev[budgetId]
+    }));
+  };
+
+  const getBudgetTransactions = (categoryId) => {
+    // Trouver toutes les sous-catégories de cette catégorie
+    const subcategoryIds = categories
+      .filter(cat => cat.parent_id === categoryId)
+      .map(cat => cat.id);
+    
+    // Inclure la catégorie parente et toutes ses sous-catégories
+    const allCategoryIds = [categoryId, ...subcategoryIds];
+    
+    // Obtenir le début et la fin du mois en cours
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return allCategoryIds.includes(t.category_id) && 
+        t.is_expense &&
+        transactionDate >= startOfMonth &&
+        transactionDate <= endOfMonth;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date)); // Trier par date décroissante
+  };
+
+  const getTransactionsBySubcategory = (categoryId) => {
+    const allTransactions = getBudgetTransactions(categoryId);
+    const grouped = {};
+    
+    allTransactions.forEach(transaction => {
+      const txCategory = categories.find(c => c.id === transaction.category_id);
+      if (!txCategory) return;
+      
+      // Si c'est une sous-catégorie, grouper par son nom
+      const groupKey = txCategory.parent_id ? txCategory.id : 'parent';
+      const groupName = txCategory.parent_id ? txCategory.name : 'Autres';
+      
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = {
+          name: groupName,
+          color: txCategory.color || '#6b7280', // Couleur de la sous-catégorie
+          transactions: [],
+          total: 0
+        };
+      }
+      
+      grouped[groupKey].transactions.push(transaction);
+      grouped[groupKey].total += transaction.amount;
+    });
+    
+    return Object.values(grouped).sort((a, b) => b.total - a.total);
+  };
+
   const BudgetCard = ({ budget }) => {
     const status = getBudgetStatus(budget.percentage);
     const StatusIcon = status.icon;
     const progressWidth = Math.min(budget.percentage, 100);
+    const isExpanded = expandedBudgets[budget.id];
+    const transactionsBySubcategory = getTransactionsBySubcategory(budget.category_id);
+    const totalTransactions = transactionsBySubcategory.reduce((sum, group) => sum + group.transactions.length, 0);
 
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -165,6 +231,77 @@ export default function BudgetScreen() {
               />
             </div>
           </div>
+
+          {/* Bouton pour voir les transactions */}
+          {totalTransactions > 0 && (
+            <button
+              onClick={() => toggleBudgetExpansion(budget.id)}
+              className="w-full mt-4 flex items-center justify-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium py-2 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp size={16} />
+                  Masquer les transactions
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={16} />
+                  Voir les transactions du mois ({totalTransactions})
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Liste des transactions groupées par sous-catégorie */}
+          {isExpanded && totalTransactions > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Transactions du mois en cours</h4>
+              <div className="space-y-4">
+                {transactionsBySubcategory.map((group, groupIndex) => (
+                  <div key={groupIndex}>
+                    {/* En-tête de groupe (sous-catégorie) */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: group.color }}
+                        ></div>
+                        <span className="text-xs font-semibold text-gray-700 uppercase">
+                          {group.name}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-red-600">
+                        -{formatCurrency(group.total)}
+                      </span>
+                    </div>
+                    
+                    {/* Transactions de la sous-catégorie */}
+                    <div className="space-y-1.5 ml-4">
+                      {group.transactions.map((transaction) => (
+                        <div key={transaction.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(transaction.date)}
+                              {transaction.merchant && (
+                                <>
+                                  <span className="mx-1">•</span>
+                                  {transaction.merchant}
+                                </>
+                              )}
+                            </p>
+                          </div>
+                          <span className="text-sm font-semibold text-red-600">
+                            -{formatCurrency(transaction.amount)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
