@@ -35,8 +35,18 @@ def prepare_mongodb_document_for_response(document: Dict[str, Any]) -> Dict[str,
         elif isinstance(value, ObjectId):
             # Convertir les ObjectId en chaînes de caractères
             result[key] = str(value)
+        elif isinstance(value, str) and key in ["date", "created_at", "updated_at"]:
+            # Convertir les dates en string ISO en objets datetime
+            try:
+                result[key] = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            except:
+                result[key] = value
         else:
             result[key] = value
+    
+    # Ajouter created_at si manquant (pour les catégories)
+    if "created_at" not in result:
+        result["created_at"] = datetime.now(UTC)
     
     return result
 
@@ -60,7 +70,7 @@ async def get_transactions(
     Récupérer toutes les transactions de l'utilisateur avec filtres optionnels.
     """
     # Construire le filtre MongoDB
-    filter_query = {"user_id": str(current_user["_id"])}
+    filter_query = {"user_id": current_user["_id"]}
     
     # Appliquer les filtres si fournis
     if start_date:

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { getCategories, createCategory, updateCategory, deleteCategory } from '../services/categoryService';
 
 const CategoriesScreen = () => {
   const [categories, setCategories] = useState([]);
@@ -18,17 +19,12 @@ const CategoriesScreen = () => {
 
   const loadCategories = async () => {
     try {
-      // Simulation de données
-      const mockCategories = [
-        { id: 1, name: 'Alimentation', type: 'expense', color: '#e53e3e', transaction_count: 15 },
-        { id: 2, name: 'Transport', type: 'expense', color: '#3182ce', transaction_count: 8 },
-        { id: 3, name: 'Loisirs', type: 'expense', color: '#805ad5', transaction_count: 12 },
-        { id: 4, name: 'Salaire', type: 'income', color: '#38a169', transaction_count: 3 },
-        { id: 5, name: 'Travail', type: 'income', color: '#d69e2e', transaction_count: 5 }
-      ];
-      setCategories(mockCategories);
+      const data = await getCategories();
+      console.log('Categories loaded:', data);
+      setCategories(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des catégories:', error);
+      setCategories([]);
     } finally {
       setLoading(false);
     }
@@ -40,24 +36,17 @@ const CategoriesScreen = () => {
     try {
       if (editingCategory) {
         // Mise à jour
-        setCategories(categories.map(cat => 
-          cat.id === editingCategory.id 
-            ? { ...cat, ...formData }
-            : cat
-        ));
+        await updateCategory(editingCategory.id, formData);
       } else {
         // Ajout
-        const newCategory = {
-          id: Date.now(),
-          ...formData,
-          transaction_count: 0
-        };
-        setCategories([...categories, newCategory]);
+        await createCategory(formData);
       }
       
+      await loadCategories();
       closeModal();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
+      alert('Impossible de sauvegarder la catégorie');
     }
   };
 
@@ -65,7 +54,7 @@ const CategoriesScreen = () => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      type: category.type,
+      type: category.type || 'expense',
       color: category.color
     });
     setShowModal(true);
@@ -74,9 +63,11 @@ const CategoriesScreen = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
       try {
-        setCategories(categories.filter(cat => cat.id !== id));
+        await deleteCategory(id);
+        await loadCategories();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
+        alert('Impossible de supprimer la catégorie');
       }
     }
   };
@@ -123,14 +114,14 @@ const CategoriesScreen = () => {
               ></div>
               <div className="category-info">
                 <h3>{category.name}</h3>
-                <span className={`category-type ${category.type}`}>
+                <span className={`category-type ${category.type || 'expense'}`}>
                   {category.type === 'income' ? 'Revenu' : 'Dépense'}
                 </span>
               </div>
             </div>
             
             <div className="category-stats">
-              <p>{category.transaction_count} transaction{category.transaction_count !== 1 ? 's' : ''}</p>
+              <p>{category.transaction_count || 0} transaction{(category.transaction_count || 0) !== 1 ? 's' : ''}</p>
             </div>
             
             <div className="category-actions">

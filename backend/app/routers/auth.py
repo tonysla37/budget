@@ -12,7 +12,7 @@ from app.models.user import User
 from app.schemas import Token, TokenData, UserCreate, User as UserSchema, BoursoramaCredentials, LoginRequest
 from app.services.auth import authenticate_user, create_access_token, get_user_by_email, create_user, update_user, get_current_user
 
-router = APIRouter(tags=["authentication"])
+router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 

@@ -57,10 +57,10 @@ Dans l'interface Swagger, les icônes de cadenas indiquent le statut de sécurit
     lifespan=lifespan,
 )
 
-# Configuration CORS
+# Configuration CORS - DOIT être ajouté EN PREMIER (exécuté en dernier dans la chaîne)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=["*"],  # Temporaire : autoriser toutes les origines
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -69,13 +69,13 @@ app.add_middleware(
 # Configuration des intercepteurs (logging, monitoring, gestion d'erreurs)
 setup_interceptors(app)
 
-# Inclusion des routeurs
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(users.router, prefix="/api/users", tags=["users"])
-app.include_router(transactions.router, prefix="/api/transactions", tags=["transactions"])
-app.include_router(categories.router, prefix="/api/categories", tags=["categories"])
-app.include_router(reports.router, prefix="/api/reports", tags=["reports"])
-app.include_router(dashboard.router, prefix="/api/dashboard", tags=["dashboard"])
+# Inclusion des routeurs (les routeurs ont déjà leur prefix /api/... défini)
+app.include_router(auth.router)
+app.include_router(users.router)
+app.include_router(transactions.router)
+app.include_router(categories.router)
+app.include_router(reports.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/api/health", tags=["health"])

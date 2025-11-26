@@ -27,6 +27,7 @@ categories = [
         "name": "Alimentation",
         "color": "#4CAF50",
         "icon": "shopping-cart",
+        "type": "expense",
         "user_id": user_id
     },
     {
@@ -34,6 +35,7 @@ categories = [
         "name": "Transport",
         "color": "#2196F3",
         "icon": "car",
+        "type": "expense",
         "user_id": user_id
     },
     {
@@ -41,13 +43,31 @@ categories = [
         "name": "Loisirs",
         "color": "#9C27B0",
         "icon": "film",
+        "type": "expense",
         "user_id": user_id
     },
     {
         "_id": ObjectId(),
-        "name": "Revenus",
+        "name": "Salaire",
         "color": "#009688",
         "icon": "wallet",
+        "type": "income",
+        "user_id": user_id
+    },
+    {
+        "_id": ObjectId(),
+        "name": "Freelance",
+        "color": "#00BCD4",
+        "icon": "briefcase",
+        "type": "income",
+        "user_id": user_id
+    },
+    {
+        "_id": ObjectId(),
+        "name": "Investissements",
+        "color": "#4CAF50",
+        "icon": "trending-up",
+        "type": "income",
         "user_id": user_id
     }
 ]
@@ -60,7 +80,9 @@ category_map = {
     "Alimentation": categories[0]["_id"],
     "Transport": categories[1]["_id"],
     "Loisirs": categories[2]["_id"],
-    "Revenus": categories[3]["_id"]
+    "Salaire": categories[3]["_id"],
+    "Freelance": categories[4]["_id"],
+    "Investissements": categories[5]["_id"]
 }
 
 # Créer des transactions pour les 2 derniers mois
@@ -81,7 +103,7 @@ transactions.append({
     "description": "Salaire",
     "merchant": "Entreprise XYZ",
     "is_expense": False,
-    "category_id": category_map["Revenus"],
+    "category_id": category_map["Salaire"],
     "created_at": now.isoformat()
 })
 
@@ -141,7 +163,7 @@ transactions.append({
     "description": "Salaire",
     "merchant": "Entreprise XYZ",
     "is_expense": False,
-    "category_id": category_map["Revenus"],
+    "category_id": category_map["Salaire"],
     "created_at": (now - timedelta(days=30)).isoformat()
 })
 

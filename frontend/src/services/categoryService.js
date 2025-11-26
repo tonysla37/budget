@@ -4,7 +4,11 @@ import { apiCall } from '../config/api.config';
 export const getCategories = async (type = null) => {
   try {
     const params = type ? `?type=${type}` : '';
-    return await apiCall(`/api/categories${params}`);
+    const url = `/api/categories/${params}`;
+    console.log('Fetching categories from:', url, 'type:', type);
+    const result = await apiCall(url);
+    console.log('Categories received:', result);
+    return result;
   } catch (error) {
     console.error('Erreur lors de la récupération des catégories:', error);
     throw error;

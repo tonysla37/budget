@@ -26,12 +26,11 @@ export const apiCall = async (endpoint, options = {}) => {
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   
   const config = {
-    method: 'GET',
+    method: options.method || 'GET',
     headers: {
       ...getDefaultHeaders(),
       ...options.headers,
     },
-    timeout: API_CONFIG.TIMEOUT,
     ...options,
   };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
@@ -53,6 +53,14 @@ const Navigation = () => {
               className={`nav-link ${isActive('/categories') ? 'active' : ''}`}
             >
               Catégories
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/settings" 
+              className={`nav-link ${isActive('/settings') ? 'active' : ''}`}
+            >
+              Paramètres
             </Link>
           </li>
         </ul>

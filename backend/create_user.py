@@ -25,6 +25,7 @@ user = {
     "first_name": "Test",
     "last_name": "User",
     "is_active": True,
+    "billing_cycle_day": 1,  # Jour de début du cycle (1-28)
     "created_at": datetime.now(UTC).isoformat()
 }
 

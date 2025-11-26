@@ -7,28 +7,37 @@ import DashboardScreen from './screens/DashboardScreen';
 import TransactionsScreen from './screens/TransactionsScreen';
 import AddTransactionScreen from './screens/AddTransactionScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
+import SettingsScreen from './screens/SettingsScreen';
 import Navigation from './components/Navigation';
 import './App.css';
 
 // Composant pour les routes protégées
 const ProtectedRoute = ({ children }) => {
-  const { isLoggedIn } = useAuth();
-  return isLoggedIn ? children : <Navigate to="/login" replace />;
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 // Composant principal de l'application
 const AppContent = () => {
-  const { isLoggedIn } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="app">
-      {isLoggedIn && <Navigation />}
+      {isAuthenticated && <Navigation />}
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/register" element={<RegisterScreen />} />
           <Route 
             path="/" 
+            element={
+              <ProtectedRoute>
+                <DashboardScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/dashboard" 
             element={
               <ProtectedRoute>
                 <DashboardScreen />
@@ -56,6 +65,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <CategoriesScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <SettingsScreen />
               </ProtectedRoute>
             } 
           />

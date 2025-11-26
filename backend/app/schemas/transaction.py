@@ -31,6 +31,7 @@ class CategoryBase(BaseModel):
     description: Optional[str] = None
     color: Optional[str] = None
     icon: Optional[str] = None
+    type: Optional[str] = "expense"
 
 
 class CategoryCreate(CategoryBase):
@@ -44,6 +45,7 @@ class CategoryUpdate(CategoryBase):
 class Category(CategoryBase):
     id: str
     user_id: Optional[str] = None
+    type: Optional[str] = "expense"
     created_at: datetime
 
     class Config:

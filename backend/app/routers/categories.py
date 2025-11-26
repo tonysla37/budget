@@ -14,17 +14,26 @@ router = APIRouter(prefix="/api/categories", tags=["categories"])
 def prepare_mongodb_document_for_response(document: Dict) -> Dict:
     """
     Prépare un document MongoDB pour être retourné en réponse.
-    Convertit _id en id.
+    Convertit _id en id et ObjectId en string.
     """
     if document is None:
         return None
+    
+    from datetime import datetime, UTC
+    from bson import ObjectId
     
     result = {}
     for key, value in document.items():
         if key == "_id":
             result["id"] = str(value)
+        elif isinstance(value, ObjectId):
+            result[key] = str(value)
         else:
             result[key] = value
+    
+    # Ajouter created_at si manquant pour compatibilité
+    if "created_at" not in result:
+        result["created_at"] = datetime.now(UTC)
     
     return result
 

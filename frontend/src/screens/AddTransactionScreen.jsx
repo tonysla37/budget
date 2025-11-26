@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTransaction } from '../services/transactionService';
-import { COLORS } from '../utils/colors';
 import { formatDate } from '../utils/formatters';
 import CategorySelector from '../components/CategorySelector';
 import { Plus, Minus, Calendar, ArrowLeft } from 'lucide-react';
@@ -10,23 +9,14 @@ export default function AddTransactionScreen() {
   const [type, setType] = useState('expense');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const navigate = useNavigate();
 
-  const showDatePickerModal = () => {
-    setShowDatePicker(true);
-  };
-
-  const onDateChange = (event) => {
-    const selectedDate = new Date(event.target.value);
-    setDate(selectedDate);
-    setShowDatePicker(false);
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
     if (!description.trim() || !amount.trim() || !categoryId) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
@@ -43,12 +33,12 @@ export default function AddTransactionScreen() {
       await createTransaction({
         description: description.trim(),
         amount: numAmount,
-        date: date.toISOString().split('T')[0],
+        date: date,
         category_id: categoryId,
         is_expense: type === 'expense',
       });
       
-      navigate('/');
+      navigate('/transactions');
     } catch (error) {
       console.error('Erreur lors de la création:', error);
       alert('Impossible de créer la transaction');
@@ -58,103 +48,119 @@ export default function AddTransactionScreen() {
   };
 
   return (
-    <div className="add-transaction-container">
-      {/* Header */}
-      <div className="add-transaction-header">
-        <button 
-          className="back-button"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="add-transaction-title">Nouvelle transaction</h1>
-      </div>
-
-      <div className="add-transaction-content">
-        {/* Sélecteur de type */}
-        <div className="type-selector">
-          <button
-            className={`type-button ${type === 'expense' ? 'selected' : ''}`}
-            onClick={() => setType('expense')}
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center mb-6">
+          <button 
+            className="mr-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => navigate(-1)}
           >
-            <Minus size={20} />
-            <span className="type-button-text">Dépense</span>
+            <ArrowLeft size={24} className="text-gray-600" />
           </button>
-          
-          <button
-            className={`type-button ${type === 'income' ? 'selected' : ''}`}
-            onClick={() => setType('income')}
-          >
-            <Plus size={20} />
-            <span className="type-button-text">Revenu</span>
-          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Nouvelle transaction</h1>
         </div>
 
-        <div className="form">
-          {/* Description */}
-          <div className="input-group">
-            <label className="input-label">Description</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Ex: Courses alimentaires"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={100}
-            />
-          </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <form onSubmit={handleSubmit}>
+            {/* Sélecteur de type */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  className={`flex items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    type === 'expense' 
+                      ? 'border-red-500 bg-red-50 text-red-700' 
+                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                  }`}
+                  onClick={() => setType('expense')}
+                >
+                  <Minus size={20} className="mr-2" />
+                  <span className="font-medium">Dépense</span>
+                </button>
+                
+                <button
+                  type="button"
+                  className={`flex items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                    type === 'income' 
+                      ? 'border-green-500 bg-green-50 text-green-700' 
+                      : 'border-gray-300 text-gray-600 hover:border-gray-400'
+                  }`}
+                  onClick={() => setType('income')}
+                >
+                  <Plus size={20} className="mr-2" />
+                  <span className="font-medium">Revenu</span>
+                </button>
+              </div>
+            </div>
 
-          {/* Montant */}
-          <div className="input-group">
-            <label className="input-label">Montant (€)</label>
-            <input
-              type="number"
-              step="0.01"
-              className="input"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              maxLength={10}
-            />
-          </div>
+            {/* Description */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ex: Courses alimentaires"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={100}
+              />
+            </div>
 
-          {/* Date */}
-          <div className="input-group">
-            <label className="input-label">Date</label>
-            <button
-              className="date-button"
-              onClick={showDatePickerModal}
-            >
-              <Calendar size={20} />
-              <span className="date-button-text">{formatDate(date, 'short')}</span>
-            </button>
-            {showDatePicker && (
+            {/* Montant */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Montant (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+
+            {/* Date */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
               <input
                 type="date"
-                value={date.toISOString().split('T')[0]}
-                onChange={onDateChange}
-                className="date-input"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 max={new Date().toISOString().split('T')[0]}
               />
-            )}
-          </div>
+            </div>
 
-          {/* Sélecteur de catégorie */}
-          <CategorySelector 
-            selectedCategoryId={categoryId}
-            onSelectCategory={setCategoryId}
-            type={type}
-          />
+            {/* Sélecteur de catégorie */}
+            <CategorySelector 
+              selectedCategoryId={categoryId}
+              onSelectCategory={setCategoryId}
+              type={type}
+            />
+
+            {/* Boutons d'action */}
+            <div className="flex gap-4 mt-8">
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoading ? 'Création...' : 'Créer la transaction'}
+              </button>
+            </div>
+          </form>
         </div>
-
-        {/* Bouton de soumission */}
-        <button
-          className={`submit-button ${isLoading ? 'disabled' : ''}`}
-          onClick={handleSubmit}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Création...' : 'Créer la transaction'}
-        </button>
       </div>
     </div>
   );

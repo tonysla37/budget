@@ -138,7 +138,7 @@ export default function DashboardScreen() {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
-              onClick={() => navigate('/transactions/add')}
+              onClick={() => navigate('/add-transaction')}
               className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <Plus className="h-6 w-6 text-gray-400 mr-2" />
@@ -173,6 +173,18 @@ export default function DashboardScreen() {
           </div>
         )}
 
+        {/* Revenus par catégorie */}
+        {dashboardData?.income_by_category && dashboardData.income_by_category.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenus par catégorie</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {dashboardData.income_by_category.map((category, index) => (
+                <CategoryCard key={index} category={category} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Transactions récentes */}
         {dashboardData?.recent_transactions && dashboardData.recent_transactions.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -197,7 +209,7 @@ export default function DashboardScreen() {
                   </div>
                   <div className="text-right">
                     <p className={`font-semibold ${transaction.is_expense ? 'text-red-600' : 'text-green-600'}`}>
-                      {transaction.is_expense ? '-' : '+'}{formatCurrency(transaction.amount)}
+                      {transaction.is_expense ? '-' : '+'}{formatCurrency(Math.abs(transaction.amount))}
                     </p>
                     {transaction.category && (
                       <p className="text-sm text-gray-500">{transaction.category.name}</p>
@@ -221,7 +233,7 @@ export default function DashboardScreen() {
                 Commencez par ajouter vos premières transactions pour voir vos statistiques ici.
               </p>
               <button
-                onClick={() => navigate('/transactions/add')}
+                onClick={() => navigate('/add-transaction')}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />

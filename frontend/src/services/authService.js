@@ -119,3 +119,28 @@ export const registerUser = async (userData) => {
     return { success: false, message: error.message || 'Erreur lors de l\'inscription' };
   }
 };
+
+// Récupérer le profil utilisateur
+export const getUserProfile = async () => {
+  try {
+    return await apiCall('/api/users/me');
+  } catch (error) {
+    console.error('Erreur lors de la récupération du profil:', error);
+    throw error;
+  }
+};
+
+// Mettre à jour le profil utilisateur
+export const updateUserProfile = async (userData) => {
+  try {
+    const response = await apiCall('/api/users/me', {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+    await setUserData(response);
+    return response;
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du profil:', error);
+    throw error;
+  }
+};

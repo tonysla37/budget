@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.database import get_db
 from app.services.auth import get_current_user
 
-router = APIRouter(tags=["dashboard"])
+router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
 @router.get("/")
@@ -90,11 +90,28 @@ async def get_dashboard_data(
         
         category_results = await collection.aggregate(category_pipeline).to_list(length=None)
         
+        # Pipeline pour les revenus par catégorie
+        income_category_pipeline = [
+            {"$match": {
+                "user_id": current_user["_id"],
+                "date": {"$gte": start_date, "$lt": end_date},
+                "is_expense": False
+            }},
+            {"$group": {
+                "_id": "$category_id",
+                "total": {"$sum": "$amount"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"total": -1}}
+        ]
+        
+        income_category_results = await collection.aggregate(income_category_pipeline).to_list(length=None)
+        
         # Récupérer les détails des catégories
         categories = await db.find_many("categories", {"user_id": current_user["_id"]})
         category_map = {str(cat["_id"]): cat for cat in categories}
         
-        # Préparer les données des catégories
+        # Préparer les données des catégories de dépenses
         expenses_by_category = []
         for result in category_results:
             category_id = str(result["_id"]) if result["_id"] else "uncategorized"
@@ -117,6 +134,30 @@ async def get_dashboard_data(
                 })
             
             expenses_by_category.append(category_data)
+        
+        # Préparer les données des catégories de revenus
+        income_by_category = []
+        for result in income_category_results:
+            category_id = str(result["_id"]) if result["_id"] else "uncategorized"
+            category_data = {
+                "id": category_id,
+                "total": result["total"],
+                "count": result["count"],
+                "percentage": (result["total"] / total_income * 100) if total_income > 0 else 0
+            }
+            
+            if category_id in category_map:
+                category_data.update({
+                    "name": category_map[category_id]["name"],
+                    "color": category_map[category_id].get("color", "#6b7280")
+                })
+            else:
+                category_data.update({
+                    "name": "Non catégorisé",
+                    "color": "#6b7280"
+                })
+            
+            income_by_category.append(category_data)
         
         # Récupérer les transactions récentes
         recent_transactions = await collection.find({
@@ -154,6 +195,7 @@ async def get_dashboard_data(
             "expense_count": expense_count,
             "savings": 0,  # À implémenter plus tard
             "expenses_by_category": expenses_by_category,
+            "income_by_category": income_by_category,
             "recent_transactions": recent_transactions_data,
             "period": {
                 "start": start_date,

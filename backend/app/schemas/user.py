@@ -27,6 +27,7 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool = True
+    billing_cycle_day: int = 1  # Jour de début du cycle de facturation (1-28)
 
 
 class UserCreate(UserBase):
@@ -34,9 +35,20 @@ class UserCreate(UserBase):
     password: str
 
 
-class UserUpdate(UserBase):
+class UserUpdate(BaseModel):
     """Schema for user update."""
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    is_active: Optional[bool] = None
+    billing_cycle_day: Optional[int] = None
     password: Optional[str] = None
+    
+    @field_validator('billing_cycle_day')
+    def validate_billing_cycle_day(cls, v):
+        if v is not None and (v < 1 or v > 28):
+            raise ValueError('billing_cycle_day doit être entre 1 et 28')
+        return v
 
 
 class User(UserBase):

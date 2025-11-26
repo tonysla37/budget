@@ -3,7 +3,7 @@ import { apiCall } from '../config/api.config';
 // Récupérer les données du dashboard
 export const getDashboardData = async (period = 'current') => {
   try {
-    return await apiCall(`/api/dashboard?period=${period}`);
+    return await apiCall(`/api/dashboard/?period=${period}`);
   } catch (error) {
     console.error('Erreur lors de la récupération des données du dashboard:', error);
     throw error;
