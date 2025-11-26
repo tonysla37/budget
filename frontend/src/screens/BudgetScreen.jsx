@@ -87,7 +87,7 @@ export default function BudgetScreen() {
   };
 
   const getBudgetStatus = (percentage) => {
-    if (percentage >= 100) return { color: 'red', icon: AlertTriangle, text: 'Dépassé' };
+    if (percentage >= 100) return { color: 'red', icon: AlertTriangle, text: '' };
     if (percentage >= 80) return { color: 'orange', icon: AlertCircle, text: 'Attention' };
     return { color: 'green', icon: CheckCircle2, text: 'OK' };
   };
@@ -200,7 +200,7 @@ export default function BudgetScreen() {
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Restant</span>
             <span className={`font-semibold ${budget.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-              {formatCurrency(Math.abs(budget.remaining))}
+              {budget.remaining < 0 ? '- ' : ''}{formatCurrency(Math.abs(budget.remaining))}
             </span>
           </div>
 
@@ -213,11 +213,11 @@ export default function BudgetScreen() {
                   className={`text-${status.color}-600`}
                 />
                 <span className={`text-sm font-medium text-${status.color}-600`}>
-                  {status.text}
+                  {budget.percentage >= 100 ? `Dépassé de ${budget.percentage.toFixed(1)}%` : status.text}
                 </span>
               </div>
               <span className={`text-sm font-bold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
-                {budget.percentage.toFixed(1)}%
+                {budget.percentage < 100 ? `${budget.percentage.toFixed(1)}%` : ''}
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">

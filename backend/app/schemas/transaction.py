@@ -97,14 +97,21 @@ class TransactionWithCategory(Transaction):
     category: Optional[Category] = None
 
 
+class CategoryAmount(BaseModel):
+    category_id: str
+    category_name: str
+    amount: float
+    count: int
+
+
 class MonthlyReport(BaseModel):
     year: int
     month: int
     total_income: float
     total_expenses: float
     net: float
-    expenses_by_category: dict
-    income_by_category: dict
+    expenses_by_category: List[CategoryAmount]
+    income_by_category: List[CategoryAmount]
 
 
 class PeriodReport(BaseModel):
@@ -113,7 +120,7 @@ class PeriodReport(BaseModel):
     total_income: float
     total_expenses: float
     net: float
-    expenses_by_category: dict
-    income_by_category: dict
+    expenses_by_category: List[CategoryAmount]
+    income_by_category: List[CategoryAmount]
     expenses_by_tag: dict
     income_by_tag: dict 

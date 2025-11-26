@@ -65,6 +65,14 @@ const Navigation = () => {
           </li>
           <li>
             <Link 
+              to="/reports" 
+              className={`nav-link ${isActive('/reports') ? 'active' : ''}`}
+            >
+              Statistiques
+            </Link>
+          </li>
+          <li>
+            <Link 
               to="/settings" 
               className={`nav-link ${isActive('/settings') ? 'active' : ''}`}
             >

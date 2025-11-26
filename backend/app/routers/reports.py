@@ -29,9 +29,10 @@ async def get_monthly_report(
         end_date = datetime(year, month + 1, 1)
     
     # Agréger les données mensuelles
+    user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
-            "user_id": current_user["_id"],
+            "user_id": user_id,
             "date": {"$gte": start_date, "$lt": end_date}
         }},
         {"$group": {
@@ -83,7 +84,7 @@ async def get_monthly_report(
         "month": month,
         "total_income": total_income,
         "total_expenses": total_expenses,
-        "net_amount": net_amount,
+        "net": net_amount,
         "income_by_category": [
             {
                 "category_id": cat_id,
@@ -122,9 +123,10 @@ async def get_period_report(
     end_datetime = datetime.combine(end_date, datetime.max.time())
     
     # Agréger les données pour la période
+    user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
-            "user_id": current_user["_id"],
+            "user_id": user_id,
             "date": {"$gte": start_datetime, "$lte": end_datetime}
         }},
         {"$group": {
