@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../services/categoryService';
 
 const CategoriesScreen = () => {
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState(new Set());
   const [formData, setFormData] = useState({
     name: '',
     type: 'expense',
-    color: '#3b82f6'
+    color: '#3b82f6',
+    parent_id: null
   });
   const [loading, setLoading] = useState(true);
   const [customColor, setCustomColor] = useState('#3b82f6');
@@ -56,7 +58,8 @@ const CategoriesScreen = () => {
     setFormData({
       name: category.name,
       type: category.type || 'expense',
-      color: category.color
+      color: category.color,
+      parent_id: category.parent_id || null
     });
     setCustomColor(category.color);
     setShowModal(true);
@@ -80,10 +83,45 @@ const CategoriesScreen = () => {
     setFormData({
       name: '',
       type: 'expense',
-      color: '#3b82f6'
+      color: '#3b82f6',
+      parent_id: null
     });
     setCustomColor('#3b82f6');
   };
+
+  const toggleCategory = (categoryId) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const handleAddSubcategory = (parentCategory) => {
+    setFormData({
+      name: '',
+      type: parentCategory.type,
+      color: parentCategory.color,
+      parent_id: parentCategory.id
+    });
+    setCustomColor(parentCategory.color);
+    setShowModal(true);
+  };
+
+  // Organiser les catégories en structure hiérarchique
+  const organizeCategories = () => {
+    const parents = categories.filter(cat => !cat.parent_id);
+    const subcategories = categories.filter(cat => cat.parent_id);
+    
+    return parents.map(parent => ({
+      ...parent,
+      subcategories: subcategories.filter(sub => sub.parent_id === parent.id)
+    }));
+  };
+
+  const hierarchicalCategories = organizeCategories();
 
   const colorOptions = [
     // Rouges
@@ -150,48 +188,105 @@ const CategoriesScreen = () => {
 
       {/* Contenu */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {categories.map(category => (
-            <div key={category.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
-                  <div 
-                    className="w-4 h-4 rounded-full mr-3" 
-                    style={{ backgroundColor: category.color }}
-                  ></div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
-                    <span className={`inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full ${
-                      category.type === 'income' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {category.type === 'income' ? 'Revenu' : 'Dépense'}
-                    </span>
+        <div className="space-y-4">
+          {hierarchicalCategories.map(category => (
+            <div key={category.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+              {/* Catégorie parente */}
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center flex-1">
+                    {category.subcategories.length > 0 && (
+                      <button
+                        onClick={() => toggleCategory(category.id)}
+                        className="mr-2 p-1 hover:bg-gray-100 rounded"
+                      >
+                        {expandedCategories.has(category.id) ? (
+                          <ChevronDown className="h-4 w-4 text-gray-600" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-600" />
+                        )}
+                      </button>
+                    )}
+                    <div 
+                      className="w-4 h-4 rounded-full mr-3" 
+                      style={{ backgroundColor: category.color }}
+                    ></div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                          category.type === 'income' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {category.type === 'income' ? 'Revenu' : 'Dépense'}
+                        </span>
+                        {category.subcategories.length > 0 && (
+                          <span className="text-xs text-gray-500">
+                            {category.subcategories.length} sous-catégorie{category.subcategories.length !== 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleAddSubcategory(category)}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Ajouter une sous-catégorie"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleEdit(category)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(category.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               </div>
-              
-              <div className="mb-4 text-sm text-gray-600">
-                <p>{category.transaction_count || 0} transaction{(category.transaction_count || 0) !== 1 ? 's' : ''}</p>
-              </div>
-              
-              <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <button 
-                  onClick={() => handleEdit(category)}
-                  className="flex-1 flex items-center justify-center px-3 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                >
-                  <Edit className="h-4 w-4 mr-1" />
-                  <span className="text-sm font-medium">Modifier</span>
-                </button>
-                <button 
-                  onClick={() => handleDelete(category.id)}
-                  className="flex-1 flex items-center justify-center px-3 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  <span className="text-sm font-medium">Supprimer</span>
-                </button>
-              </div>
+
+              {/* Sous-catégories */}
+              {expandedCategories.has(category.id) && category.subcategories.length > 0 && (
+                <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {category.subcategories.map(subcategory => (
+                      <div key={subcategory.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center flex-1">
+                            <div 
+                              className="w-3 h-3 rounded-full mr-2" 
+                              style={{ backgroundColor: subcategory.color }}
+                            ></div>
+                            <h4 className="text-sm font-medium text-gray-900">{subcategory.name}</h4>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 mt-2">
+                          <button 
+                            onClick={() => handleEdit(subcategory)}
+                            className="flex-1 p-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          >
+                            <Edit className="h-3 w-3 mx-auto" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(subcategory.id)}
+                            className="flex-1 p-1.5 text-xs text-red-600 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <Trash2 className="h-3 w-3 mx-auto" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -199,7 +294,7 @@ const CategoriesScreen = () => {
         {categories.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
-              <Eye size={48} className="mx-auto" />
+              <Plus size={48} className="mx-auto" />
             </div>
             <p className="text-gray-600 mb-4">Aucune catégorie</p>
             <button 
@@ -248,11 +343,48 @@ const CategoriesScreen = () => {
                   value={formData.type}
                   onChange={(e) => setFormData({...formData, type: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={formData.parent_id}
                 >
                   <option value="expense">Dépense</option>
                   <option value="income">Revenu</option>
                 </select>
+                {formData.parent_id && (
+                  <p className="text-xs text-gray-500 mt-1">Le type est hérité de la catégorie parente</p>
+                )}
               </div>
+
+              {!editingCategory && !formData.parent_id && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Catégorie parente (optionnel)
+                  </label>
+                  <select
+                    value={formData.parent_id || ''}
+                    onChange={(e) => {
+                      const parentId = e.target.value || null;
+                      const parentCat = categories.find(c => c.id === parentId);
+                      setFormData({
+                        ...formData, 
+                        parent_id: parentId,
+                        type: parentCat ? parentCat.type : formData.type,
+                        color: parentCat ? parentCat.color : formData.color
+                      });
+                      if (parentCat) {
+                        setCustomColor(parentCat.color);
+                      }
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Aucune (catégorie principale)</option>
+                    {categories.filter(cat => !cat.parent_id && cat.type === formData.type).map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Créez une sous-catégorie pour mieux organiser vos budgets
+                  </p>
+                </div>
+              )}
 
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Couleur</label>

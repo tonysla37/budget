@@ -6,7 +6,9 @@ import RegisterScreen from './screens/RegisterScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import TransactionsScreen from './screens/TransactionsScreen';
 import AddTransactionScreen from './screens/AddTransactionScreen';
+import EditTransactionScreen from './screens/EditTransactionScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
+import BudgetScreen from './screens/BudgetScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import Navigation from './components/Navigation';
 import './App.css';
@@ -61,10 +63,26 @@ const AppContent = () => {
             } 
           />
           <Route 
+            path="/edit-transaction" 
+            element={
+              <ProtectedRoute>
+                <EditTransactionScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/categories" 
             element={
               <ProtectedRoute>
                 <CategoriesScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/budgets" 
+            element={
+              <ProtectedRoute>
+                <BudgetScreen />
               </ProtectedRoute>
             } 
           />

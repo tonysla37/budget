@@ -32,6 +32,7 @@ class CategoryBase(BaseModel):
     color: Optional[str] = None
     icon: Optional[str] = None
     type: Optional[str] = "expense"
+    parent_id: Optional[str] = None  # ID de la catégorie parente pour les sous-catégories
 
 
 class CategoryCreate(CategoryBase):
@@ -46,6 +47,7 @@ class Category(CategoryBase):
     id: str
     user_id: Optional[str] = None
     type: Optional[str] = "expense"
+    parent_id: Optional[str] = None
     created_at: datetime
 
     class Config:

@@ -1,11 +1,15 @@
 import { apiCall } from '../config/api.config';
 
 // Récupérer toutes les catégories
-export const getCategories = async (type = null) => {
+export const getCategories = async (type = null, includeSubcategories = true) => {
   try {
-    const params = type ? `?type=${type}` : '';
-    const url = `/api/categories/${params}`;
-    console.log('Fetching categories from:', url, 'type:', type);
+    const params = new URLSearchParams();
+    if (type) params.append('type', type);
+    if (includeSubcategories) params.append('include_subcategories', 'true');
+    
+    const queryString = params.toString();
+    const url = `/api/categories${queryString ? '?' + queryString : ''}`;
+    console.log('Fetching categories from:', url);
     const result = await apiCall(url);
     console.log('Categories received:', result);
     return result;

@@ -57,6 +57,14 @@ const Navigation = () => {
           </li>
           <li>
             <Link 
+              to="/budgets" 
+              className={`nav-link ${isActive('/budgets') ? 'active' : ''}`}
+            >
+              Budgets
+            </Link>
+          </li>
+          <li>
+            <Link 
               to="/settings" 
               className={`nav-link ${isActive('/settings') ? 'active' : ''}`}
             >

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getTransactions, deleteTransaction } from '../services/transactionService';
+import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X } from 'lucide-react';
 
 export default function TransactionsScreen() {
   const [transactions, setTransactions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -19,6 +21,7 @@ export default function TransactionsScreen() {
 
   useEffect(() => {
     loadTransactions();
+    loadCategories();
     loadUserProfile();
   }, []);
 
@@ -28,6 +31,15 @@ export default function TransactionsScreen() {
       setBillingCycleDay(profile.billing_cycle_day || 1);
     } catch (error) {
       console.error('Erreur lors du chargement du profil:', error);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const data = await getCategories();
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error);
     }
   };
 
@@ -59,6 +71,37 @@ export default function TransactionsScreen() {
         alert('Impossible de supprimer la transaction');
       }
     }
+  };
+
+  // Fonction pour obtenir le nom complet de la catégorie (avec parent si sous-catégorie)
+  const getCategoryDisplayName = (categoryId) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return '';
+    
+    if (category.parent_id) {
+      const parent = categories.find(c => c.id === category.parent_id);
+      return parent ? `${parent.name} › ${category.name}` : category.name;
+    }
+    
+    return category.name;
+  };
+
+  // Fonction pour obtenir le nom à partir de l'objet category de la transaction
+  const getTransactionCategoryName = (transaction) => {
+    if (!transaction.category) return 'Sans catégorie';
+    
+    // Si le backend a déjà fourni le parent_name
+    if (transaction.category.parent_name) {
+      return `${transaction.category.parent_name} › ${transaction.category.name}`;
+    }
+    
+    // Sinon chercher dans la liste des catégories
+    if (transaction.category.parent_id) {
+      const parent = categories.find(c => c.id === transaction.category.parent_id);
+      return parent ? `${parent.name} › ${transaction.category.name}` : transaction.category.name;
+    }
+    
+    return transaction.category.name;
   };
 
   // Fonction pour obtenir les dates de début et fin selon la période sélectionnée
@@ -348,7 +391,7 @@ export default function TransactionsScreen() {
                               className="w-2 h-2 rounded-full mr-1.5" 
                               style={{ backgroundColor: transaction.category.color || '#6b7280' }}
                             />
-                            {transaction.category.name}
+                            {getTransactionCategoryName(transaction)}
                           </span>
                         )}
                       </div>

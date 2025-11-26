@@ -123,10 +123,17 @@ async def get_dashboard_data(
             }
             
             if category_id in category_map:
+                cat = category_map[category_id]
                 category_data.update({
-                    "name": category_map[category_id]["name"],
-                    "color": category_map[category_id].get("color", "#6b7280")
+                    "name": cat["name"],
+                    "color": cat.get("color", "#6b7280"),
+                    "parent_id": cat.get("parent_id")
                 })
+                # Ajouter le nom du parent si c'est une sous-catégorie
+                if cat.get("parent_id"):
+                    parent = category_map.get(str(cat["parent_id"]))
+                    if parent:
+                        category_data["parent_name"] = parent["name"]
             else:
                 category_data.update({
                     "name": "Non catégorisé",
@@ -147,10 +154,17 @@ async def get_dashboard_data(
             }
             
             if category_id in category_map:
+                cat = category_map[category_id]
                 category_data.update({
-                    "name": category_map[category_id]["name"],
-                    "color": category_map[category_id].get("color", "#6b7280")
+                    "name": cat["name"],
+                    "color": cat.get("color", "#6b7280"),
+                    "parent_id": cat.get("parent_id")
                 })
+                # Ajouter le nom du parent si c'est une sous-catégorie
+                if cat.get("parent_id"):
+                    parent = category_map.get(str(cat["parent_id"]))
+                    if parent:
+                        category_data["parent_name"] = parent["name"]
             else:
                 category_data.update({
                     "name": "Non catégorisé",
@@ -173,6 +187,7 @@ async def get_dashboard_data(
                 "amount": transaction["amount"],
                 "is_expense": transaction["is_expense"],
                 "date": transaction["date"],
+                "merchant": transaction.get("merchant"),
                 "category": None
             }
             
@@ -181,8 +196,14 @@ async def get_dashboard_data(
                 if category:
                     transaction_data["category"] = {
                         "id": str(category["_id"]),
-                        "name": category["name"]
+                        "name": category["name"],
+                        "parent_id": category.get("parent_id")
                     }
+                    # Ajouter le nom du parent si c'est une sous-catégorie
+                    if category.get("parent_id"):
+                        parent = category_map.get(str(category["parent_id"]))
+                        if parent:
+                            transaction_data["category"]["parent_name"] = parent["name"]
             
             recent_transactions_data.append(transaction_data)
         

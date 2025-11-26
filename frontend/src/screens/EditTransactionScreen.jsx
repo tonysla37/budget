@@ -1,19 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createTransaction } from '../services/transactionService';
-import { formatDate } from '../utils/formatters';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { updateTransaction } from '../services/transactionService';
 import CategorySelector from '../components/CategorySelector';
-import { Plus, Minus, Calendar, ArrowLeft } from 'lucide-react';
+import { Plus, Minus, ArrowLeft } from 'lucide-react';
 
-export default function AddTransactionScreen() {
-  const [type, setType] = useState('expense');
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [merchant, setMerchant] = useState('');
-  const [categoryId, setCategoryId] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+export default function EditTransactionScreen() {
+  const location = useLocation();
   const navigate = useNavigate();
+  const transaction = location.state?.transaction;
+
+  const [type, setType] = useState(transaction?.is_expense ? 'expense' : 'income');
+  const [description, setDescription] = useState(transaction?.description || '');
+  const [amount, setAmount] = useState(transaction?.amount?.toString() || '');
+  const [date, setDate] = useState(
+    transaction?.date 
+      ? new Date(transaction.date).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0]
+  );
+  const [merchant, setMerchant] = useState(transaction?.merchant || '');
+  const [categoryId, setCategoryId] = useState(transaction?.category_id || null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!transaction) {
+      navigate('/transactions');
+    }
+  }, [transaction, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,7 +43,7 @@ export default function AddTransactionScreen() {
 
     setIsLoading(true);
     try {
-      await createTransaction({
+      await updateTransaction(transaction.id, {
         description: description.trim(),
         amount: numAmount,
         date: date,
@@ -42,12 +54,16 @@ export default function AddTransactionScreen() {
       
       navigate('/transactions');
     } catch (error) {
-      console.error('Erreur lors de la création:', error);
-      alert('Impossible de créer la transaction');
+      console.error('Erreur lors de la modification:', error);
+      alert('Impossible de modifier la transaction');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (!transaction) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -60,7 +76,7 @@ export default function AddTransactionScreen() {
           >
             <ArrowLeft size={24} className="text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Nouvelle transaction</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Modifier la transaction</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -171,7 +187,7 @@ export default function AddTransactionScreen() {
                   isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isLoading ? 'Création...' : 'Créer la transaction'}
+                {isLoading ? 'Modification...' : 'Enregistrer les modifications'}
               </button>
             </div>
           </form>

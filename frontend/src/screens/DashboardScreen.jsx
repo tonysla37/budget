@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardData } from '../services/dashboardService';
+import { getCategories } from '../services/categoryService';
 import { formatCurrency, formatPercentage, formatDate } from '../utils/formatters';
 import { getCurrentPeriod } from '../utils/dateUtils';
 import { TrendingUp, TrendingDown, Wallet, Save, Plus, RefreshCw } from 'lucide-react';
 
 export default function DashboardScreen() {
   const [dashboardData, setDashboardData] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('current');
@@ -16,9 +18,14 @@ export default function DashboardScreen() {
 
   const currentPeriod = getCurrentPeriod();
 
-  useEffect(() => {
-    loadDashboardData();
-  }, [selectedPeriod, customStartDate, customEndDate]);
+  const loadCategories = async () => {
+    try {
+      const data = await getCategories();
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -29,6 +36,32 @@ export default function DashboardScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [selectedPeriod, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Fonction pour obtenir le nom à partir de l'objet category de la transaction
+  const getTransactionCategoryName = (transaction) => {
+    if (!transaction.category) return 'Sans catégorie';
+    
+    // Si le backend a déjà fourni le parent_name
+    if (transaction.category.parent_name) {
+      return `${transaction.category.parent_name} › ${transaction.category.name}`;
+    }
+    
+    // Sinon chercher dans la liste des catégories
+    if (transaction.category.parent_id) {
+      const parent = categories.find(c => c.id === transaction.category.parent_id);
+      return parent ? `${parent.name} › ${transaction.category.name}` : transaction.category.name;
+    }
+    
+    return transaction.category.name;
   };
 
   const onRefresh = async () => {
@@ -52,23 +85,30 @@ export default function DashboardScreen() {
     </div>
   );
 
-  const CategoryCard = ({ category }) => (
-    <div 
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => navigate('/transactions', { state: { categoryId: category.id } })}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center">
-          <div className="w-4 h-4 rounded-full mr-3" style={{ backgroundColor: category.color }} />
-          <span className="font-medium text-gray-900">{category.name}</span>
+  const CategoryCard = ({ category }) => {
+    // Afficher "Parent › Sous-catégorie" si c'est une sous-catégorie
+    const displayName = category.parent_name 
+      ? `${category.parent_name} › ${category.name}`
+      : category.name;
+    
+    return (
+      <div 
+        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => navigate('/transactions', { state: { categoryId: category.id } })}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded-full mr-3" style={{ backgroundColor: category.color }} />
+            <span className="font-medium text-gray-900">{displayName}</span>
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-lg font-semibold text-gray-900">{formatCurrency(category.total)}</span>
+          <span className="text-sm text-gray-500">{formatPercentage(category.percentage)}</span>
         </div>
       </div>
-      <div className="flex justify-between items-center">
-        <span className="text-lg font-semibold text-gray-900">{formatCurrency(category.total)}</span>
-        <span className="text-sm text-gray-500">{formatPercentage(category.percentage)}</span>
-      </div>
-    </div>
-  );
+    );
+  };
 
   if (isLoading) {
     return (
@@ -248,7 +288,15 @@ export default function DashboardScreen() {
                     <div className={`w-3 h-3 rounded-full mr-3 ${transaction.is_expense ? 'bg-red-500' : 'bg-green-500'}`} />
                     <div>
                       <p className="font-medium text-gray-900">{transaction.description}</p>
-                      <p className="text-sm text-gray-500">{formatDate(transaction.date)}</p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(transaction.date)}
+                        {transaction.merchant && (
+                          <>
+                            <span className="mx-1">•</span>
+                            {transaction.merchant}
+                          </>
+                        )}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -256,7 +304,7 @@ export default function DashboardScreen() {
                       {transaction.is_expense ? '-' : '+'}{formatCurrency(Math.abs(transaction.amount))}
                     </p>
                     {transaction.category && (
-                      <p className="text-sm text-gray-500">{transaction.category.name}</p>
+                      <p className="text-sm text-gray-500">{getTransactionCategoryName(transaction)}</p>
                     )}
                   </div>
                 </div>
