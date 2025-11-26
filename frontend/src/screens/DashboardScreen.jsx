@@ -9,17 +9,20 @@ export default function DashboardScreen() {
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('current');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const navigate = useNavigate();
 
   const currentPeriod = getCurrentPeriod();
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [selectedPeriod, customStartDate, customEndDate]);
 
   const loadDashboardData = async () => {
     try {
-      const data = await getDashboardData();
+      const data = await getDashboardData(selectedPeriod, customStartDate, customEndDate);
       setDashboardData(data);
     } catch (error) {
       console.error('Erreur lors du chargement du dashboard:', error);
@@ -86,16 +89,57 @@ export default function DashboardScreen() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
-              <p className="text-gray-600 mt-1">{currentPeriod.label}</p>
+              <p className="text-gray-600 mt-1">
+                {dashboardData?.period?.label || currentPeriod.label}
+              </p>
             </div>
-            <button
-              onClick={onRefresh}
-              disabled={refreshing}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Actualiser
-            </button>
+            <div className="flex items-center gap-3">
+              <select
+                value={selectedPeriod}
+                onChange={(e) => {
+                  setSelectedPeriod(e.target.value);
+                  if (e.target.value !== 'custom') {
+                    setCustomStartDate('');
+                    setCustomEndDate('');
+                  }
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="current">Période actuelle</option>
+                <option value="previous">Période précédente</option>
+                <option value="year">Cette année</option>
+                <option value="custom">Personnalisée</option>
+              </select>
+              
+              {selectedPeriod === 'custom' && (
+                <>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Date début"
+                  />
+                  <span className="text-gray-500">-</span>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Date fin"
+                  />
+                </>
+              )}
+              
+              <button
+                onClick={onRefresh}
+                disabled={refreshing}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Actualiser
+              </button>
+            </div>
           </div>
         </div>
       </div>

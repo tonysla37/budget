@@ -1,9 +1,13 @@
 import { apiCall } from '../config/api.config';
 
 // Récupérer les données du dashboard
-export const getDashboardData = async (period = 'current') => {
+export const getDashboardData = async (period = 'current', startDate = null, endDate = null) => {
   try {
-    return await apiCall(`/api/dashboard/?period=${period}`);
+    let url = `/api/dashboard/?period=${period}`;
+    if (period === 'custom' && startDate && endDate) {
+      url = `/api/dashboard/?start_date=${startDate}&end_date=${endDate}`;
+    }
+    return await apiCall(url);
   } catch (error) {
     console.error('Erreur lors de la récupération des données du dashboard:', error);
     throw error;
