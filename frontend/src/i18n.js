@@ -197,6 +197,7 @@ const translations = {
       },
       budgets: {
         title: "Budgets",
+        subtitle: "Gérez vos budgets par catégorie et suivez vos dépenses",
         loading: "Chargement...",
         add: "Ajouter un budget",
         edit: "Modifier",
@@ -488,6 +489,7 @@ const translations = {
       },
       budgets: {
         title: "Budgets",
+        subtitle: "Manage your budgets by category and track your expenses",
         loading: "Loading...",
         add: "Add budget",
         edit: "Edit",
