@@ -174,7 +174,9 @@ const CategoriesScreen = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
-              <p className="text-gray-600 mt-1">{categories.length} catégorie{categories.length !== 1 ? 's' : ''}</p>
+              <p className="text-gray-600 mt-1">
+                {categories.length} {categories.length !== 1 ? t('categories.categoryCountPlural') : t('categories.categoryCount')}
+              </p>
             </div>
             <button 
               onClick={() => setShowModal(true)}
@@ -382,7 +384,7 @@ const CategoriesScreen = () => {
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-1">
-                    Créez une sous-catégorie pour mieux organiser vos budgets
+                    {t('categories.subcategoryHint')}
                   </p>
                 </div>
               )}

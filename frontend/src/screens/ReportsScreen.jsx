@@ -154,12 +154,12 @@ export default function ReportsScreen() {
             {/* Revenus totaux */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Revenus totaux</span>
+                <span className="text-sm font-medium text-gray-600">{t('reports.totalIncomeLabel')}</span>
                 <TrendingUp className="h-5 w-5 text-green-600" />
               </div>
               <div className="text-3xl font-bold text-gray-900">{formatCurrency(stats.totalIncome)}</div>
               <div className="text-sm text-gray-500 mt-1">
-                Moyenne : {formatCurrency(stats.avgIncome)}/mois
+                {t('reports.avgMonthlyShort')} : {formatCurrency(stats.avgIncome)}{t('reports.perMonth')}
               </div>
             </div>
 
@@ -171,7 +171,7 @@ export default function ReportsScreen() {
               </div>
               <div className="text-3xl font-bold text-gray-900">{formatCurrency(stats.totalExpenses)}</div>
               <div className="text-sm text-gray-500 mt-1">
-                {t('reports.avgMonthly')} {formatCurrency(stats.avgExpenses)}/mois
+                {t('reports.avgMonthly')} {formatCurrency(stats.avgExpenses)}{t('reports.perMonth')}
               </div>
             </div>
 

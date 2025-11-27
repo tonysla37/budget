@@ -63,7 +63,7 @@ export default function BudgetScreen() {
       loadData();
     } catch (error) {
       console.error('Erreur:', error);
-      alert(error.message || 'Une erreur est survenue');
+      alert(error.message || t('budgets.genericError'));
     }
   };
 
