@@ -49,6 +49,27 @@ export const getMonthName = (monthIndex, short = false) => {
   return getTranslatedMonthName(monthIndex, short);
 };
 
+// Générer un label de période à partir de dates
+export const getPeriodLabel = (startDate, endDate) => {
+  if (!startDate) return '';
+  
+  const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
+  const end = endDate ? (typeof endDate === 'string' ? new Date(endDate) : endDate) : start;
+  
+  const startMonth = start.getMonth();
+  const startYear = start.getFullYear();
+  const endMonth = end.getMonth();
+  const endYear = end.getFullYear();
+  
+  // Si même mois et année
+  if (startMonth === endMonth && startYear === endYear) {
+    return `${getMonthName(startMonth)} ${startYear}`;
+  }
+  
+  // Si différents
+  return `${getMonthName(startMonth)} ${startYear} - ${getMonthName(endMonth)} ${endYear}`;
+};
+
 // Formater une date pour l'API (YYYY-MM-DD)
 export const formatDateForAPI = (date) => {
   const dateObj = typeof date === 'string' ? new Date(date) : date;

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboardData } from '../services/dashboardService';
 import { getCategories } from '../services/categoryService';
 import { formatCurrency, formatPercentage, formatDate } from '../utils/formatters';
-import { getCurrentPeriod } from '../utils/dateUtils';
+import { getCurrentPeriod, getPeriodLabel } from '../utils/dateUtils';
 import { useTranslation } from '../i18n';
 import { TrendingUp, TrendingDown, Wallet, Save, Plus, RefreshCw } from 'lucide-react';
 
@@ -15,10 +15,19 @@ export default function DashboardScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
-  const currentPeriod = getCurrentPeriod();
+  // Recalculer currentPeriod quand la langue change
+  const currentPeriod = useMemo(() => getCurrentPeriod(), [i18n?.language]);
+
+  // Générer le label de période à partir des dates du backend
+  const periodLabel = useMemo(() => {
+    if (dashboardData?.period?.start) {
+      return getPeriodLabel(dashboardData.period.start, dashboardData.period.end);
+    }
+    return currentPeriod.label;
+  }, [dashboardData?.period?.start, dashboardData?.period?.end, i18n?.language, currentPeriod.label]);
 
   const loadCategories = async () => {
     try {
@@ -132,7 +141,7 @@ export default function DashboardScreen() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
               <p className="text-gray-600 mt-1">
-                {dashboardData?.period?.label || currentPeriod.label}
+                {periodLabel}
               </p>
             </div>
             <div className="flex items-center gap-3">
