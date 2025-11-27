@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../i18n';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 const LoginScreen = () => {
@@ -12,6 +13,7 @@ const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login, error, clearError } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -49,10 +51,10 @@ const LoginScreen = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Connexion
+              {t('auth.loginTitle')}
             </h2>
             <p className="text-gray-600">
-              Accédez à votre espace personnel
+              {t('auth.loginSubtitle')}
             </p>
           </div>
 
@@ -66,7 +68,7 @@ const LoginScreen = () => {
             <div className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Adresse email
+                  {t('auth.email')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -85,7 +87,7 @@ const LoginScreen = () => {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Mot de passe
+                  {t('auth.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -119,7 +121,7 @@ const LoginScreen = () => {
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
               ) : (
                 <>
-                  Se connecter
+                  {t('auth.loginButton')}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </>
               )}
@@ -127,13 +129,13 @@ const LoginScreen = () => {
 
             <div className="text-center">
               <p className="text-gray-600">
-                Pas encore de compte ?{' '}
+                {t('auth.noAccount')}{' '}
                 <button
                   type="button"
                   onClick={() => navigate('/register')}
                   className="text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Créer un compte
+                  {t('auth.registerButton')}
                 </button>
               </p>
             </div>

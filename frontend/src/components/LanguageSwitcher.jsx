@@ -1,23 +1,24 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Globe } from 'lucide-react';
+import { changeLanguage, i18n } from '../i18n';
 
 const LanguageSwitcher = () => {
-  const { i18n } = useTranslation();
+  const [currentLang, setCurrentLang] = React.useState(i18n?.language || 'fr');
 
   const toggleLanguage = () => {
-    const newLang = i18n.language === 'fr' ? 'en' : 'fr';
-    i18n.changeLanguage(newLang);
+    const newLang = currentLang === 'fr' ? 'en' : 'fr';
+    changeLanguage(newLang);
+    setCurrentLang(newLang);
   };
 
   return (
     <button 
       onClick={toggleLanguage} 
       className="language-switcher"
-      title={i18n.language === 'fr' ? 'Switch to English' : 'Passer en français'}
+      title={currentLang === 'fr' ? 'Switch to English' : 'Passer en français'}
     >
       <Globe size={16} />
-      <span className="language-label">{i18n.language.toUpperCase()}</span>
+      <span className="language-label">{currentLang.toUpperCase()}</span>
     </button>
   );
 };

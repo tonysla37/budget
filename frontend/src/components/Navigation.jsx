@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../i18n';
 import { LogOut, User, Menu, X } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,7 +31,7 @@ const Navigation = () => {
     <nav className="nav">
       <div className="nav-content">
         <Link to="/" className="nav-brand" onClick={closeMenu}>
-          Budget App
+          {t('nav.brand')}
         </Link>
 
         <button className="burger-menu" onClick={toggleMenu}>
@@ -42,7 +45,7 @@ const Navigation = () => {
               className={`nav-link ${isActive('/') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Tableau de bord
+              {t('nav.dashboard')}
             </Link>
           </li>
           <li>
@@ -51,7 +54,7 @@ const Navigation = () => {
               className={`nav-link ${isActive('/transactions') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Transactions
+              {t('nav.transactions')}
             </Link>
           </li>
           <li>
@@ -60,7 +63,7 @@ const Navigation = () => {
               className={`nav-link ${isActive('/add-transaction') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Ajouter
+              {t('nav.addTransaction')}
             </Link>
           </li>
           <li>
@@ -69,7 +72,7 @@ const Navigation = () => {
               className={`nav-link ${isActive('/categories') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Catégories
+              {t('nav.categories')}
             </Link>
           </li>
           <li>
@@ -78,7 +81,7 @@ const Navigation = () => {
               className={`nav-link ${isActive('/budgets') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Budgets
+              {t('nav.budgets')}
             </Link>
           </li>
           <li>
@@ -87,7 +90,7 @@ const Navigation = () => {
               className={`nav-link ${isActive('/reports') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Statistiques
+              {t('nav.reports')}
             </Link>
           </li>
           <li>
@@ -96,19 +99,20 @@ const Navigation = () => {
               className={`nav-link ${isActive('/settings') ? 'active' : ''}`}
               onClick={closeMenu}
             >
-              Paramètres
+              {t('nav.settings')}
             </Link>
           </li>
         </ul>
 
         <div className="nav-user">
+          <LanguageSwitcher />
           <span className="user-name">
             <User size={16} />
             <span className="user-email">{user?.email}</span>
           </span>
           <button onClick={handleLogout} className="btn btn-secondary btn-logout">
             <LogOut size={16} />
-            <span className="logout-text">Déconnexion</span>
+            <span className="logout-text">{t('nav.logout')}</span>
           </button>
         </div>
       </div>

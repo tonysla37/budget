@@ -4,6 +4,7 @@ import { getDashboardData } from '../services/dashboardService';
 import { getCategories } from '../services/categoryService';
 import { formatCurrency, formatPercentage, formatDate } from '../utils/formatters';
 import { getCurrentPeriod } from '../utils/dateUtils';
+import { useTranslation } from '../i18n';
 import { TrendingUp, TrendingDown, Wallet, Save, Plus, RefreshCw } from 'lucide-react';
 
 export default function DashboardScreen() {
@@ -14,6 +15,7 @@ export default function DashboardScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const currentPeriod = getCurrentPeriod();
@@ -115,7 +117,7 @@ export default function DashboardScreen() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement du tableau de bord...</p>
+          <p className="text-gray-600">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -128,7 +130,7 @@ export default function DashboardScreen() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Tableau de bord</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
               <p className="text-gray-600 mt-1">
                 {dashboardData?.period?.label || currentPeriod.label}
               </p>
@@ -145,10 +147,10 @@ export default function DashboardScreen() {
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="current">Période actuelle</option>
-                <option value="previous">Période précédente</option>
-                <option value="year">Cette année</option>
-                <option value="custom">Personnalisée</option>
+                <option value="current">{t('dashboard.currentPeriodLabel')}</option>
+                <option value="previous">{t('dashboard.previousPeriod')}</option>
+                <option value="year">{t('dashboard.thisYear')}</option>
+                <option value="custom">{t('dashboard.custom')}</option>
               </select>
               
               {selectedPeriod === 'custom' && (
@@ -177,7 +179,7 @@ export default function DashboardScreen() {
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
+                {t('dashboard.refresh')}
               </button>
             </div>
           </div>
@@ -188,21 +190,21 @@ export default function DashboardScreen() {
         {/* Statistiques principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
-            title="Revenus"
+            title={t('dashboard.income')}
             value={formatCurrency(dashboardData?.total_income || 0)}
-            subtitle="Ce mois"
+            subtitle={t('dashboard.thisMonth')}
             color="#10b981"
             icon={TrendingUp}
           />
           <StatCard
-            title="Dépenses"
+            title={t('dashboard.expenses')}
             value={formatCurrency(dashboardData?.total_expenses || 0)}
-            subtitle="Ce mois"
+            subtitle={t('dashboard.thisMonth')}
             color="#ef4444"
             icon={TrendingDown}
           />
           <StatCard
-            title="Solde"
+            title={t('dashboard.netBalance')}
             value={formatCurrency((dashboardData?.total_income || 0) - (dashboardData?.total_expenses || 0))}
             subtitle="Net"
             color="#3b82f6"

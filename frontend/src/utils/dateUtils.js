@@ -1,3 +1,5 @@
+import { getMonthName as getTranslatedMonthName } from '../i18n';
+
 // Utilitaires de gestion des dates
 export const getCurrentDate = () => {
   return new Date();
@@ -42,19 +44,9 @@ export const getCurrentPeriod = () => {
   }
 };
 
-// Obtenir le nom du mois
+// Obtenir le nom du mois avec traduction
 export const getMonthName = (monthIndex, short = false) => {
-  const months = [
-    'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
-  ];
-  
-  const shortMonths = [
-    'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
-    'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'
-  ];
-  
-  return short ? shortMonths[monthIndex] : months[monthIndex];
+  return getTranslatedMonthName(monthIndex, short);
 };
 
 // Formater une date pour l'API (YYYY-MM-DD)
