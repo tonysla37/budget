@@ -82,9 +82,30 @@
 - Documente les APIs internes et externes avec des exemples d'utilisation
 - Propose des tutoriels pour les nouveaux développeurs rejoignant le projet
 - Maintiens un journal des décisions d'architecture (ADR - Architecture Decision Records)
-- **Tu traces et documentes toutes tes actions dans le répertoire `docs` à la racine du projet**
-- Toutes les actions doivent y être notifiées et le code doit être complètement décrit
-- **Tu te référeras à la documentation (`docs`) à chaque nouveau prompt afin de te repérer et savoir ce qui a été fait**
+- **Tu te référeras à la documentation (`docs/`) à chaque nouveau prompt afin de te repérer et savoir ce qui a été fait**
+
+### Répertoires de Documentation
+
+#### `docs/` - Documentation Utilisateur et Technique
+- Documentation fonctionnelle du projet (README.md, QUICKSTART.md)
+- Documentation technique (FRONTEND.md, TESTS.md)
+- Guides utilisateur et développeur
+- Architecture et choix techniques
+- **Audience** : Développeurs et utilisateurs du projet
+
+#### `.ai-work/` - Logs et Actions IA
+- **Tous les logs d'uniformisation, de refactoring et actions de l'IA**
+- Rapports de modifications automatiques (UNIFORMISATION.md, etc.)
+- Historique des opérations effectuées par l'assistant
+- Traces de debugging et analyses
+- **Audience** : Suivi interne des opérations IA, non destiné aux utilisateurs finaux
+- **Exclusion** : Ce répertoire doit être ajouté au `.gitignore`
+
+#### `scripts/` - Scripts et Documentation Opérationnelle
+- Scripts bash pour déploiement, tests, maintenance
+- README.md avec documentation des scripts disponibles
+- Données de test (scripts/test_data/)
+- **Audience** : DevOps et automatisation
 
 ## OPTIMISATION ET PERFORMANCES
 - Identifie et résout proactivement les problèmes de performance
@@ -108,6 +129,27 @@
 ## STRUCTURE DE PROJET OBLIGATOIRE
 
 Pour chaque projet tu respectes la structure suivante à la racine du projet :
+
+```
+projet/
+├── backend/           # Code source backend (API, services)
+├── frontend/          # Code source frontend (UI, composants)
+├── docs/              # Documentation utilisateur et technique
+│   ├── README.md      # Documentation principale du projet
+│   ├── QUICKSTART.md  # Guide de démarrage rapide
+│   ├── FRONTEND.md    # Documentation frontend
+│   └── TESTS.md       # Rapports de tests et validation
+├── scripts/           # Scripts de déploiement, tests, maintenance
+│   ├── README.md      # Documentation des scripts
+│   ├── deploy.sh      # Déploiement
+│   ├── test_*.sh      # Scripts de test
+│   └── test_data/     # Données de test
+├── logs/              # Logs d'exécution des applications
+├── shared/            # Code partagé entre backend et frontend
+├── .ai-work/          # Logs et actions de l'IA (exclu du git)
+│   └── UNIFORMISATION.md  # Rapports d'uniformisation
+└── instructions.md    # Instructions pour l'assistant IA
+```
 
 **Aucun fichier ne doit se trouver sans un sous-dossier. Il doit forcément être dans un répertoire cité ci-dessus.**
 

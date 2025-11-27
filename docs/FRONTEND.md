@@ -2,102 +2,355 @@
 
 ##  Vue d'ensemble
 
-Le frontend de l'Application Budget est développé avec **React Native** et **Expo**, offrant une expérience utilisateur moderne et responsive sur mobile et web.
+Le frontend de l'Application Budget est développé avec **React 18** et **Vite**, offrant une expérience utilisateur moderne et responsive sur le web.
 
 ## 🛠️ Technologies utilisées
 
-- **React Native** : 0.72.6
-- **Expo** : 49.0.15
-- **React Navigation** : 6.x
-- **AsyncStorage** : Stockage local
-- **Expo Vector Icons** : Icônes
+- **React** : 18.2.0
+- **Vite** : 4.5.14 (build tool rapide)
+- **React Router DOM** : 6.x (navigation)
+- **Tailwind CSS** : Styling moderne
+- **Lucide React** : Bibliothèque d'icônes
+- **LocalStorage** : Stockage local pour l'authentification
 
 ## 📁 Structure du code
 
 ```
 frontend/src/
 ├──  screens/           # Écrans de l'application
-│   ├── LoginScreen.js    # Écran de connexion
-│   ├── DashboardScreen.js # Tableau de bord
-│   ├── TransactionsScreen.js # Liste des transactions
-│   ├── AddTransactionScreen.js # Ajout de transaction
-│   └── CategoriesScreen.js # Gestion des catégories
+│   ├── LoginScreen.jsx    # Écran de connexion/inscription
+│   ├── DashboardScreen.jsx # Tableau de bord principal
+│   ├── TransactionsScreen.jsx # Liste et gestion des transactions
+│   ├── AddTransactionScreen.jsx # Ajout/modification de transaction
+│   ├── CategoriesScreen.jsx # Gestion des catégories hiérarchiques
+│   ├── BudgetScreen.jsx # Gestion des budgets
+│   ├── ReportsScreen.jsx # Statistiques et rapports mensuels
+│   └── SettingsScreen.jsx # Paramètres utilisateur
 ├──  services/          # Services API
-│   ├── authService.js    # Authentification
-│   ├── transactionService.js # Transactions
-│   ├── categoryService.js # Catégories
-│   └── dashboardService.js # Dashboard
-├──  navigation/        # Navigation
-│   └── AppNavigator.js   # Navigation principale
+│   ├── authService.js    # Authentification (login, register)
+│   ├── transactionService.js # CRUD transactions
+│   ├── categoryService.js # CRUD catégories
+│   ├── budgetService.js # CRUD budgets
+│   ├── dashboardService.js # Données du dashboard
+│   └── reportService.js # Rapports mensuels
+├──  components/        # Composants réutilisables
+│   ├── Navigation.jsx    # Barre de navigation
+│   └── CategorySelector.jsx # Sélecteur de catégories hiérarchiques
 ├──  contexts/          # Contexte React
-│   └── AuthContext.js    # Contexte d'authentification
+│   └── AuthContext.jsx    # Contexte d'authentification global
 ├──  utils/             # Utilitaires
-│   ├── formatters.js     # Formatage des données
-│   ├── dateUtils.js      # Utilitaires de dates
-│   ├── validators.js     # Validation
-│   └── colors.js         # Couleurs et thème
+│   └── formatters.js     # Formatage des montants (formatCurrency)
 ├──  config/            # Configuration
-│   └── api.config.js     # Configuration API
+│   └── api.config.js     # Configuration API et gestion des erreurs
 └──  constants/         # Constantes
     └── theme.js          # Thème et couleurs
 ```
 
 ##  Design System
 
-### Couleurs principales
+### Couleurs principales (Tailwind CSS)
 ```javascript
 const COLORS = {
-  primary: '#3498db',      // Bleu principal
-  secondary: '#2ecc71',    // Vert
-  danger: '#e74c3c',       // Rouge
-  warning: '#f39c12',      // Orange
-  success: '#27ae60',      // Vert succès
-  background: '#f5f5f5',   // Fond gris clair
-  surface: '#ffffff',      // Surface blanche
+  primary: 'blue-600',      // Bleu principal (#2563eb)
+  secondary: 'green-600',    // Vert (#16a34a)
+  danger: 'red-600',       // Rouge (#dc2626)
+  warning: 'orange-500',      // Orange (#f97316)
+  success: 'green-500',      // Vert succès (#22c55e)
+  background: 'gray-50',   // Fond gris clair
+  surface: 'white',      // Surface blanche
   text: {
-    primary: '#2c3e50',    // Texte principal
-    secondary: '#7f8c8d',  // Texte secondaire
+    primary: 'gray-900',    // Texte principal
+    secondary: 'gray-600',  // Texte secondaire
   }
 };
 ```
 
-### Typographie
-- **Titres** : 18-24px, font-weight: bold
-- **Corps** : 14-16px, font-weight: normal
-- **Captions** : 12px, font-weight: normal
-
-### Espacement
-- **Base** : 8px
-- **Padding** : 15px
-- **Margin** : 10px
-- **Border radius** : 8px
+### Composants de navigation
+- Navigation responsive avec liens actifs
+- Items : Tableau de bord, Transactions, Ajouter, Catégories, Budgets, Statistiques, Paramètres
+- Gap de 12px pour garder les onglets sur une ligne
+- Indicateur visuel pour la page active
 
 ##  Écrans détaillés
 
 ### 1. LoginScreen
 **Fonctionnalités :**
-- Formulaire de connexion
-- Validation en temps réel
-- Mode démo intégré
-- Gestion des erreurs
+- Formulaire de connexion/inscription
+- Validation en temps réel des champs
+- Gestion des erreurs avec messages clairs
+- Stockage sécurisé du token JWT
 
-**Composants :**
-```javascript
-// Éléments principaux
-- TextInput (email, password)
-- TouchableOpacity (bouton connexion)
-- Alert (messages d'erreur)
-- KeyboardAvoidingView
-```
+**Champs :**
+- Email (validation format email)
+- Mot de passe (minimum 8 caractères)
+- Prénom/Nom (inscription uniquement)
 
 ### 2. DashboardScreen
 **Fonctionnalités :**
-- Statistiques financières
-- Graphiques des catégories
-- Transactions récentes
-- Actions rapides
+- Statistiques du mois en cours
+- Solde actuel et évolution
+- Graphique des dépenses par catégorie (top 5)
+- Liste des 10 transactions récentes avec merchant
+- Affichage hiérarchique des catégories ("Parent › Sous-catégorie")
 
-**Composants :**
+**Données affichées :**
+- Revenus du mois
+- Dépenses du mois
+- Solde net
+- Top catégories de dépenses
+- Transactions récentes (date, description, merchant, montant, catégorie)
+
+### 3. TransactionsScreen
+**Fonctionnalités :**
+- Liste complète des transactions
+- Filtrage par catégorie (incluant sous-catégories)
+- Recherche par description ou merchant
+- Tri par date (décroissant par défaut)
+- Modification/Suppression en ligne
+- Affichage "Parent › Sous-catégorie"
+
+**Colonnes :**
+- Date (format jj/mm/aaaa)
+- Description
+- Merchant (optionnel)
+- Catégorie (avec hiérarchie)
+- Montant (couleur verte pour revenus, rouge pour dépenses)
+- Actions (modifier/supprimer)
+
+### 4. AddTransactionScreen
+**Fonctionnalités :**
+- Ajout de nouvelles transactions
+- Modification de transactions existantes
+- Sélection de catégorie hiérarchique
+- Champ merchant optionnel
+- Validation des données
+
+**Champs :**
+- Date (date picker)
+- Description (texte, requis)
+- Merchant (texte, optionnel - ex: "Carrefour", "SNCF")
+- Catégorie (sélecteur hiérarchique)
+- Montant (nombre, requis)
+- Type (revenus/dépenses via is_expense)
+
+### 5. CategoriesScreen
+**Fonctionnalités :**
+- Gestion complète des catégories hiérarchiques
+- Création de catégories parentes
+- Création de sous-catégories (max 2 niveaux)
+- Modification (nom, couleur, parent)
+- Suppression avec confirmation
+- Affichage hiérarchique avec indentation
+
+**Hiérarchie :**
+- Catégories parentes (parent_id = null)
+- Sous-catégories (parent_id = id de la parente)
+- Validation : maximum 2 niveaux
+- Affichage : "Parent › Sous-catégorie"
+
+**Couleurs :**
+- Sélecteur de couleur pour chaque catégorie
+- Couleurs par défaut disponibles
+- Héritage visuel pour les sous-catégories
+
+### 6. BudgetScreen
+**Fonctionnalités :**
+- Création de budgets mensuels par catégorie
+- Calcul automatique incluant toutes les sous-catégories
+- Indicateurs visuels de statut :
+  - ✅ OK (vert) : < 80%
+  - ⚠️ Attention (orange) : 80-99%
+  - 🔺 Dépassé de X% (rouge) : ≥ 100%
+- Liste expandable des transactions impliquées
+- Regroupement par sous-catégorie avec couleurs
+- Filtrage par mois en cours uniquement
+
+**Affichage budget :**
+- Nom de la catégorie
+- Montant budgeté
+- Montant dépensé
+- Restant (avec signe - si dépassé)
+- Barre de progression colorée
+- Pourcentage ou "Dépassé de X%"
+
+**Transactions détaillées :**
+- Groupées par sous-catégorie
+- Couleur de la sous-catégorie
+- Total par sous-catégorie
+- Liste chronologique (plus récentes en premier)
+
+### 7. ReportsScreen
+**Fonctionnalités :**
+- Rapports mensuels sur 6 mois
+- Graphiques interactifs
+- Cartes de synthèse
+- Tableau détaillé
+
+**Métriques disponibles :**
+- Revenus totaux et moyens
+- Dépenses totales et moyennes
+- Économies (revenus - dépenses)
+- Taux d'épargne (%)
+- Solde net mensuel
+
+**Visualisations :**
+- Graphique en barres interactif
+- Sélection de métrique (revenus/dépenses/économies/net)
+- Couleurs conditionnelles
+- Pourcentages relatifs
+
+**Tableau mensuel :**
+- Colonnes : Mois, Revenus, Dépenses, Économies, Tx. épargne
+- Format monétaire français
+- Couleurs pour les économies positives/négatives
+
+### 8. SettingsScreen
+**Fonctionnalités :**
+- Profil utilisateur
+- Jour de cycle de facturation
+- Déconnexion
+
+## 🔐 Authentification et sécurité
+
+### AuthContext
+- Gestion centralisée de l'état d'authentification
+- Stockage du token dans localStorage
+- Protection automatique des routes
+- Redirection après login/logout
+
+### ProtectedRoute
+- Composant wrapper pour les routes privées
+- Vérification du token avant accès
+- Redirection automatique vers /login si non authentifié
+
+### API Configuration
+- Base URL centralisée (http://localhost:8000)
+- Ajout automatique du token Bearer dans les headers
+- Gestion des erreurs avec classes personnalisées (ApiError)
+- Timeout de 10 secondes par défaut
+
+## 🎨 Composants réutilisables
+
+### CategorySelector
+**Fonctionnalités :**
+- Sélection de catégorie avec hiérarchie
+- Affichage "Parent › Sous-catégorie"
+- Couleurs visuelles
+- Filtrage des catégories (uniquement dépenses pour budgets/transactions dépenses)
+
+**Props :**
+- `value` : ID de la catégorie sélectionnée
+- `onChange` : Callback lors du changement
+- `filterExpense` : Boolean pour filtrer uniquement les catégories de dépenses
+
+### Navigation
+**Fonctionnalités :**
+- Menu horizontal responsive
+- Liens avec état actif
+- Gap optimisé (12px) pour éviter la compression
+- Icônes intégrées (Lucide React)
+
+**Items :**
+1. Tableau de bord (/)
+2. Transactions (/transactions)
+3. Ajouter (/add-transaction)
+4. Catégories (/categories)
+5. Budgets (/budgets)
+6. Statistiques (/reports)
+7. Paramètres (/settings)
+
+## 📊 Formatage des données
+
+### formatCurrency(amount)
+Formate un montant en euros avec 2 décimales.
+```javascript
+formatCurrency(1234.56) // "1 234,56 €"
+formatCurrency(-500) // "-500,00 €"
+```
+
+### Affichage hiérarchique
+```javascript
+// Parent uniquement
+"Alimentation"
+
+// Sous-catégorie
+"Alimentation › Courses"
+"Transport › Essence"
+```
+
+## 🚀 Optimisations
+
+### Performance
+- Utilisation de React hooks (useState, useEffect, useContext)
+- Mise en cache des données de catégories
+- Rechargement conditionnel basé sur les dépendances
+- Lazy loading des composants lourds
+
+### UX/UI
+- Feedback visuel immédiat (couleurs, icônes)
+- Messages d'erreur clairs et contextuels
+- Loading states pendant les appels API
+- Confirmations pour les actions destructives
+
+### Code
+- Séparation des concerns (services/composants/screens)
+- Configuration centralisée (api.config.js)
+- Gestion d'erreur unifiée
+- Typage avec PropTypes (optionnel)
+
+## 🐛 Dépannage Frontend
+
+### Problème : Page blanche au chargement
+**Solutions :**
+1. Vérifier la console du navigateur (F12)
+2. Vérifier que le backend est démarré (http://localhost:8000)
+3. Vider le cache et recharger (Ctrl+Shift+R)
+
+### Problème : Erreur "Not authenticated"
+**Solutions :**
+1. Se déconnecter et se reconnecter
+2. Vérifier que le token existe dans localStorage
+3. Vérifier la date d'expiration du token
+
+### Problème : Statistiques à 0
+**Solutions :**
+1. Vérifier que des transactions existent dans la base
+2. Vérifier les logs backend pour les erreurs d'API
+3. S'assurer que le user_id correspond dans les transactions
+
+### Problème : Navigation compressée
+**Solutions :**
+1. Gap CSS réduit à 12px dans App.css
+2. Pas de flex-wrap pour garder sur une ligne
+3. Responsive design à vérifier pour petits écrans
+
+## 📱 Développement
+
+### Commandes utiles
+```bash
+# Démarrer le dev server
+npm run dev
+
+# Build pour production
+npm run build
+
+# Preview du build
+npm run preview
+
+# Installer les dépendances
+npm install
+```
+
+### Variables d'environnement
+Aucune variable d'environnement requise pour le moment. La configuration API est dans `src/config/api.config.js`.
+
+### Hot Module Replacement (HMR)
+Vite supporte le HMR automatiquement. Les modifications sont visibles instantanément sans rechargement complet de la page.
+
+---
+
+**Dernière mise à jour** : 27 novembre 2025
+**Version** : 1.0.0
 ```javascript
 // Éléments principaux
 - StatCard (cartes de statistiques)

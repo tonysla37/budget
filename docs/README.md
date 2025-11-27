@@ -91,6 +91,19 @@ budget/
 
 ## Installation et démarrage
 
+### Méthode rapide : Démarrage automatique
+
+```bash
+# Démarrer le backend
+cd backend
+source venv/bin/activate
+nohup python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
+
+# Démarrer le frontend
+cd ../frontend
+nohup npm run dev > /tmp/frontend.log 2>&1 &
+```
+
 ### Méthode 1 : Tests et déploiement complet
 
 Pour tester et déployer l'application complète :
@@ -123,7 +136,7 @@ Pour tester et déployer l'application complète :
 cd backend && source venv/bin/activate && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Dans un nouveau terminal, démarrer le frontend
-cd frontend && npm start
+cd frontend && npm run dev
 ```
 
 ## Utilisation
@@ -135,15 +148,74 @@ cd frontend && npm start
 - **Health check** : http://localhost:8000/api/health
 - **Health check DB** : http://localhost:8000/api/health/db
 
-### Frontend (React Native/Expo)
+### Frontend (React + Vite)
 - **Application web** : http://localhost:19006
-- **QR Code Expo** : Affiché dans le terminal lors du démarrage
+
+## Fonctionnalités principales
+
+### ✅ Authentification et sécurité
+- Connexion/Inscription avec email et mot de passe
+- Tokens JWT pour l'authentification
+- Protection des routes avec ProtectedRoute
+- Gestion sécurisée du stockage local (localStorage)
+
+### ✅ Gestion des transactions
+- Ajout de transactions (revenus/dépenses)
+- Modification et suppression
+- Filtrage par catégorie, date, montant
+- Recherche par description ou merchant
+- Champ merchant optionnel pour identifier le commerçant
+- Affichage hiérarchique "Parent › Sous-catégorie"
+
+### ✅ Catégories hiérarchiques
+- Catégories parentes et sous-catégories (2 niveaux max)
+- Couleurs personnalisées pour chaque catégorie
+- Création, modification, suppression de catégories
+- Affichage avec format "Parent › Sous-catégorie"
+- Validation de la hiérarchie (max 2 niveaux)
+
+### ✅ Budgets intelligents
+- Création de budgets mensuels par catégorie
+- Calcul automatique incluant les sous-catégories
+- Indicateurs visuels : OK (vert), Attention (orange), Dépassé (rouge)
+- Affichage "Dépassé de X%" quand budget dépassé
+- Liste des transactions impliquées (expandable)
+- Regroupement par sous-catégorie avec couleurs
+- Filtrage par mois en cours
+
+### ✅ Tableau de bord
+- Statistiques du mois en cours
+- Solde actuel et évolution
+- Transactions récentes avec merchant
+- Graphiques des dépenses par catégorie
+- Indicateurs de performance
+
+### ✅ Statistiques et rapports
+- Rapports mensuels sur 6 mois
+- Graphiques interactifs (revenus, dépenses, économies, net)
+- Cartes de synthèse (totaux et moyennes)
+- Tableau détaillé par mois avec taux d'épargne
+- Évolution temporelle visualisée
 
 ## Informations de connexion pour les tests
-- **Email** : test@example.com
-- **Mot de passe** : password123
+- **Ancien utilisateur** : test@example.com (mot de passe obsolète)
+- **Nouvel utilisateur** : demo@example.com / Demo1234!
+
+💡 **Note** : Créez votre propre compte via l'écran d'inscription pour commencer.
 
 ## Tests et déploiement
+
+### Tests rapides
+```bash
+# Script de test final complet
+./test_final.sh
+```
+
+**Résultats attendus** :
+- ✅ Backend : Swagger accessible, API fonctionnelle
+- ✅ Frontend : Application web chargée
+- ✅ MongoDB : Base de données connectée avec données
+- ✅ Processus : Backend (uvicorn) et Frontend (vite) actifs
 
 ### Logs des tests
 - **Tests de base de données** : `logs/test_database.log`
@@ -152,8 +224,13 @@ cd frontend && npm start
 - **Tests d'ensemble** : `logs/test_all.log`
 
 ### Logs de déploiement
-- **Backend** : `backend/deploy_output.log`
-- **Frontend** : `frontend/deploy_output.log`
+- **Backend** : `/tmp/backend.log`
+- **Frontend** : `/tmp/frontend.log`
+
+### Documentation détaillée
+- **Tests complets** : [docs/TESTS.md](TESTS.md)
+- **Frontend** : [docs/FRONTEND.md](FRONTEND.md)
+- **Scripts de test** : [docs/scripts_de_test.md](scripts_de_test.md)
 
 ## Dépannage
 
