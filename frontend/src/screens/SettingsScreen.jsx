@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getSettings, updateSettings } from '../services/settingsService';
 import { Save, Calendar, User, Mail, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { t } from '../i18n';
 
 export default function SettingsScreen() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function SettingsScreen() {
       });
     } catch (error) {
       console.error('Erreur lors du chargement du profil:', error);
-      setMessage({ type: 'error', text: 'Impossible de charger le profil' });
+      setMessage({ type: 'error', text: t('settings.errorLoading') });
     } finally {
       setIsLoading(false);
     }
@@ -49,17 +50,17 @@ export default function SettingsScreen() {
         last_name: profile.last_name,
         billing_cycle_day: profile.billing_cycle_day
       });
-      setMessage({ type: 'success', text: 'Paramètres sauvegardés avec succès !' });
+      setMessage({ type: 'success', text: t('settings.successMessage') });
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      setMessage({ type: 'error', text: 'Erreur lors de la sauvegarde des paramètres' });
+      setMessage({ type: 'error', text: t('settings.errorMessage') });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleLogout = () => {
-    if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+    if (window.confirm(t('settings.logoutConfirm'))) {
       logout();
       navigate('/login');
     }
@@ -96,7 +97,7 @@ export default function SettingsScreen() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">{t('settings.loading')}</p>
         </div>
       </div>
     );
@@ -107,8 +108,8 @@ export default function SettingsScreen() {
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Paramètres</h1>
-          <p className="text-gray-600 mt-1">Gérer votre profil et vos préférences</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('settings.title')}</h1>
+          <p className="text-gray-600 mt-1">{t('settings.subtitle')}</p>
         </div>
       </div>
 
@@ -130,7 +131,7 @@ export default function SettingsScreen() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center">
               <User className="h-5 w-5 text-gray-400 mr-2" />
-              <h2 className="text-xl font-semibold text-gray-900">Informations personnelles</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t('settings.profileTitle')}</h2>
             </div>
           </div>
           
@@ -138,7 +139,7 @@ export default function SettingsScreen() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Mail className="inline h-4 w-4 mr-1" />
-                Email
+                {t('settings.emailLabel')}
               </label>
               <input
                 type="email"
@@ -146,33 +147,33 @@ export default function SettingsScreen() {
                 disabled
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
               />
-              <p className="text-xs text-gray-500 mt-1">L'email ne peut pas être modifié</p>
+              <p className="text-xs text-gray-500 mt-1">{t('settings.emailNote')}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prénom
+                  {t('settings.firstNameLabel')}
                 </label>
                 <input
                   type="text"
                   value={profile.first_name}
                   onChange={(e) => setProfile({ ...profile, first_name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Votre prénom"
+                  placeholder={t('settings.firstNamePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom
+                  {t('settings.lastNameLabel')}
                 </label>
                 <input
                   type="text"
                   value={profile.last_name}
                   onChange={(e) => setProfile({ ...profile, last_name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Votre nom"
+                  placeholder={t('settings.lastNamePlaceholder')}
                 />
               </div>
             </div>
@@ -184,17 +185,17 @@ export default function SettingsScreen() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center">
               <Calendar className="h-5 w-5 text-gray-400 mr-2" />
-              <h2 className="text-xl font-semibold text-gray-900">Période de référence</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t('settings.billingTitle')}</h2>
             </div>
             <p className="text-sm text-gray-600 mt-1">
-              Définissez le jour de début de votre cycle budgétaire mensuel
+              {t('settings.billingSubtitle')}
             </p>
           </div>
           
           <div className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Jour de début du cycle
+                {t('settings.billingDayLabel')}
               </label>
               <select
                 value={profile.billing_cycle_day}
@@ -208,7 +209,7 @@ export default function SettingsScreen() {
                 ))}
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Par exemple, si vous êtes payé le 25, sélectionnez "Le 25 de chaque mois"
+                {t('settings.billingNote')}
               </p>
             </div>
 
@@ -225,12 +226,12 @@ export default function SettingsScreen() {
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <p className="text-sm text-gray-700">
-                <strong>Comment ça fonctionne ?</strong>
+                <strong>{t('settings.howItWorks')}</strong>
               </p>
               <ul className="text-sm text-gray-600 mt-2 space-y-1 list-disc list-inside">
-                <li>Le filtre "Mois en cours" utilisera votre cycle personnalisé</li>
-                <li>Le filtre "Mois dernier" utilisera le cycle précédent</li>
-                <li>Les statistiques du tableau de bord s'adapteront automatiquement</li>
+                <li>{t('settings.howItWorksItems.0')}</li>
+                <li>{t('settings.howItWorksItems.1')}</li>
+                <li>{t('settings.howItWorksItems.2')}</li>
               </ul>
             </div>
           </div>
@@ -244,7 +245,7 @@ export default function SettingsScreen() {
             className="flex-1 flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             <Save className="h-5 w-5 mr-2" />
-            {isSaving ? 'Sauvegarde...' : 'Sauvegarder les modifications'}
+            {isSaving ? t('settings.saving') : t('settings.save')}
           </button>
 
           <button
@@ -252,7 +253,7 @@ export default function SettingsScreen() {
             className="flex items-center justify-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
           >
             <LogOut className="h-5 w-5 mr-2" />
-            Se déconnecter
+            {t('settings.logout')}
           </button>
         </div>
       </div>

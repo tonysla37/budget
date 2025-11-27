@@ -4,6 +4,7 @@ import { createTransaction } from '../services/transactionService';
 import { formatDate } from '../utils/formatters';
 import CategorySelector from '../components/CategorySelector';
 import { Plus, Minus, Calendar, ArrowLeft } from 'lucide-react';
+import { t } from '../i18n';
 
 export default function AddTransactionScreen() {
   const [type, setType] = useState('expense');
@@ -19,13 +20,13 @@ export default function AddTransactionScreen() {
     e.preventDefault();
     
     if (!description.trim() || !amount.trim() || !categoryId) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      alert(t('addTransaction.errorRequired'));
       return;
     }
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      alert('Veuillez entrer un montant valide');
+      alert(t('addTransaction.errorAmount'));
       return;
     }
 
@@ -43,7 +44,7 @@ export default function AddTransactionScreen() {
       navigate('/transactions');
     } catch (error) {
       console.error('Erreur lors de la création:', error);
-      alert('Impossible de créer la transaction');
+      alert(t('addTransaction.errorCreate'));
     } finally {
       setIsLoading(false);
     }
@@ -60,14 +61,14 @@ export default function AddTransactionScreen() {
           >
             <ArrowLeft size={24} className="text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Nouvelle transaction</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('addTransaction.title')}</h1>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <form onSubmit={handleSubmit}>
             {/* Sélecteur de type */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('addTransaction.typeLabel')}</label>
               <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
@@ -79,7 +80,7 @@ export default function AddTransactionScreen() {
                   onClick={() => setType('expense')}
                 >
                   <Minus size={20} className="mr-2" />
-                  <span className="font-medium">Dépense</span>
+                  <span className="font-medium">{t('addTransaction.typeExpense')}</span>
                 </button>
                 
                 <button
@@ -92,18 +93,18 @@ export default function AddTransactionScreen() {
                   onClick={() => setType('income')}
                 >
                   <Plus size={20} className="mr-2" />
-                  <span className="font-medium">Revenu</span>
+                  <span className="font-medium">{t('addTransaction.typeIncome')}</span>
                 </button>
               </div>
             </div>
 
             {/* Description */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('addTransaction.descriptionLabel')}</label>
               <input
                 type="text"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ex: Courses alimentaires"
+                placeholder={t('addTransaction.descriptionPlaceholder')}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={100}
@@ -112,11 +113,11 @@ export default function AddTransactionScreen() {
 
             {/* Commerçant */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Commerçant (optionnel)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('addTransaction.merchantLabel')}</label>
               <input
                 type="text"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ex: SNCF, Carrefour, EDF..."
+                placeholder={t('addTransaction.merchantPlaceholder')}
                 value={merchant}
                 onChange={(e) => setMerchant(e.target.value)}
                 maxLength={100}
@@ -125,12 +126,12 @@ export default function AddTransactionScreen() {
 
             {/* Montant */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Montant (€)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('addTransaction.amountLabel')}</label>
               <input
                 type="number"
                 step="0.01"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0.00"
+                placeholder={t('addTransaction.amountPlaceholder')}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
@@ -138,7 +139,7 @@ export default function AddTransactionScreen() {
 
             {/* Date */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('addTransaction.dateLabel')}</label>
               <input
                 type="date"
                 value={date}
@@ -162,7 +163,7 @@ export default function AddTransactionScreen() {
                 onClick={() => navigate(-1)}
                 className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Annuler
+                {t('addTransaction.cancel')}
               </button>
               <button
                 type="submit"
@@ -171,7 +172,7 @@ export default function AddTransactionScreen() {
                   isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isLoading ? 'Création...' : 'Créer la transaction'}
+                {isLoading ? t('addTransaction.creating') : t('addTransaction.create')}
               </button>
             </div>
           </form>

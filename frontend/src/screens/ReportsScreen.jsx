@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getMonthlyReports } from '../services/reportService';
 import { formatCurrency } from '../utils/formatters';
 import { TrendingUp, TrendingDown, Calendar, PiggyBank, BarChart3, LineChart } from 'lucide-react';
+import { t } from '../i18n';
 
 export default function ReportsScreen() {
   const [reports, setReports] = useState([]);
@@ -109,7 +110,7 @@ export default function ReportsScreen() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des statistiques...</p>
+          <p className="text-gray-600">{t('reports.loading')}</p>
         </div>
       </div>
     );
@@ -120,8 +121,8 @@ export default function ReportsScreen() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <BarChart3 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Aucune donnée disponible</h2>
-          <p className="text-gray-500">Aucune statistique n'a pu être chargée pour les 6 derniers mois.</p>
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">{t('reports.noData')}</h2>
+          <p className="text-gray-500">{t('reports.noDataSubtitle')}</p>
         </div>
       </div>
     );
@@ -138,8 +139,8 @@ export default function ReportsScreen() {
                 <BarChart3 className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Statistiques et Rapports</h1>
-                <p className="text-sm text-gray-600">Évolution sur 6 mois</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('reports.title')}</h1>
+                <p className="text-sm text-gray-600">{t('reports.subtitle')}</p>
               </div>
             </div>
           </div>
@@ -165,26 +166,26 @@ export default function ReportsScreen() {
             {/* Dépenses totales */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Dépenses totales</span>
+                <span className="text-sm font-medium text-gray-600">{t('reports.totalExpensesLabel')}</span>
                 <TrendingDown className="h-5 w-5 text-red-600" />
               </div>
               <div className="text-3xl font-bold text-gray-900">{formatCurrency(stats.totalExpenses)}</div>
               <div className="text-sm text-gray-500 mt-1">
-                Moyenne : {formatCurrency(stats.avgExpenses)}/mois
+                {t('reports.avgMonthly')} {formatCurrency(stats.avgExpenses)}/mois
               </div>
             </div>
 
             {/* Économies */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600">Économies</span>
+                <span className="text-sm font-medium text-gray-600">{t('reports.savingsLabel')}</span>
                 <PiggyBank className="h-5 w-5 text-blue-600" />
               </div>
               <div className={`text-3xl font-bold ${stats.totalSavings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(stats.totalSavings)}
               </div>
               <div className="text-sm text-gray-500 mt-1">
-                Taux d'épargne : {stats.savingsRate.toFixed(1)}%
+                {t('reports.savingsRateLabel')} {stats.savingsRate.toFixed(1)}%
               </div>
             </div>
           </div>
@@ -193,7 +194,7 @@ export default function ReportsScreen() {
         {/* Graphique d'évolution */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Évolution mensuelle</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('reports.monthlyEvolution')}</h2>
             
             {/* Sélecteur de métrique */}
             <div className="flex gap-2 flex-wrap">
@@ -205,7 +206,7 @@ export default function ReportsScreen() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                Revenus
+                {t('reports.metricIncome')}
               </button>
               <button
                 onClick={() => setSelectedMetric('expenses')}
@@ -215,7 +216,7 @@ export default function ReportsScreen() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                Dépenses
+                {t('reports.metricExpenses')}
               </button>
               <button
                 onClick={() => setSelectedMetric('savings')}
@@ -225,7 +226,7 @@ export default function ReportsScreen() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                Économies
+                {t('reports.metricSavings')}
               </button>
               <button
                 onClick={() => setSelectedMetric('net')}
@@ -235,7 +236,7 @@ export default function ReportsScreen() {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                Solde net
+                {t('reports.metricNet')}
               </button>
             </div>
           </div>
@@ -277,16 +278,16 @@ export default function ReportsScreen() {
 
         {/* Détails mensuels */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Détails par mois</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('reports.detailsByMonth')}</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Mois</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Revenus</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Dépenses</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Économies</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Tx. épargne</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.monthColumn')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.incomeColumn')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.expensesColumn')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.savingsColumn')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.savingsRateColumn')}</th>
                 </tr>
               </thead>
               <tbody>

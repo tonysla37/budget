@@ -82,8 +82,8 @@ const RegisterScreen = () => {
           >
             <ArrowLeft size={20} />
           </button>
-          <h1>Créer un compte</h1>
-          <p>Rejoignez Budget App</p>
+          <h1>{t('auth.createAccount')}</h1>
+          <p>{t('auth.joinApp')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -100,7 +100,7 @@ const RegisterScreen = () => {
               value={formData.first_name}
               onChange={handleChange}
               className="form-input"
-              placeholder="Votre prénom"
+              placeholder={t('auth.firstNamePlaceholder')}
               required
             />
           </div>
@@ -116,7 +116,7 @@ const RegisterScreen = () => {
               value={formData.last_name}
               onChange={handleChange}
               className="form-input"
-              placeholder="Votre nom"
+              placeholder={t('auth.lastNamePlaceholder')}
               required
             />
           </div>
@@ -132,7 +132,7 @@ const RegisterScreen = () => {
               value={formData.email}
               onChange={handleChange}
               className="form-input"
-              placeholder="votre@email.com"
+              placeholder={t('auth.emailPlaceholder')}
               required
             />
           </div>
@@ -149,7 +149,7 @@ const RegisterScreen = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className="form-input"
-                placeholder="Votre mot de passe"
+                placeholder={t('auth.passwordPlaceholder')}
                 required
               />
               <button
@@ -174,7 +174,7 @@ const RegisterScreen = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className="form-input"
-                placeholder="Confirmez votre mot de passe"
+                placeholder={t('auth.confirmPasswordPlaceholder')}
                 required
               />
               <button
@@ -197,12 +197,12 @@ const RegisterScreen = () => {
         </form>
 
         <div className="login-footer">
-          <p>Déjà un compte ?</p>
+          <p>{t('auth.alreadyAccount')}</p>
           <button 
             className="btn btn-secondary"
             onClick={() => navigate('/login')}
           >
-            Se connecter
+            {t('auth.loginButton')}
           </button>
         </div>
       </div>

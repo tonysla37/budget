@@ -50,7 +50,7 @@ export default function DashboardScreen() {
 
   // Fonction pour obtenir le nom à partir de l'objet category de la transaction
   const getTransactionCategoryName = (transaction) => {
-    if (!transaction.category) return 'Sans catégorie';
+    if (!transaction.category) return t('dashboard.noCategory');
     
     // Si le backend a déjà fourni le parent_name
     if (transaction.category.parent_name) {
@@ -160,7 +160,7 @@ export default function DashboardScreen() {
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Date début"
+                    placeholder={t('filters.startDatePlaceholder')}
                   />
                   <span className="text-gray-500">-</span>
                   <input
@@ -168,7 +168,7 @@ export default function DashboardScreen() {
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Date fin"
+                    placeholder={t('filters.endDatePlaceholder')}
                   />
                 </>
               )}
@@ -206,14 +206,14 @@ export default function DashboardScreen() {
           <StatCard
             title={t('dashboard.netBalance')}
             value={formatCurrency((dashboardData?.total_income || 0) - (dashboardData?.total_expenses || 0))}
-            subtitle="Net"
+            subtitle={t('dashboard.net')}
             color="#3b82f6"
             icon={Wallet}
           />
           <StatCard
-            title="Épargne"
+            title={t('dashboard.savings')}
             value={formatCurrency(dashboardData?.savings || 0)}
-            subtitle="Objectif"
+            subtitle={t('dashboard.objective')}
             color="#8b5cf6"
             icon={Save}
           />
@@ -221,28 +221,28 @@ export default function DashboardScreen() {
 
         {/* Actions rapides */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Actions rapides</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('dashboard.quickActions')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button
               onClick={() => navigate('/add-transaction')}
               className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <Plus className="h-6 w-6 text-gray-400 mr-2" />
-              <span className="text-gray-600">Ajouter une transaction</span>
+              <span className="text-gray-600">{t('dashboard.addTransaction')}</span>
             </button>
             <button
               onClick={() => navigate('/categories')}
               className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <Plus className="h-6 w-6 text-gray-400 mr-2" />
-              <span className="text-gray-600">Gérer les catégories</span>
+              <span className="text-gray-600">{t('dashboard.manageCategories')}</span>
             </button>
             <button
               onClick={() => navigate('/reports')}
               className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors"
             >
               <Plus className="h-6 w-6 text-gray-400 mr-2" />
-              <span className="text-gray-600">Voir les rapports</span>
+              <span className="text-gray-600">{t('dashboard.viewReports')}</span>
             </button>
           </div>
         </div>
@@ -250,7 +250,7 @@ export default function DashboardScreen() {
         {/* Dépenses par catégorie */}
         {dashboardData?.expenses_by_category && dashboardData.expenses_by_category.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Dépenses par catégorie</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('dashboard.expensesByCategory')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {dashboardData.expenses_by_category.map((category, index) => (
                 <CategoryCard key={index} category={category} />
@@ -262,7 +262,7 @@ export default function DashboardScreen() {
         {/* Revenus par catégorie */}
         {dashboardData?.income_by_category && dashboardData.income_by_category.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenus par catégorie</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('dashboard.incomeByCategory')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {dashboardData.income_by_category.map((category, index) => (
                 <CategoryCard key={index} category={category} />
@@ -275,12 +275,12 @@ export default function DashboardScreen() {
         {dashboardData?.recent_transactions && dashboardData.recent_transactions.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Transactions récentes</h2>
+              <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.recentTransactions')}</h2>
               <button
                 onClick={() => navigate('/transactions')}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                Voir tout
+                {t('dashboard.viewAll')}
               </button>
             </div>
             <div className="space-y-3">
@@ -322,16 +322,16 @@ export default function DashboardScreen() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <div className="max-w-md mx-auto">
               <Wallet className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Bienvenue dans votre tableau de bord !</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{t('dashboard.welcomeMessage')}</h3>
               <p className="text-gray-600 mb-6">
-                Commencez par ajouter vos premières transactions pour voir vos statistiques ici.
+                {t('dashboard.welcomeSubtitle')}
               </p>
               <button
                 onClick={() => navigate('/add-transaction')}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter ma première transaction
+                {t('dashboard.addFirstTransaction')}
               </button>
             </div>
           </div>

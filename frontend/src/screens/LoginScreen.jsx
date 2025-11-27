@@ -80,7 +80,7 @@ const LoginScreen = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="votre@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                   />
                 </div>
               </div>
@@ -99,7 +99,7 @@ const LoginScreen = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Votre mot de passe"
+                    placeholder={t('auth.passwordPlaceholder')}
                   />
                   <button
                     type="button"

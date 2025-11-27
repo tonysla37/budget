@@ -4,6 +4,7 @@ import { getCategories } from '../services/categoryService';
 import { getTransactions } from '../services/transactionService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { t } from '../i18n';
 
 export default function BudgetScreen() {
   const [budgets, setBudgets] = useState([]);
@@ -77,7 +78,7 @@ export default function BudgetScreen() {
   };
 
   const handleDelete = async (budgetId) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce budget ?')) return;
+    if (!confirm(t('budgets.deleteConfirm'))) return;
     try {
       await deleteBudget(budgetId);
       loadData();
@@ -88,8 +89,8 @@ export default function BudgetScreen() {
 
   const getBudgetStatus = (percentage) => {
     if (percentage >= 100) return { color: 'red', icon: AlertTriangle, text: '' };
-    if (percentage >= 80) return { color: 'orange', icon: AlertCircle, text: 'Attention' };
-    return { color: 'green', icon: CheckCircle2, text: 'OK' };
+    if (percentage >= 80) return { color: 'orange', icon: AlertCircle, text: t('budgets.statusWarning') };
+    return { color: 'green', icon: CheckCircle2, text: t('budgets.statusOk') };
   };
 
   const toggleBudgetExpansion = (budgetId) => {
@@ -132,7 +133,7 @@ export default function BudgetScreen() {
       
       // Si c'est une sous-catégorie, grouper par son nom
       const groupKey = txCategory.parent_id ? txCategory.id : 'parent';
-      const groupName = txCategory.parent_id ? txCategory.name : 'Autres';
+      const groupName = txCategory.parent_id ? txCategory.name : t('dashboard.others');
       
       if (!grouped[groupKey]) {
         grouped[groupKey] = {
@@ -186,19 +187,19 @@ export default function BudgetScreen() {
 
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Budget alloué</span>
+            <span className="text-gray-600">{t('budgets.allocated')}</span>
             <span className="font-semibold text-gray-900">{formatCurrency(budget.amount)}</span>
           </div>
           
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Dépensé</span>
+            <span className="text-gray-600">{t('budgets.spent')}</span>
             <span className={`font-semibold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
               {formatCurrency(budget.spent)}
             </span>
           </div>
 
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Restant</span>
+            <span className="text-gray-600">{t('budgets.remaining')}</span>
             <span className={`font-semibold ${budget.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
               {budget.remaining < 0 ? '- ' : ''}{formatCurrency(Math.abs(budget.remaining))}
             </span>
@@ -213,7 +214,7 @@ export default function BudgetScreen() {
                   className={`text-${status.color}-600`}
                 />
                 <span className={`text-sm font-medium text-${status.color}-600`}>
-                  {budget.percentage >= 100 ? `Dépassé de ${budget.percentage.toFixed(1)}%` : status.text}
+                  {budget.percentage >= 100 ? `${t('budgets.exceeded')} ${budget.percentage.toFixed(1)}%` : status.text}
                 </span>
               </div>
               <span className={`text-sm font-bold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
@@ -241,12 +242,12 @@ export default function BudgetScreen() {
               {isExpanded ? (
                 <>
                   <ChevronUp size={16} />
-                  Masquer les transactions
+                  {t('budgets.hideTransactions')}
                 </>
               ) : (
                 <>
                   <ChevronDown size={16} />
-                  Voir les transactions du mois ({totalTransactions})
+                  {t('budgets.showTransactions')} ({totalTransactions})
                 </>
               )}
             </button>
@@ -255,7 +256,7 @@ export default function BudgetScreen() {
           {/* Liste des transactions groupées par sous-catégorie */}
           {isExpanded && totalTransactions > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Transactions du mois en cours</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">{t('budgets.currentMonthTransactions')}</h4>
               <div className="space-y-4">
                 {transactionsBySubcategory.map((group, groupIndex) => (
                   <div key={groupIndex}>
@@ -312,7 +313,7 @@ export default function BudgetScreen() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des budgets...</p>
+          <p className="text-gray-600">{t('budgets.loading')}</p>
         </div>
       </div>
     );
@@ -338,7 +339,7 @@ export default function BudgetScreen() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Budgets</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('budgets.title')}</h1>
               <p className="text-gray-600 mt-1">
                 Gérez vos budgets par catégorie et suivez vos dépenses
               </p>
@@ -349,8 +350,8 @@ export default function BudgetScreen() {
                 onChange={(e) => setPeriodType(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="monthly">Mensuel</option>
-                <option value="yearly">Annuel</option>
+                <option value="monthly">{t('budgets.periodMonthly')}</option>
+                <option value="yearly">{t('budgets.periodYearly')}</option>
               </select>
               <button
                 onClick={() => {
@@ -361,7 +362,7 @@ export default function BudgetScreen() {
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Plus className="h-5 w-5 mr-2" />
-                Nouveau budget
+                {t('budgets.add')}
               </button>
             </div>
           </div>
@@ -384,7 +385,7 @@ export default function BudgetScreen() {
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Créer mon premier budget
+              {t('budgets.add')}
             </button>
           </div>
         ) : (
@@ -401,13 +402,13 @@ export default function BudgetScreen() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {editingBudget ? 'Modifier le budget' : 'Nouveau budget'}
+              {editingBudget ? t('budgets.modalTitleEdit') : t('budgets.modalTitle')}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!editingBudget && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Catégorie
+                    {t('budgets.categoryLabel')}
                   </label>
                   <select
                     value={formData.category_id}
@@ -415,7 +416,7 @@ export default function BudgetScreen() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   >
-                    <option value="">Sélectionner une catégorie</option>
+                    <option value="">{t('budgets.categoryPlaceholder')}</option>
                     {availableCategories.map(cat => (
                       <option key={cat.id} value={cat.id}>
                         {getCategoryDisplayName(cat)}
@@ -427,7 +428,7 @@ export default function BudgetScreen() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Montant du budget (€)
+                  {t('budgets.amountLabel')}
                 </label>
                 <input
                   type="number"
@@ -437,7 +438,7 @@ export default function BudgetScreen() {
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  placeholder="500.00"
+                  placeholder={t('budgets.amountPlaceholder')}
                 />
               </div>
 
@@ -451,13 +452,13 @@ export default function BudgetScreen() {
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                 >
-                  Annuler
+                  {t('budgets.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  {editingBudget ? 'Mettre à jour' : 'Créer'}
+                  {editingBudget ? t('budgets.edit') : t('budgets.save')}
                 </button>
               </div>
             </form>

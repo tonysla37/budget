@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../services/categoryService';
+import { t } from '../i18n';
 
 const CategoriesScreen = () => {
   const [categories, setCategories] = useState([]);
@@ -49,7 +50,7 @@ const CategoriesScreen = () => {
       closeModal();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
-      alert('Impossible de sauvegarder la catégorie');
+      alert(t('categories.saveError'));
     }
   };
 
@@ -66,13 +67,13 @@ const CategoriesScreen = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette catégorie ?')) {
+    if (window.confirm(t('categories.deleteConfirm'))) {
       try {
         await deleteCategory(id);
         await loadCategories();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Impossible de supprimer la catégorie');
+        alert(t('categories.deleteError'));
       }
     }
   };
@@ -159,7 +160,7 @@ const CategoriesScreen = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <p className="text-gray-600">{t('categories.loading')}</p>
         </div>
       </div>
     );
@@ -172,7 +173,7 @@ const CategoriesScreen = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Catégories</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('categories.title')}</h1>
               <p className="text-gray-600 mt-1">{categories.length} catégorie{categories.length !== 1 ? 's' : ''}</p>
             </div>
             <button 
@@ -180,7 +181,7 @@ const CategoriesScreen = () => {
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter
+              {t('common.add')}
             </button>
           </div>
         </div>
@@ -219,11 +220,11 @@ const CategoriesScreen = () => {
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {category.type === 'income' ? 'Revenu' : 'Dépense'}
+                          {category.type === 'income' ? t('categories.typeIncome') : t('categories.typeExpense')}
                         </span>
                         {category.subcategories.length > 0 && (
                           <span className="text-xs text-gray-500">
-                            {category.subcategories.length} sous-catégorie{category.subcategories.length !== 1 ? 's' : ''}
+                            {category.subcategories.length} {t('categories.subcategories')}
                           </span>
                         )}
                       </div>
@@ -233,7 +234,7 @@ const CategoriesScreen = () => {
                     <button 
                       onClick={() => handleAddSubcategory(category)}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                      title="Ajouter une sous-catégorie"
+                      title={t('categories.addSubcategory')}
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -296,13 +297,13 @@ const CategoriesScreen = () => {
             <div className="text-gray-400 mb-4">
               <Plus size={48} className="mx-auto" />
             </div>
-            <p className="text-gray-600 mb-4">Aucune catégorie</p>
+            <p className="text-gray-600 mb-4">{t('categories.title')}</p>
             <button 
               onClick={() => setShowModal(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Ajouter votre première catégorie
+              {t('categories.add')}
             </button>
           </div>
         )}
@@ -314,7 +315,7 @@ const CategoriesScreen = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">
-                {editingCategory ? 'Modifier' : 'Ajouter'} une catégorie
+                {editingCategory ? t('categories.modalTitleEdit') : t('categories.modalTitle')}
               </h2>
               <button 
                 onClick={closeModal}
@@ -326,37 +327,37 @@ const CategoriesScreen = () => {
             
             <form onSubmit={handleSubmit} className="p-6">
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nom</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('categories.nameLabel')}</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nom de la catégorie"
+                  placeholder={t('categories.namePlaceholder')}
                   required
                 />
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('categories.typeLabel')}</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({...formData, type: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={formData.parent_id}
                 >
-                  <option value="expense">Dépense</option>
-                  <option value="income">Revenu</option>
+                  <option value="expense">{t('categories.typeExpense')}</option>
+                  <option value="income">{t('categories.typeIncome')}</option>
                 </select>
                 {formData.parent_id && (
-                  <p className="text-xs text-gray-500 mt-1">Le type est hérité de la catégorie parente</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('categories.typeInherited')}</p>
                 )}
               </div>
 
               {!editingCategory && !formData.parent_id && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Catégorie parente (optionnel)
+                    {t('categories.parentLabel')}
                   </label>
                   <select
                     value={formData.parent_id || ''}
@@ -375,7 +376,7 @@ const CategoriesScreen = () => {
                     }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Aucune (catégorie principale)</option>
+                    <option value="">{t('categories.parentNone')}</option>
                     {categories.filter(cat => !cat.parent_id && cat.type === formData.type).map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -387,11 +388,11 @@ const CategoriesScreen = () => {
               )}
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Couleur</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('categories.colorLabel')}</label>
                 
                 {/* Sélecteur de couleur personnalisée */}
                 <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <label className="block text-xs font-medium text-gray-600 mb-2">Couleur personnalisée</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">{t('categories.customColor')}</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
@@ -419,7 +420,7 @@ const CategoriesScreen = () => {
 
                 {/* Palette prédéfinie */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-2">Couleurs prédéfinies</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">{t('categories.predefinedColors')}</label>
                   <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
                     {colorOptions.map(color => (
                       <button
@@ -448,13 +449,13 @@ const CategoriesScreen = () => {
                   onClick={closeModal}
                   className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
-                  Annuler
+                  {t('categories.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  {editingCategory ? 'Modifier' : 'Ajouter'}
+                  {editingCategory ? t('categories.edit') : t('categories.save')}
                 </button>
               </div>
             </form>

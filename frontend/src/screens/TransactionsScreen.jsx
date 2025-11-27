@@ -5,6 +5,7 @@ import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X } from 'lucide-react';
+import { t } from '../i18n';
 
 export default function TransactionsScreen() {
   const [transactions, setTransactions] = useState([]);
@@ -30,7 +31,7 @@ export default function TransactionsScreen() {
       const profile = await getUserProfile();
       setBillingCycleDay(profile.billing_cycle_day || 1);
     } catch (error) {
-      console.error('Erreur lors du chargement du profil:', error);
+      console.error(t('transactions.errorLoading'), error);
     }
   };
 
@@ -39,7 +40,7 @@ export default function TransactionsScreen() {
       const data = await getCategories();
       setCategories(data || []);
     } catch (error) {
-      console.error('Erreur lors du chargement des catégories:', error);
+      console.error(t('transactions.errorLoading'), error);
     }
   };
 
@@ -62,13 +63,13 @@ export default function TransactionsScreen() {
   };
 
   const handleDeleteTransaction = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
+    if (window.confirm(t('transactions.deleteConfirm'))) {
       try {
         await deleteTransaction(id);
         loadTransactions();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert('Impossible de supprimer la transaction');
+        alert(t('transactions.deleteError'));
       }
     }
   };
@@ -88,7 +89,7 @@ export default function TransactionsScreen() {
 
   // Fonction pour obtenir le nom à partir de l'objet category de la transaction
   const getTransactionCategoryName = (transaction) => {
-    if (!transaction.category) return 'Sans catégorie';
+    if (!transaction.category) return t('transactions.noCategory');
     
     // Si le backend a déjà fourni le parent_name
     if (transaction.category.parent_name) {
@@ -185,7 +186,7 @@ export default function TransactionsScreen() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement des transactions...</p>
+          <p className="text-gray-600">{t('transactions.loading')}</p>
         </div>
       </div>
     );
@@ -198,9 +199,9 @@ export default function TransactionsScreen() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
+              <h1 className="text-3xl font-bold text-gray-900">{t('transactions.title')}</h1>
               <p className="text-gray-600 mt-1">
-                {filteredTransactions.length} sur {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+                {filteredTransactions.length} {t('common.search')} {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="flex gap-2">
@@ -213,14 +214,14 @@ export default function TransactionsScreen() {
                 }`}
               >
                 <Filter className="h-4 w-4 mr-2" />
-                Filtres
+                {t('transactions.filters')}
               </button>
               <button 
                 onClick={() => navigate('/add-transaction')}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter
+                {t('transactions.add')}
               </button>
             </div>
           </div>
@@ -233,7 +234,7 @@ export default function TransactionsScreen() {
         {showFilters && (
           <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Filtres</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{t('transactions.filters')}</h3>
               <button
                 onClick={() => setShowFilters(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -246,13 +247,13 @@ export default function TransactionsScreen() {
               {/* Type de transaction */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type de transaction
+                  {t('transactions.typeLabel')}
                 </label>
                 <div className="flex gap-2">
                   {[
-                    { key: 'all', label: 'Toutes' },
-                    { key: 'expense', label: 'Dépenses' },
-                    { key: 'income', label: 'Revenus' }
+                    { key: 'all', label: t('transactions.typeAll') },
+                    { key: 'expense', label: t('transactions.typeExpenses') },
+                    { key: 'income', label: t('transactions.typeIncome') }
                   ].map(type => (
                     <button
                       key={type.key}
@@ -272,15 +273,15 @@ export default function TransactionsScreen() {
               {/* Période */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Période
+                  {t('transactions.periodLabel')}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { key: 'all', label: 'Toutes' },
-                    { key: 'current', label: 'Mois en cours' },
-                    { key: 'last', label: 'Mois dernier' },
-                    { key: 'thisYear', label: 'Cette année' },
-                    { key: 'custom', label: 'Personnalisée' }
+                    { key: 'all', label: t('transactions.periodAll') },
+                    { key: 'current', label: t('transactions.periodCurrent') },
+                    { key: 'last', label: t('transactions.periodLast') },
+                    { key: 'thisYear', label: t('transactions.periodYear') },
+                    { key: 'custom', label: t('transactions.periodCustom') }
                   ].map(period => (
                     <button
                       key={period.key}
@@ -303,7 +304,7 @@ export default function TransactionsScreen() {
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date de début
+                    {t('transactions.startDateLabel')}
                   </label>
                   <input
                     type="date"
@@ -314,7 +315,7 @@ export default function TransactionsScreen() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Date de fin
+                    {t('transactions.endDateLabel')}
                   </label>
                   <input
                     type="date"
@@ -338,7 +339,7 @@ export default function TransactionsScreen() {
                   }}
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  Réinitialiser les filtres
+                  {t('transactions.resetFilters')}
                 </button>
               </div>
             )}
@@ -351,7 +352,7 @@ export default function TransactionsScreen() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
-              placeholder="Rechercher des transactions..."
+              placeholder={t('transactions.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -367,14 +368,14 @@ export default function TransactionsScreen() {
                 <Search size={48} className="mx-auto" />
               </div>
               <p className="text-gray-600 mb-4">
-                {searchTerm ? 'Aucune transaction trouvée' : 'Aucune transaction'}
+                {searchTerm ? t('transactions.noResults') : t('transactions.noTransactions')}
               </p>
               <button 
                 onClick={() => navigate('/add-transaction')}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter votre première transaction
+                {t('transactions.addFirst')}
               </button>
             </div>
           ) : (
@@ -416,14 +417,14 @@ export default function TransactionsScreen() {
                         <button
                           onClick={() => navigate('/edit-transaction', { state: { transaction } })}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Modifier"
+                          title={t('transactions.editTitle')}
                         >
                           <Edit size={18} />
                         </button>
                         <button
                           onClick={() => handleDeleteTransaction(transaction.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Supprimer"
+                          title={t('transactions.deleteTitle')}
                         >
                           <Trash2 size={18} />
                         </button>
