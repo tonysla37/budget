@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getMonthlyReports } from '../services/reportService';
 import { formatCurrency } from '../utils/formatters';
 import { TrendingUp, TrendingDown, Calendar, PiggyBank, BarChart3, LineChart } from 'lucide-react';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 export default function ReportsScreen() {
+  const { t } = useTranslation();
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState('net'); // 'net', 'expenses', 'income', 'savings'

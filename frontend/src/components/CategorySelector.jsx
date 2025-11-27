@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getCategories } from '../services/categoryService';
 import { ChevronDown, Check, ChevronRight } from 'lucide-react';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 export default function CategorySelector({ selectedCategoryId, onSelectCategory, type = 'expense' }) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

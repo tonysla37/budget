@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../services/categoryService';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 const CategoriesScreen = () => {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);

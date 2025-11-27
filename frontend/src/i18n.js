@@ -633,9 +633,15 @@ export const useTranslation = () => {
       forceUpdate({});
     };
     
+    // Écouter l'événement i18next natif
     i18n?.on('languageChanged', handleLanguageChanged);
+    
+    // Écouter aussi notre événement custom du LanguageSwitcher
+    window.addEventListener('languageChanged', handleLanguageChanged);
+    
     return () => {
       i18n?.off('languageChanged', handleLanguageChanged);
+      window.removeEventListener('languageChanged', handleLanguageChanged);
     };
   }, []);
   

@@ -4,9 +4,10 @@ import { getCategories } from '../services/categoryService';
 import { getTransactions } from '../services/transactionService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 export default function BudgetScreen() {
+  const { t } = useTranslation();
   const [budgets, setBudgets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);

@@ -5,9 +5,10 @@ import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X } from 'lucide-react';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 export default function TransactionsScreen() {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

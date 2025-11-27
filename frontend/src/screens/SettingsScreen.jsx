@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { getSettings, updateSettings } from '../services/settingsService';
 import { Save, Calendar, User, Mail, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 export default function SettingsScreen() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);

@@ -9,6 +9,8 @@ const LanguageSwitcher = () => {
     const newLang = currentLang === 'fr' ? 'en' : 'fr';
     changeLanguage(newLang);
     setCurrentLang(newLang);
+    // Forcer un re-render en émettant un événement
+    window.dispatchEvent(new Event('languageChanged'));
   };
 
   return (

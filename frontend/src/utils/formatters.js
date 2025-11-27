@@ -92,7 +92,9 @@ export const formatDate = (date, format = 'short') => {
     },
   };
 
-  return new Intl.DateTimeFormat('fr-FR', options[format] || options.short).format(dateObj);
+  // Utiliser la langue actuelle de i18n ou fr-FR par défaut
+  const locale = (typeof window !== 'undefined' && window.i18n?.language) || 'fr-FR';
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'fr-FR', options[format] || options.short).format(dateObj);
 };
 
 // Formatage des noms de catégories

@@ -4,9 +4,10 @@ import { createTransaction } from '../services/transactionService';
 import { formatDate } from '../utils/formatters';
 import CategorySelector from '../components/CategorySelector';
 import { Plus, Minus, Calendar, ArrowLeft } from 'lucide-react';
-import { t } from '../i18n';
+import { useTranslation } from '../i18n';
 
 export default function AddTransactionScreen() {
+  const { t } = useTranslation();
   const [type, setType] = useState('expense');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
