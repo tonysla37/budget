@@ -3,12 +3,15 @@ import { getMonthlyReports } from '../services/reportService';
 import { formatCurrency } from '../utils/formatters';
 import { TrendingUp, TrendingDown, Calendar, PiggyBank, BarChart3, LineChart } from 'lucide-react';
 import { useTranslation } from '../i18n';
+import LineChartComponent from '../components/LineChart';
+import BarChartComponent from '../components/BarChart';
 
 export default function ReportsScreen() {
   const { t } = useTranslation();
   const [reports, setReports] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMetric, setSelectedMetric] = useState('net'); // 'net', 'expenses', 'income', 'savings'
+  const [chartType, setChartType] = useState('line'); // 'line' ou 'bar'
 
   useEffect(() => {
     loadReports();
@@ -51,6 +54,15 @@ export default function ReportsScreen() {
         }
       }
       
+      // Calculer l'épargne cumulative (solde du compte qui s'accumule)
+      // TODO: Récupérer le solde initial depuis Boursorama API
+      // Pour l'instant, on commence à 0 et on accumule les soldes mensuels
+      let cumulativeSavings = 0;
+      monthsData.forEach(report => {
+        cumulativeSavings += report.net;
+        report.cumulative_savings = cumulativeSavings;
+      });
+      
       console.log('Tous les rapports chargés:', monthsData);
       setReports(monthsData);
     } catch (error) {
@@ -69,7 +81,7 @@ export default function ReportsScreen() {
       case 'net':
         return report.net;
       case 'savings':
-        return report.total_income - report.total_expenses;
+        return report.cumulative_savings || 0;
       default:
         return 0;
     }
@@ -86,7 +98,8 @@ export default function ReportsScreen() {
 
     const totalIncome = reports.reduce((sum, r) => sum + r.total_income, 0);
     const totalExpenses = reports.reduce((sum, r) => sum + r.total_expenses, 0);
-    const totalSavings = totalIncome - totalExpenses;
+    // L'épargne totale = le solde cumulé du dernier mois
+    const totalSavings = reports[reports.length - 1]?.cumulative_savings || 0;
     const avgIncome = totalIncome / reports.length;
     const avgExpenses = totalExpenses / reports.length;
     const savingsRate = totalIncome > 0 ? (totalSavings / totalIncome * 100) : 0;
@@ -195,85 +208,111 @@ export default function ReportsScreen() {
         {/* Graphique d'évolution */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('reports.monthlyEvolution')}</h2>
-            
-            {/* Sélecteur de métrique */}
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setSelectedMetric('income')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedMetric === 'income'
-                    ? 'bg-green-100 text-green-700 border-2 border-green-300'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('reports.metricIncome')}
-              </button>
-              <button
-                onClick={() => setSelectedMetric('expenses')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedMetric === 'expenses'
-                    ? 'bg-red-100 text-red-700 border-2 border-red-300'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('reports.metricExpenses')}
-              </button>
-              <button
-                onClick={() => setSelectedMetric('savings')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedMetric === 'savings'
-                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('reports.metricSavings')}
-              </button>
-              <button
-                onClick={() => setSelectedMetric('net')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedMetric === 'net'
-                    ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {t('reports.metricNet')}
-              </button>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">{t('reports.monthlyEvolution')}</h2>
+              
+              {/* Sélecteur de type de graphique */}
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setChartType('line')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                    chartType === 'line'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <LineChart size={16} />
+                  Courbe
+                </button>
+                <button
+                  onClick={() => setChartType('bar')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                    chartType === 'bar'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <BarChart3 size={16} />
+                  Barres
+                </button>
+              </div>
             </div>
+            
+            {/* Sélecteur de métrique (uniquement pour graphique en ligne) */}
+            {chartType === 'line' && (
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setSelectedMetric('income')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedMetric === 'income'
+                      ? 'bg-green-100 text-green-700 border-2 border-green-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t('reports.metricIncome')}
+                </button>
+                <button
+                  onClick={() => setSelectedMetric('expenses')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedMetric === 'expenses'
+                      ? 'bg-red-100 text-red-700 border-2 border-red-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t('reports.metricExpenses')}
+                </button>
+                <button
+                  onClick={() => setSelectedMetric('savings')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedMetric === 'savings'
+                      ? 'bg-blue-100 text-blue-700 border-2 border-blue-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t('reports.metricSavings')}
+                </button>
+                <button
+                  onClick={() => setSelectedMetric('net')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedMetric === 'net'
+                      ? 'bg-purple-100 text-purple-700 border-2 border-purple-300'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t('reports.metricNet')}
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Graphique en barres */}
-          <div className="space-y-4">
-            {reports.map((report, index) => {
-              const value = getMetricValue(report);
-              const percentage = maxValue > 0 ? (Math.abs(value) / maxValue) * 100 : 0;
-              const color = getMetricColor(value);
-              
-              return (
-                <div key={index} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-gray-700 w-24">{report.label}</span>
-                    <span className={`font-bold ${color === 'green' ? 'text-green-600' : color === 'red' ? 'text-red-600' : 'text-gray-900'}`}>
-                      {formatCurrency(Math.abs(value))}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-8 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 flex items-center justify-end pr-3 ${
-                        color === 'green' ? 'bg-green-500' :
-                        color === 'red' ? 'bg-red-500' :
-                        'bg-blue-500'
-                      }`}
-                      style={{ width: `${Math.max(percentage, 5)}%` }}
-                    >
-                      <span className="text-xs font-semibold text-white">
-                        {percentage.toFixed(0)}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Graphiques */}
+          <div className="mt-6">
+            {chartType === 'line' ? (
+              <LineChartComponent
+                data={reports.map(r => ({
+                  label: r.label,
+                  value: getMetricValue(r)
+                }))}
+                width={1000}
+                height={350}
+                color={
+                  selectedMetric === 'income' ? '#10b981' :
+                  selectedMetric === 'expenses' ? '#ef4444' :
+                  selectedMetric === 'savings' ? '#3b82f6' :
+                  '#8b5cf6'
+                }
+              />
+            ) : (
+              <BarChartComponent
+                data={reports.map(r => ({
+                  label: r.label,
+                  income: r.total_income,
+                  expenses: r.total_expenses
+                }))}
+                width={1000}
+                height={350}
+              />
+            )}
           </div>
         </div>
 
@@ -287,14 +326,14 @@ export default function ReportsScreen() {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.monthColumn')}</th>
                   <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.incomeColumn')}</th>
                   <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.expensesColumn')}</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.savingsColumn')}</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.savingsRateColumn')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">{t('reports.monthlyNetColumn')}</th>
+                  <th className="text-right py-3 px-4 text-sm font-semibold text-blue-700 bg-blue-50">{t('reports.cumulativeBalanceColumn')}</th>
                 </tr>
               </thead>
               <tbody>
                 {reports.map((report, index) => {
-                  const savings = report.total_income - report.total_expenses;
-                  const savingsRate = report.total_income > 0 ? (savings / report.total_income * 100) : 0;
+                  const monthlyNet = report.net;
+                  const cumulativeSavings = report.cumulative_savings || 0;
                   
                   return (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
@@ -305,11 +344,11 @@ export default function ReportsScreen() {
                       <td className="py-3 px-4 text-sm text-right text-red-600 font-semibold">
                         {formatCurrency(report.total_expenses)}
                       </td>
-                      <td className={`py-3 px-4 text-sm text-right font-semibold ${savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(savings)}
+                      <td className={`py-3 px-4 text-sm text-right font-semibold ${monthlyNet >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(monthlyNet)}
                       </td>
-                      <td className="py-3 px-4 text-sm text-right text-gray-700">
-                        {savingsRate.toFixed(1)}%
+                      <td className={`py-3 px-4 text-sm text-right font-bold bg-blue-50 ${cumulativeSavings >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                        {formatCurrency(cumulativeSavings)}
                       </td>
                     </tr>
                   );
