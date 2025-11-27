@@ -114,7 +114,10 @@ async def get_budgets(
             spent=spent,
             remaining=remaining,
             percentage=percentage,
-            period_type=budget["period_type"]
+            period_type=budget["period_type"],
+            is_recurring=budget.get("is_recurring", True),
+            year=budget.get("year"),
+            month=budget.get("month")
         ))
     
     return result
@@ -145,11 +148,27 @@ async def create_budget(
         )
     
     # Vérifier qu'il n'existe pas déjà un budget pour cette catégorie et période
-    existing_budget = await budgets_collection.find_one({
+    budget_filter = {
         "user_id": current_user["_id"],
         "category_id": ObjectId(budget_data.category_id),
         "period_type": budget_data.period_type
-    })
+    }
+    
+    # Si c'est un budget ponctuel, vérifier pour l'année/mois spécifique
+    if not budget_data.is_recurring:
+        if not budget_data.year or not budget_data.month:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="L'année et le mois sont requis pour un budget ponctuel"
+            )
+        budget_filter["is_recurring"] = False
+        budget_filter["year"] = budget_data.year
+        budget_filter["month"] = budget_data.month
+    else:
+        # Pour un budget récurrent, vérifier qu'il n'y a pas déjà un récurrent
+        budget_filter["is_recurring"] = True
+    
+    existing_budget = await budgets_collection.find_one(budget_filter)
     
     if existing_budget:
         raise HTTPException(
@@ -163,9 +182,15 @@ async def create_budget(
         "category_id": ObjectId(budget_data.category_id),
         "amount": budget_data.amount,
         "period_type": budget_data.period_type,
+        "is_recurring": budget_data.is_recurring,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     }
+    
+    # Ajouter year/month si budget ponctuel
+    if not budget_data.is_recurring:
+        budget["year"] = budget_data.year
+        budget["month"] = budget_data.month
     
     result = await budgets_collection.insert_one(budget)
     budget["_id"] = result.inserted_id
@@ -206,7 +231,10 @@ async def create_budget(
         spent=spent,
         remaining=remaining,
         percentage=percentage,
-        period_type=budget["period_type"]
+        period_type=budget["period_type"],
+        is_recurring=budget.get("is_recurring", True),
+        year=budget.get("year"),
+        month=budget.get("month")
     )
 
 @router.put("/{budget_id}", response_model=BudgetResponse)

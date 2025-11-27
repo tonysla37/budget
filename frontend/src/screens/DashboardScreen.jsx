@@ -40,10 +40,12 @@ export default function DashboardScreen() {
 
   const loadDashboardData = async () => {
     try {
+      console.log('🔄 Chargement du dashboard...', { selectedPeriod, customStartDate, customEndDate });
       const data = await getDashboardData(selectedPeriod, customStartDate, customEndDate);
+      console.log('✅ Données du dashboard reçues:', data);
       setDashboardData(data);
     } catch (error) {
-      console.error('Erreur lors du chargement du dashboard:', error);
+      console.error('❌ Erreur lors du chargement du dashboard:', error);
     } finally {
       setIsLoading(false);
     }
@@ -228,6 +230,61 @@ export default function DashboardScreen() {
           />
         </div>
 
+        {/* Top Dépenses */}
+        {dashboardData?.recent_transactions && dashboardData.recent_transactions.filter(t => t.is_expense).length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.topExpenses')}</h2>
+              <button
+                onClick={() => navigate('/transactions')}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              >
+                {t('dashboard.viewAll')}
+              </button>
+            </div>
+            <div className="space-y-3">
+              {dashboardData.recent_transactions
+                .filter(t => t.is_expense)
+                .sort((a, b) => b.amount - a.amount)
+                .slice(0, 5)
+                .map((transaction, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-transparent rounded-lg border border-red-100 hover:shadow-md transition-shadow">
+                    <div className="flex items-center flex-1">
+                      <div className="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full font-bold mr-4">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{transaction.description}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-sm text-gray-500">
+                            {formatDate(transaction.date)}
+                          </p>
+                          {transaction.merchant && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <p className="text-sm text-gray-600">{transaction.merchant}</p>
+                            </>
+                          )}
+                          {transaction.category && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <p className="text-sm text-gray-600">{getTransactionCategoryName(transaction)}</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <p className="text-xl font-bold text-red-600">
+                        {formatCurrency(transaction.amount)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Actions rapides */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('dashboard.quickActions')}</h2>
@@ -255,6 +312,139 @@ export default function DashboardScreen() {
             </button>
           </div>
         </div>
+
+        {/* Aperçu des budgets */}
+        {dashboardData?.budget_info && dashboardData.budget_info.total_budget > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.budgetOverview')}</h2>
+              <button
+                onClick={() => navigate('/budgets')}
+                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+              >
+                {t('dashboard.viewAll')}
+              </button>
+            </div>
+
+            {/* Carte de synthèse globale */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
+                <p className="text-sm text-blue-700 font-medium mb-1">{t('dashboard.totalBudget')}</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {formatCurrency(dashboardData.budget_info.total_budget)}
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
+                <p className="text-sm text-orange-700 font-medium mb-1">{t('dashboard.totalSpent')}</p>
+                <p className="text-2xl font-bold text-orange-900">
+                  {formatCurrency(dashboardData.budget_info.total_spent)}
+                </p>
+              </div>
+              <div className={`bg-gradient-to-br rounded-lg p-4 border ${
+                dashboardData.budget_info.total_remaining >= 0
+                  ? 'from-green-50 to-green-100 border-green-200'
+                  : 'from-red-50 to-red-100 border-red-200'
+              }`}>
+                <p className={`text-sm font-medium mb-1 ${
+                  dashboardData.budget_info.total_remaining >= 0 ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {t('dashboard.totalRemaining')}
+                </p>
+                <p className={`text-2xl font-bold ${
+                  dashboardData.budget_info.total_remaining >= 0 ? 'text-green-900' : 'text-red-900'
+                }`}>
+                  {formatCurrency(Math.abs(dashboardData.budget_info.total_remaining))}
+                </p>
+              </div>
+            </div>
+
+            {/* Barre de progression globale */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">{t('dashboard.budgetUsage')}</span>
+                <span className="text-sm font-bold text-gray-900">
+                  {dashboardData.budget_info.usage_percentage.toFixed(1)}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    dashboardData.budget_info.usage_percentage >= 100
+                      ? 'bg-gradient-to-r from-red-500 to-red-600'
+                      : dashboardData.budget_info.usage_percentage >= 80
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                  }`}
+                  style={{ width: `${Math.min(dashboardData.budget_info.usage_percentage, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Liste des budgets individuels */}
+            {dashboardData.budget_info.budgets && dashboardData.budget_info.budgets.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Par catégorie</h3>
+                {dashboardData.budget_info.budgets.map((budget, index) => (
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <div
+                          className="w-4 h-4 rounded-full mr-3"
+                          style={{ backgroundColor: budget.category_color }}
+                        />
+                        <span className="font-medium text-gray-900">{budget.category_name}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">
+                          {formatCurrency(budget.spent)} / {formatCurrency(budget.amount)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            budget.percentage >= 100
+                              ? 'bg-red-500'
+                              : budget.percentage >= 80
+                              ? 'bg-orange-500'
+                              : 'bg-green-500'
+                          }`}
+                          style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                        />
+                      </div>
+                      <span className={`text-sm font-bold min-w-[60px] text-right ${
+                        budget.percentage >= 100
+                          ? 'text-red-600'
+                          : budget.percentage >= 80
+                          ? 'text-orange-600'
+                          : 'text-green-600'
+                      }`}>
+                        {budget.percentage.toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Message si pas de budget */}
+        {dashboardData?.budget_info && dashboardData.budget_info.total_budget === 0 && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-8 mb-8 text-center">
+            <Wallet className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('dashboard.noBudgets')}</h3>
+            <p className="text-gray-600 mb-4">Définissez des budgets pour mieux contrôler vos dépenses</p>
+            <button
+              onClick={() => navigate('/budgets')}
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              {t('dashboard.createBudget')}
+            </button>
+          </div>
+        )}
 
         {/* Dépenses par catégorie */}
         {dashboardData?.expenses_by_category && dashboardData.expenses_by_category.length > 0 && (

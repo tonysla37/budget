@@ -7,9 +7,12 @@ export const getDashboardData = async (period = 'current', startDate = null, end
     if (period === 'custom' && startDate && endDate) {
       url = `/api/dashboard/?start_date=${startDate}&end_date=${endDate}`;
     }
-    return await apiCall(url);
+    console.log('📡 Appel API dashboard:', url);
+    const result = await apiCall(url);
+    console.log('📦 Réponse API dashboard:', result);
+    return result;
   } catch (error) {
-    console.error('Erreur lors de la récupération des données du dashboard:', error);
+    console.error('❌ Erreur API dashboard:', error);
     throw error;
   }
 };

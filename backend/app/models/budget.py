@@ -24,6 +24,9 @@ class Budget(BaseModel):
     category_id: PyObjectId
     amount: float = Field(..., description="Montant du budget alloué")
     period_type: str = Field(default="monthly", description="Type de période: monthly, yearly")
+    is_recurring: bool = Field(default=True, description="Budget récurrent ou ponctuel")
+    year: Optional[int] = Field(None, description="Année pour budget ponctuel")
+    month: Optional[int] = Field(None, description="Mois (1-12) pour budget ponctuel")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

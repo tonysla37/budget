@@ -21,10 +21,16 @@ class BudgetCreate(BaseModel):
     category_id: str
     amount: float = Field(..., gt=0, description="Montant du budget (doit être > 0)")
     period_type: str = Field(default="monthly", pattern="^(monthly|yearly)$")
+    is_recurring: bool = Field(default=True, description="Budget récurrent (True) ou ponctuel (False)")
+    year: Optional[int] = Field(None, description="Année pour budget ponctuel (requis si is_recurring=False)")
+    month: Optional[int] = Field(None, ge=1, le=12, description="Mois pour budget ponctuel (1-12, requis si is_recurring=False)")
 
 class BudgetUpdate(BaseModel):
     amount: Optional[float] = Field(None, gt=0)
     period_type: Optional[str] = Field(None, pattern="^(monthly|yearly)$")
+    is_recurring: Optional[bool] = None
+    year: Optional[int] = None
+    month: Optional[int] = Field(None, ge=1, le=12)
 
 class BudgetResponse(BaseModel):
     id: str
@@ -36,6 +42,9 @@ class BudgetResponse(BaseModel):
     remaining: float
     percentage: float
     period_type: str
+    is_recurring: bool
+    year: Optional[int] = None
+    month: Optional[int] = None
 
     class Config:
         allow_population_by_field_name = True

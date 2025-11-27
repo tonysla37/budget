@@ -20,21 +20,45 @@ async def get_dashboard_data(
     Récupérer les données du tableau de bord.
     """
     try:
+        # Récupérer le billing_cycle_day de l'utilisateur
+        billing_cycle_day = current_user.get("billing_cycle_day", 1)
+        
         # Calculer la période
         now = datetime.now()
         if period == "current":
-            start_date = datetime(now.year, now.month, 1)
-            if now.month == 12:
-                end_date = datetime(now.year + 1, 1, 1)
+            # Utilise le billing_cycle_day pour déterminer le début du mois
+            if now.day >= billing_cycle_day:
+                start_date = datetime(now.year, now.month, billing_cycle_day)
+                # Mois suivant
+                if now.month == 12:
+                    end_date = datetime(now.year + 1, 1, billing_cycle_day)
+                else:
+                    end_date = datetime(now.year, now.month + 1, billing_cycle_day)
             else:
-                end_date = datetime(now.year, now.month + 1, 1)
+                # On est avant le billing_cycle_day, donc période précédente
+                if now.month == 1:
+                    start_date = datetime(now.year - 1, 12, billing_cycle_day)
+                else:
+                    start_date = datetime(now.year, now.month - 1, billing_cycle_day)
+                end_date = datetime(now.year, now.month, billing_cycle_day)
         elif period == "previous":
-            if now.month == 1:
-                start_date = datetime(now.year - 1, 12, 1)
-                end_date = datetime(now.year, 1, 1)
+            # Calculer le mois précédent en tenant compte du billing_cycle_day
+            if now.day >= billing_cycle_day:
+                # Période actuelle, donc previous = mois -1
+                if now.month == 1:
+                    start_date = datetime(now.year - 1, 12, billing_cycle_day)
+                    end_date = datetime(now.year, 1, billing_cycle_day)
+                else:
+                    start_date = datetime(now.year, now.month - 1, billing_cycle_day)
+                    end_date = datetime(now.year, now.month, billing_cycle_day)
             else:
-                start_date = datetime(now.year, now.month - 1, 1)
-                end_date = datetime(now.year, now.month, 1)
+                # On est déjà dans la période précédente, donc previous = mois -2
+                if now.month <= 2:
+                    start_date = datetime(now.year - 1, 12 if now.month == 1 else 11, billing_cycle_day)
+                    end_date = datetime(now.year - 1 if now.month == 1 else now.year, 12 if now.month == 1 else now.month - 1, billing_cycle_day)
+                else:
+                    start_date = datetime(now.year, now.month - 2, billing_cycle_day)
+                    end_date = datetime(now.year, now.month - 1, billing_cycle_day)
         else:  # year
             start_date = datetime(now.year, 1, 1)
             end_date = datetime(now.year + 1, 1, 1)
@@ -207,6 +231,101 @@ async def get_dashboard_data(
             
             recent_transactions_data.append(transaction_data)
         
+        # Récupérer les informations budgétaires (optionnel, ne doit pas casser le dashboard)
+        budget_info = {
+            "total_budget": 0,
+            "total_spent": 0,
+            "total_remaining": 0,
+            "usage_percentage": 0,
+            "budgets": []
+        }
+        
+        try:
+            budgets_collection = await db.get_collection("budgets")
+            
+            # Construire le filtre pour les budgets en fonction de la période
+            budget_filter = {"user_id": current_user["_id"]}
+            
+            # Pour la période actuelle, on cherche :
+            # 1. Les budgets récurrents (is_recurring=True)
+            # 2. Les budgets ponctuels pour ce mois/année spécifique
+            if period in ["current", "previous"]:
+                budget_filter["$or"] = [
+                    {"is_recurring": True},  # Budgets récurrents
+                    {  # Budgets ponctuels pour ce mois
+                        "is_recurring": False,
+                        "year": start_date.year,
+                        "month": start_date.month
+                    }
+                ]
+            else:  # year
+                # Pour l'année, on prend tous les budgets récurrents
+                budget_filter["is_recurring"] = True
+            
+            budgets_cursor = budgets_collection.find(budget_filter)
+            budgets = await budgets_cursor.to_list(length=None)
+            
+            if budgets:
+                total_budget = 0
+                total_spent_budget = 0
+                budget_summary = []
+                
+                # Créer un dict des dépenses par catégorie pour un accès rapide
+                expenses_dict = {}
+                for exp in expenses_by_category:
+                    expenses_dict[exp["id"]] = exp["total"]
+                
+                for budget in budgets:
+                    # Récupérer les infos de la catégorie
+                    category = category_map.get(str(budget["category_id"]))
+                    if not category:
+                        continue
+                    
+                    # Calculer les dépenses pour cette catégorie
+                    spent = expenses_dict.get(str(budget["category_id"]), 0)
+                    
+                    # Ajouter les dépenses des sous-catégories
+                    for cat_id, cat_data in category_map.items():
+                        if cat_data.get("parent_id") == str(budget["category_id"]):
+                            spent += expenses_dict.get(cat_id, 0)
+                    
+                    # Calculer le montant du budget selon la période
+                    budget_amount = budget["amount"]
+                    if period == "year" and budget.get("period_type") == "monthly":
+                        # Pour une année, multiplier le budget mensuel par 12
+                        budget_amount = budget_amount * 12
+                    
+                    remaining = budget_amount - spent
+                    percentage = (spent / budget_amount * 100) if budget_amount > 0 else 0
+                    
+                    total_budget += budget_amount
+                    total_spent_budget += spent
+                    
+                    budget_summary.append({
+                        "category_id": str(budget["category_id"]),
+                        "category_name": category["name"],
+                        "category_color": category.get("color", "#3b82f6"),
+                        "amount": budget_amount,
+                        "spent": spent,
+                        "remaining": remaining,
+                        "percentage": percentage
+                    })
+                
+                # Calculer le budget restant total
+                total_budget_remaining = total_budget - total_spent_budget
+                budget_usage_percentage = (total_spent_budget / total_budget * 100) if total_budget > 0 else 0
+                
+                budget_info = {
+                    "total_budget": total_budget,
+                    "total_spent": total_spent_budget,
+                    "total_remaining": total_budget_remaining,
+                    "usage_percentage": budget_usage_percentage,
+                    "budgets": budget_summary[:5]  # Top 5 budgets
+                }
+        except Exception as e:
+            # En cas d'erreur, on continue avec budget_info vide
+            print(f"Erreur lors de la récupération des budgets: {e}")
+        
         # Préparer la réponse
         dashboard_data = {
             "total_income": total_income,
@@ -218,6 +337,7 @@ async def get_dashboard_data(
             "expenses_by_category": expenses_by_category,
             "income_by_category": income_by_category,
             "recent_transactions": recent_transactions_data,
+            "budget_info": budget_info,
             "period": {
                 "start": start_date,
                 "end": end_date,
