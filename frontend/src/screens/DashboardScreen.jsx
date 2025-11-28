@@ -230,61 +230,6 @@ export default function DashboardScreen() {
           />
         </div>
 
-        {/* Top Dépenses */}
-        {dashboardData?.recent_transactions && dashboardData.recent_transactions.filter(t => t.is_expense).length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.topExpenses')}</h2>
-              <button
-                onClick={() => navigate('/transactions')}
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-              >
-                {t('dashboard.viewAll')}
-              </button>
-            </div>
-            <div className="space-y-3">
-              {dashboardData.recent_transactions
-                .filter(t => t.is_expense)
-                .sort((a, b) => b.amount - a.amount)
-                .slice(0, 5)
-                .map((transaction, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-transparent rounded-lg border border-red-100 hover:shadow-md transition-shadow">
-                    <div className="flex items-center flex-1">
-                      <div className="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full font-bold mr-4">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900">{transaction.description}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-sm text-gray-500">
-                            {formatDate(transaction.date)}
-                          </p>
-                          {transaction.merchant && (
-                            <>
-                              <span className="text-gray-300">•</span>
-                              <p className="text-sm text-gray-600">{transaction.merchant}</p>
-                            </>
-                          )}
-                          {transaction.category && (
-                            <>
-                              <span className="text-gray-300">•</span>
-                              <p className="text-sm text-gray-600">{getTransactionCategoryName(transaction)}</p>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-xl font-bold text-red-600">
-                        {formatCurrency(transaction.amount)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
-
         {/* Actions rapides */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('dashboard.quickActions')}</h2>
@@ -313,11 +258,62 @@ export default function DashboardScreen() {
           </div>
         </div>
 
-        {/* Aperçu des budgets */}
-        {dashboardData?.budget_info && dashboardData.budget_info.total_budget > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.budgetOverview')}</h2>
+        {/* Top Dépenses et Aperçu des budgets côte à côte */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Top Dépenses */}
+          {dashboardData?.recent_transactions && dashboardData.recent_transactions.filter(t => t.is_expense).length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.topExpenses')}</h2>
+                <button
+                  onClick={() => navigate('/transactions')}
+                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                >
+                  {t('dashboard.viewAll')}
+                </button>
+              </div>
+              <div className="space-y-2">
+                {dashboardData.recent_transactions
+                  .filter(t => t.is_expense)
+                  .sort((a, b) => b.amount - a.amount)
+                  .slice(0, 10)
+                  .map((transaction, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-gradient-to-r from-red-50 to-transparent rounded-lg border border-red-100 hover:shadow-sm transition-shadow">
+                      <div className="flex items-center flex-1">
+                        <div className="flex items-center justify-center w-7 h-7 bg-red-100 text-red-600 rounded-full font-bold text-sm mr-3">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-gray-900 truncate">{transaction.description}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <p className="text-xs text-gray-500">
+                              {formatDate(transaction.date)}
+                            </p>
+                            {transaction.category && (
+                              <>
+                                <span className="text-gray-300 text-xs">•</span>
+                                <p className="text-xs text-gray-600 truncate">{getTransactionCategoryName(transaction)}</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right ml-2">
+                        <p className="text-sm font-bold text-red-600">
+                          {formatCurrency(transaction.amount)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Aperçu des budgets */}
+          {dashboardData?.budget_info && dashboardData.budget_info.total_budget > 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">{t('dashboard.budgetOverview')}</h2>
               <button
                 onClick={() => navigate('/budgets')}
                 className="text-blue-600 hover:text-blue-700 font-medium text-sm"
@@ -429,6 +425,7 @@ export default function DashboardScreen() {
             )}
           </div>
         )}
+        </div>
 
         {/* Message si pas de budget */}
         {dashboardData?.budget_info && dashboardData.budget_info.total_budget === 0 && (

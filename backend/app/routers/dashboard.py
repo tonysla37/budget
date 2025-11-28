@@ -197,10 +197,11 @@ async def get_dashboard_data(
             
             income_by_category.append(category_data)
         
-        # Récupérer les transactions récentes
+        # Récupérer les transactions récentes de la période
         recent_transactions = await collection.find({
-            "user_id": current_user["_id"]
-        }).sort("date", -1).limit(10).to_list(length=10)
+            "user_id": current_user["_id"],
+            "date": {"$gte": start_date, "$lt": end_date}
+        }).sort("date", -1).limit(100).to_list(length=100)
         
         # Préparer les transactions récentes
         recent_transactions_data = []
