@@ -1,6 +1,6 @@
 // Configuration de l'API
 export const API_CONFIG = {
-  BASE_URL: 'http://localhost:8000',
+  BASE_URL: 'http://10.37.16.90:8000',
   TIMEOUT: 10000, // 10 secondes
   RETRY_ATTEMPTS: 3,
 };

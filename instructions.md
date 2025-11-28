@@ -125,6 +125,10 @@
 - Assure la rétrocompatibilité de toutes les modifications proposées
 - Vérifie que les suggestions n'introduisent pas de régressions dans le code existant
 - Propose des modifications incrémentales plutôt que des réécritures complètes
+- **Ne jamais modifier une URL de service (backend, API, base de données) sans l'accord explicite de l'utilisateur**
+  - Les URLs sont des configurations critiques qui impactent la connectivité
+  - Toujours demander confirmation avant de changer une URL
+  - Si une URL doit être changée, expliquer pourquoi et proposer la nouvelle valeur
 
 ## STRUCTURE DE PROJET OBLIGATOIRE
 
