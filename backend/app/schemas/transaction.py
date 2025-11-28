@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Any
 from datetime import datetime
 
 
@@ -88,6 +88,8 @@ class Transaction(TransactionBase):
     updated_at: Optional[datetime] = None
     category: Optional[Category] = None
     tags: List[Tag] = []
+    bank_connection_id: Optional[str] = None  # ID de la connexion bancaire
+    bank: Optional[Dict[str, Any]] = None  # Infos de la banque (ajoutées dynamiquement)
 
     class Config:
         from_attributes = True

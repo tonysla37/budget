@@ -1,10 +1,13 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime, date, UTC
 from bson import ObjectId
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.database import get_db
+
+logger = logging.getLogger("budget-api")
 from app.models.user import User
 from app.models.transaction import Transaction, Category, Tag
 from app.schemas import (
@@ -14,10 +17,10 @@ from app.schemas import (
     TransactionWithCategory
 )
 from app.services.auth import get_current_user
-from app.services.boursorama import BoursoramaService
+# from app.services.boursorama import BoursoramaService  # Ancien service, remplacé par bank_connections
 
 router = APIRouter(prefix="/api/transactions", tags=["transactions"])
-boursorama_service = BoursoramaService()
+# boursorama_service = BoursoramaService()  # Ancien service, remplacé par bank_connections
 
 
 def prepare_mongodb_document_for_response(document: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,16 +113,38 @@ async def get_transactions(
     
     # Préparer les transactions pour la réponse
     result = []
+    bank_connections_collection = await db.get_collection("bank_connections")
+    
     for transaction in transactions:
         # Récupérer la catégorie si elle existe
         category = None
         if transaction.get("category_id"):
             category = await db.find_one("categories", {"_id": transaction["category_id"]})
         
+        # Récupérer la connexion bancaire si elle existe
+        bank_connection = None
+        if transaction.get("bank_connection_id"):
+            # bank_connection_id est déjà un ObjectId dans la base
+            bank_conn_id = transaction["bank_connection_id"]
+            if isinstance(bank_conn_id, str):
+                bank_conn_id = ObjectId(bank_conn_id)
+            bank_connection = await bank_connections_collection.find_one({
+                "_id": bank_conn_id
+            })
+        
         # Préparer la transaction
         transaction_data = prepare_mongodb_document_for_response(transaction)
         if category:
             transaction_data["category"] = prepare_mongodb_document_for_response(category)
+        
+        # Ajouter les infos de la banque
+        if bank_connection:
+            transaction_data["bank"] = {
+                "id": str(bank_connection["_id"]),
+                "name": bank_connection.get("bank"),
+                "nickname": bank_connection.get("nickname"),
+                "connection_type": bank_connection.get("connection_type")
+            }
         
         result.append(transaction_data)
     
@@ -220,7 +245,7 @@ async def update_transaction(
     await db.update_one(
         "transactions",
         {"_id": ObjectId(transaction_id)},
-        {"$set": update_data}
+        update_data
     )
     
     # Récupérer la transaction mise à jour
@@ -256,44 +281,20 @@ async def delete_transaction(
     return {"message": "Transaction supprimée avec succès"}
 
 
-@router.post("/import/boursorama")
-async def import_boursorama_transactions(
-    current_user: Dict = Depends(get_current_user),
-    db = Depends(get_db)
-):
-    """
-    Importer les transactions depuis Boursorama.
-    """
-    try:
-        # Récupérer les identifiants Boursorama de l'utilisateur
-        user_credentials = await db.find_one("boursorama_credentials", {
-            "user_id": current_user["_id"]
-        })
-        
-        if not user_credentials:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Aucune identifiants Boursorama configurés"
-            )
-        
-        # Importer les transactions
-        imported_count = await boursorama_service.import_transactions(
-            user_credentials["username"],
-            user_credentials["password"],
-            current_user["_id"],
-            db
-        )
-        
-        return {
-            "message": f"{imported_count} transactions importées avec succès",
-            "imported_count": imported_count
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur lors de l'import: {str(e)}"
-        )
+# ANCIEN ENDPOINT - Remplacé par le système de connexions bancaires (/api/bank-connections)
+# @router.post("/import/boursorama")
+# async def import_boursorama_transactions(
+#     current_user: Dict = Depends(get_current_user),
+#     db = Depends(get_db)
+# ):
+#     """
+#     Importer les transactions depuis Boursorama.
+#     DEPRECATED: Utiliser /api/bank-connections/{id}/sync à la place
+#     """
+#     raise HTTPException(
+#         status_code=status.HTTP_410_GONE,
+#         detail="Cet endpoint est obsolète. Utilisez /api/bank-connections pour gérer vos connexions bancaires."
+#     )
 
 
 @router.get("/stats/summary")

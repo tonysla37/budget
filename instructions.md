@@ -75,6 +75,17 @@
 - Aide à créer et maintenir un guide de style de code spécifique au projet
 - **Il est impératif de garantir une cohérence entre le backend et le frontend** : Lorsque par exemple, tu utilises MongoDB en backend, il faut s'assurer que côté frontend tu réalises bien des appels MongoDB et non SQLAlchemy ou autre
 - Il faut donc s'assurer en relisant les codes pour être cohérent
+- **Cohérence des types de données entre backend et frontend** :
+  - Les IDs MongoDB sont stockés comme ObjectId dans la base de données
+  - Les APIs les renvoient comme strings (sérialisés)
+  - Le frontend les utilise comme strings
+  - Lors des requêtes MongoDB, toujours convertir les IDs strings en ObjectId avec `ObjectId(id_string)`
+  - Exemple : `user_id` peut être string dans le JWT mais doit être ObjectId pour les requêtes MongoDB
+- **Uniformisation des couleurs et styles visuels** :
+  - Centraliser les constantes de couleurs dans des fichiers utilitaires (ex: `bankUtils.js`)
+  - Réutiliser les mêmes classes Tailwind et couleurs sur tous les écrans
+  - BoursoBank : pink-500, CIC : blue-500, Manual/Other : gray-400
+  - Ne jamais coder en dur les couleurs dans les composants individuels
 
 ## DOCUMENTATION ET KNOWLEDGE MANAGEMENT
 - Génère automatiquement une documentation technique pour chaque module développé à la racine dans le répertoire dénommé `docs`
@@ -233,6 +244,25 @@ Je veux que tu pilotes le backend et le frontend via un même script.
   - Validation des données
   - Caching stratégique
 
+- **Schémas et Modèles** :
+  - Les schémas Pydantic (backend) doivent refléter la structure réelle des données MongoDB
+  - Toujours inclure les champs optionnels présents dans la base de données
+  - Exemple : Si `bank_connection_id` et `bank` existent en base, ils doivent être dans le schéma Transaction
+  - Les données enrichies (ex: informations de connexion bancaire) doivent être ajoutées dans les routers avant sérialisation
+  - Ne jamais filtrer implicitement des champs par omission dans le schéma Pydantic
+
+- **Gestion des ObjectIds MongoDB** :
+  - Toujours vérifier le type d'un ID avant de l'utiliser dans une requête MongoDB
+  - Pattern recommandé :
+    ```python
+    user_id = current_user["_id"]
+    if isinstance(user_id, str):
+        user_id = ObjectId(user_id)
+    collection.find({"user_id": user_id})
+    ```
+  - Les migrations de données doivent convertir les strings en ObjectId quand nécessaire
+  - Exemple de migration : `db.collection.updateMany({field: {$type: "string"}}, [{$set: {field: {$toObjectId: "$field"}}}])`
+
 #### 5. Intégrations Externes
 
 - **API Clients** : Communication avec services externes
@@ -250,6 +280,31 @@ Je veux que tu pilotes le backend et le frontend via un même script.
   - Dead letter queues
   - Monitoring de la profondeur des queues
   - Retry policies
+
+- **Connecteurs Bancaires** :
+  - Support de deux modes : `mock` (sans Selenium) et `real` (avec Selenium)
+  - Lazy imports de Selenium pour éviter les dépendances en mode mock
+  - Chiffrement AES-256 (Fernet) + PBKDF2HMAC (100k iterations) pour les credentials
+  - Structure des données de transaction :
+    - Nouvelles transactions : `type: "income" | "expense"` (format string)
+    - Anciennes transactions : `is_expense: boolean` (format legacy)
+    - Les agrégations MongoDB doivent gérer les deux formats avec `$cond` et `$type`
+  - Pattern d'enrichissement des transactions :
+    ```python
+    if transaction.get("bank_connection_id"):
+        bank_conn_id = transaction["bank_connection_id"]
+        if isinstance(bank_conn_id, str):
+            bank_conn_id = ObjectId(bank_conn_id)
+        bank_connection = await bank_connections_collection.find_one({"_id": bank_conn_id})
+        if bank_connection:
+            transaction["bank"] = {
+                "id": str(bank_connection["_id"]),
+                "name": bank_connection.get("bank"),
+                "nickname": bank_connection.get("nickname"),
+                "connection_type": bank_connection.get("connection_type")
+            }
+    ```
+  - Banques supportées : BoursoBank, CIC (extensible)
 
 ## OBSERVABILITÉ
 

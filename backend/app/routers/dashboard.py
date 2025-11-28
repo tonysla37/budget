@@ -72,8 +72,17 @@ async def get_dashboard_data(
                 "user_id": current_user["_id"],
                 "date": {"$gte": start_date, "$lt": end_date}
             }},
+            {"$addFields": {
+                "computed_is_expense": {
+                    "$cond": [
+                        {"$eq": [{"$type": "$is_expense"}, "bool"]},
+                        "$is_expense",
+                        {"$eq": ["$type", "expense"]}
+                    ]
+                }
+            }},
             {"$group": {
-                "_id": "$is_expense",
+                "_id": "$computed_is_expense",
                 "total_amount": {"$sum": "$amount"},
                 "count": {"$sum": 1}
             }}
@@ -101,8 +110,19 @@ async def get_dashboard_data(
         category_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date, "$lt": end_date},
-                "is_expense": True
+                "date": {"$gte": start_date, "$lt": end_date}
+            }},
+            {"$addFields": {
+                "computed_is_expense": {
+                    "$cond": [
+                        {"$eq": [{"$type": "$is_expense"}, "bool"]},
+                        "$is_expense",
+                        {"$eq": ["$type", "expense"]}
+                    ]
+                }
+            }},
+            {"$match": {
+                "computed_is_expense": True
             }},
             {"$group": {
                 "_id": "$category_id",
@@ -118,8 +138,19 @@ async def get_dashboard_data(
         income_category_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date, "$lt": end_date},
-                "is_expense": False
+                "date": {"$gte": start_date, "$lt": end_date}
+            }},
+            {"$addFields": {
+                "computed_is_expense": {
+                    "$cond": [
+                        {"$eq": [{"$type": "$is_expense"}, "bool"]},
+                        "$is_expense",
+                        {"$eq": ["$type", "expense"]}
+                    ]
+                }
+            }},
+            {"$match": {
+                "computed_is_expense": False
             }},
             {"$group": {
                 "_id": "$category_id",
@@ -203,18 +234,44 @@ async def get_dashboard_data(
             "date": {"$gte": start_date, "$lt": end_date}
         }).sort("date", -1).limit(100).to_list(length=100)
         
+        # Récupérer la collection des connexions bancaires pour ajouter les infos bank
+        bank_connections_collection = await db.get_collection("bank_connections")
+        
         # Préparer les transactions récentes
         recent_transactions_data = []
         for transaction in recent_transactions:
+            # Gérer les deux formats : is_expense (boolean) ou type (string)
+            is_expense = transaction.get("is_expense")
+            if is_expense is None and "type" in transaction:
+                # Convertir type ('income'/'expense') en is_expense (boolean)
+                is_expense = transaction["type"] == "expense"
+            
             transaction_data = {
                 "id": str(transaction["_id"]),
                 "description": transaction["description"],
                 "amount": transaction["amount"],
-                "is_expense": transaction["is_expense"],
+                "is_expense": is_expense if is_expense is not None else True,
                 "date": transaction["date"],
                 "merchant": transaction.get("merchant"),
                 "category": None
             }
+            
+            # Récupérer la connexion bancaire si elle existe
+            if transaction.get("bank_connection_id"):
+                bank_conn_id = transaction["bank_connection_id"]
+                if isinstance(bank_conn_id, str):
+                    from bson import ObjectId
+                    bank_conn_id = ObjectId(bank_conn_id)
+                bank_connection = await bank_connections_collection.find_one({
+                    "_id": bank_conn_id
+                })
+                if bank_connection:
+                    transaction_data["bank"] = {
+                        "id": str(bank_connection["_id"]),
+                        "name": bank_connection.get("bank"),
+                        "nickname": bank_connection.get("nickname"),
+                        "connection_type": bank_connection.get("connection_type")
+                    }
             
             if transaction.get("category_id"):
                 category = category_map.get(str(transaction["category_id"]))

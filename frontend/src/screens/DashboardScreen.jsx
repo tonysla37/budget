@@ -4,6 +4,7 @@ import { getDashboardData } from '../services/dashboardService';
 import { getCategories } from '../services/categoryService';
 import { formatCurrency, formatPercentage, formatDate } from '../utils/formatters';
 import { getCurrentPeriod, getPeriodLabel } from '../utils/dateUtils';
+import { getBankStyles } from '../utils/bankUtils';
 import { useTranslation } from '../i18n';
 import { TrendingUp, TrendingDown, Wallet, Save, Plus, RefreshCw } from 'lucide-react';
 
@@ -277,14 +278,24 @@ export default function DashboardScreen() {
                   .filter(t => t.is_expense)
                   .sort((a, b) => b.amount - a.amount)
                   .slice(0, 10)
-                  .map((transaction, index) => (
+                  .map((transaction, index) => {
+                    const bankStyles = getBankStyles(transaction.bank?.name);
+                    return (
                     <div key={index} className="flex items-center justify-between p-2 bg-gradient-to-r from-red-50 to-transparent rounded-lg border border-red-100 hover:shadow-sm transition-shadow">
                       <div className="flex items-center flex-1">
                         <div className="flex items-center justify-center w-7 h-7 bg-red-100 text-red-600 rounded-full font-bold text-sm mr-3">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-900 truncate">{transaction.description}</p>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            {/* Tag de la banque ou manuel */}
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
+                              {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
+                               transaction.bank?.name === 'cic' ? 'CIC' : 
+                               transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                            </span>
+                            <p className="font-medium text-sm text-gray-900 truncate">{transaction.description}</p>
+                          </div>
                           <div className="flex items-center gap-1 mt-0.5">
                             <p className="text-xs text-gray-500">
                               {formatDate(transaction.date)}
@@ -304,7 +315,8 @@ export default function DashboardScreen() {
                         </p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
               </div>
             </div>
           )}
@@ -480,18 +492,34 @@ export default function DashboardScreen() {
               </button>
             </div>
             <div className="space-y-3">
-              {dashboardData.recent_transactions.slice(0, 5).map((transaction, index) => (
+              {dashboardData.recent_transactions.slice(0, 5).map((transaction, index) => {
+                const bankStyles = getBankStyles(transaction.bank?.name);
+                return (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full mr-3 ${transaction.is_expense ? 'bg-red-500' : 'bg-green-500'}`} />
-                    <div>
-                      <p className="font-medium text-gray-900">{transaction.description}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {/* Tag de la banque d'origine ou manuel */}
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
+                          {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
+                           transaction.bank?.name === 'cic' ? 'CIC' : 
+                           transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                        </span>
+                        <p className="font-medium text-gray-900">{transaction.description}</p>
+                      </div>
                       <p className="text-sm text-gray-500">
                         {formatDate(transaction.date)}
                         {transaction.merchant && (
                           <>
                             <span className="mx-1">•</span>
                             {transaction.merchant}
+                          </>
+                        )}
+                        {transaction.category && (
+                          <>
+                            <span className="mx-1">•</span>
+                            <span className="text-gray-600">{getTransactionCategoryName(transaction)}</span>
                           </>
                         )}
                       </p>
@@ -501,12 +529,10 @@ export default function DashboardScreen() {
                     <p className={`font-semibold ${transaction.is_expense ? 'text-red-600' : 'text-green-600'}`}>
                       {transaction.is_expense ? '-' : '+'}{formatCurrency(Math.abs(transaction.amount))}
                     </p>
-                    {transaction.category && (
-                      <p className="text-sm text-gray-500">{getTransactionCategoryName(transaction)}</p>
-                    )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

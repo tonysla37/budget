@@ -6,7 +6,7 @@ import logging
 from app.core.config import settings
 from app.db.mongodb import mongodb, get_db
 from app.db.models import create_indexes
-from app.routers import auth, users, transactions, categories, reports, dashboard, settings as settings_router, budgets, rules
+from app.routers import auth, users, transactions, categories, reports, dashboard, settings as settings_router, budgets, rules, bank_connections
 from app.interceptors import setup_interceptors
 
 # Configuration du logger
@@ -79,6 +79,7 @@ app.include_router(dashboard.router)
 app.include_router(settings_router.router)
 app.include_router(budgets.router)
 app.include_router(rules.router)
+app.include_router(bank_connections.router)
 
 
 @app.get("/api/health", tags=["health"])

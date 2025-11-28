@@ -4,6 +4,7 @@ import { getTransactions, deleteTransaction } from '../services/transactionServi
 import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { getBankStyles } from '../utils/bankUtils';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
@@ -19,6 +20,7 @@ export default function TransactionsScreen() {
   const [endDate, setEndDate] = useState(() => localStorage.getItem('transactionsEndDate') || '');
   const [filterType, setFilterType] = useState(() => localStorage.getItem('transactionsFilterType') || 'all'); // all, expense, income
   const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('transactionsSelectedCategory') || 'all'); // Filtre par catégorie
+  const [selectedBank, setSelectedBank] = useState(() => localStorage.getItem('transactionsSelectedBank') || 'all'); // Filtre par banque
   const [billingCycleDay, setBillingCycleDay] = useState(1); // Jour de début du cycle
   const navigate = useNavigate();
 
@@ -36,7 +38,8 @@ export default function TransactionsScreen() {
     localStorage.setItem('transactionsEndDate', endDate);
     localStorage.setItem('transactionsFilterType', filterType);
     localStorage.setItem('transactionsSelectedCategory', selectedCategory);
-  }, [searchTerm, selectedPeriod, startDate, endDate, filterType, selectedCategory]);
+    localStorage.setItem('transactionsSelectedBank', selectedBank);
+  }, [searchTerm, selectedPeriod, startDate, endDate, filterType, selectedCategory, selectedBank]);
 
   const loadUserProfile = async () => {
     try {
@@ -51,12 +54,14 @@ export default function TransactionsScreen() {
     setSearchTerm('');
     setFilterType('all');
     setSelectedCategory('all');
+    setSelectedBank('all');
     setSelectedPeriod('all');
     setStartDate('');
     setEndDate('');
     localStorage.removeItem('transactionsSearchTerm');
     localStorage.removeItem('transactionsFilterType');
     localStorage.removeItem('transactionsSelectedCategory');
+    localStorage.removeItem('transactionsSelectedBank');
     localStorage.removeItem('transactionsSelectedPeriod');
     localStorage.removeItem('transactionsStartDate');
     localStorage.removeItem('transactionsEndDate');
@@ -221,6 +226,17 @@ export default function TransactionsScreen() {
       }
     }
 
+    // Filtre par banque
+    if (selectedBank !== 'all') {
+      if (selectedBank === 'manual') {
+        // Transactions manuelles (sans banque)
+        if (transaction.bank?.name) return false;
+      } else {
+        // Banque spécifique
+        if (transaction.bank?.name !== selectedBank) return false;
+      }
+    }
+
     // Filtre par période
     if (selectedPeriod !== 'all') {
       const { start, end } = getPeriodDates(selectedPeriod);
@@ -296,7 +312,7 @@ export default function TransactionsScreen() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Type de transaction */}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">
@@ -350,6 +366,23 @@ export default function TransactionsScreen() {
                         </optgroup>
                       );
                     })}
+                </select>
+              </div>
+
+              {/* Banque */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Banque d'origine
+                </label>
+                <select
+                  value={selectedBank}
+                  onChange={(e) => setSelectedBank(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Toutes les banques</option>
+                  <option value="boursobank">BoursoBank</option>
+                  <option value="cic">CIC</option>
+                  <option value="manual">Saisie manuelle</option>
                 </select>
               </div>
 
@@ -411,7 +444,7 @@ export default function TransactionsScreen() {
           )}
 
           {/* Bouton pour réinitialiser les filtres */}
-          {(selectedPeriod !== 'all' || filterType !== 'all' || selectedCategory !== 'all') && (
+          {(selectedPeriod !== 'all' || filterType !== 'all' || selectedCategory !== 'all' || selectedBank !== 'all') && (
             <div className="mt-3">
               <button
                 onClick={() => {
@@ -449,14 +482,23 @@ export default function TransactionsScreen() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => (
+              {filteredTransactions.map((transaction) => {
+                const bankStyles = getBankStyles(transaction.bank?.name);
+                return (
                 <div key={transaction.id} className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center mb-2">
+                      <div className="flex items-center mb-2 gap-2">
+                        {/* Tag de la banque d'origine ou manuel */}
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
+                          {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
+                           transaction.bank?.name === 'cic' ? 'CIC' : 
+                           transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                        </span>
                         <h3 className="text-lg font-medium text-gray-900">{transaction.description}</h3>
+                        {/* Tag de la catégorie */}
                         {transaction.category && (
-                          <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                             <div 
                               className="w-2 h-2 rounded-full mr-1.5" 
                               style={{ backgroundColor: transaction.category.color || '#6b7280' }}
@@ -501,7 +543,8 @@ export default function TransactionsScreen() {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
