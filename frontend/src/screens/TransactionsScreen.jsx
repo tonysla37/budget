@@ -18,6 +18,7 @@ export default function TransactionsScreen() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [filterType, setFilterType] = useState('all'); // all, expense, income
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Filtre par catégorie
   const [billingCycleDay, setBillingCycleDay] = useState(1); // Jour de début du cycle
   const navigate = useNavigate();
 
@@ -170,6 +171,24 @@ export default function TransactionsScreen() {
       if (transaction.is_expense !== isExpense) return false;
     }
 
+    // Filtre par catégorie
+    if (selectedCategory !== 'all') {
+      // Vérifier si c'est la catégorie elle-même ou une sous-catégorie
+      const category = categories.find(c => c.id === transaction.category_id);
+      if (!category) return false;
+      
+      // Si la catégorie sélectionnée est une parente, inclure toutes ses sous-catégories
+      const selectedCat = categories.find(c => c.id === selectedCategory);
+      if (selectedCat && !selectedCat.parent_id) {
+        // C'est une catégorie parente, inclure elle-même et ses enfants
+        const isMatch = category.id === selectedCategory || category.parent_id === selectedCategory;
+        if (!isMatch) return false;
+      } else {
+        // C'est une sous-catégorie, match exact
+        if (category.id !== selectedCategory) return false;
+      }
+    }
+
     // Filtre par période
     if (selectedPeriod !== 'all') {
       const { start, end } = getPeriodDates(selectedPeriod);
@@ -205,52 +224,44 @@ export default function TransactionsScreen() {
                 {filteredTransactions.length} {t('common.search')} {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
               </p>
             </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center px-4 py-2 rounded-lg border ${
-                  showFilters || selectedPeriod !== 'all' || filterType !== 'all'
-                    ? 'bg-blue-50 border-blue-600 text-blue-600'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                {t('transactions.filters')}
-              </button>
-              <button 
-                onClick={() => navigate('/add-transaction')}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {t('transactions.add')}
-              </button>
-            </div>
+            <button 
+              onClick={() => navigate('/add-transaction')}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('transactions.add')}
+            </button>
           </div>
         </div>
       </div>
 
       {/* Contenu */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Panneau de filtres */}
-        {showFilters && (
-          <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{t('transactions.filters')}</h3>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
+        {/* Barre de recherche */}
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder={t('transactions.searchPlaceholder')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Panneau de filtres */}
+        <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('transactions.filters')}</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Type de transaction */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
                   {t('transactions.typeLabel')}
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   {[
                     { key: 'all', label: t('transactions.typeAll') },
                     { key: 'expense', label: t('transactions.typeExpenses') },
@@ -259,7 +270,7 @@ export default function TransactionsScreen() {
                     <button
                       key={type.key}
                       onClick={() => setFilterType(type.key)}
-                      className={`flex-1 px-4 py-2 rounded-lg border font-medium transition-colors ${
+                      className={`flex-1 px-3 py-1.5 text-xs rounded-md border font-medium transition-colors ${
                         filterType === type.key
                           ? 'bg-blue-600 text-white border-blue-600'
                           : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -271,12 +282,41 @@ export default function TransactionsScreen() {
                 </div>
               </div>
 
+              {/* Catégorie */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Catégorie
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Toutes les catégories</option>
+                  {categories
+                    .filter(c => !c.parent_id)
+                    .map(parentCat => {
+                      const childCategories = categories.filter(c => c.parent_id === parentCat.id);
+                      return (
+                        <optgroup key={parentCat.id} label={parentCat.name}>
+                          <option value={parentCat.id}>{parentCat.name} (toutes)</option>
+                          {childCategories.map(childCat => (
+                            <option key={childCat.id} value={childCat.id}>
+                              &nbsp;&nbsp;› {childCat.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                </select>
+              </div>
+
               {/* Période */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
                   {t('transactions.periodLabel')}
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   {[
                     { key: 'all', label: t('transactions.periodAll') },
                     { key: 'current', label: t('transactions.periodCurrent') },
@@ -287,7 +327,7 @@ export default function TransactionsScreen() {
                     <button
                       key={period.key}
                       onClick={() => setSelectedPeriod(period.key)}
-                      className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
+                      className={`px-3 py-1.5 text-xs rounded-md border font-medium transition-colors ${
                         selectedPeriod === period.key
                           ? 'bg-blue-600 text-white border-blue-600'
                           : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -300,65 +340,51 @@ export default function TransactionsScreen() {
               </div>
             </div>
 
-            {/* Plage de dates personnalisée */}
-            {selectedPeriod === 'custom' && (
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('transactions.startDateLabel')}
-                  </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('transactions.endDateLabel')}
-                  </label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+          {/* Plage de dates personnalisée */}
+          {selectedPeriod === 'custom' && (
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  {t('transactions.startDateLabel')}
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-            )}
-
-            {/* Bouton pour réinitialiser les filtres */}
-            {(selectedPeriod !== 'all' || filterType !== 'all') && (
-              <div className="mt-4">
-                <button
-                  onClick={() => {
-                    setSelectedPeriod('all');
-                    setFilterType('all');
-                    setStartDate('');
-                    setEndDate('');
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  {t('transactions.resetFilters')}
-                </button>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  {t('transactions.endDateLabel')}
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* Barre de recherche */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder={t('transactions.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          {/* Bouton pour réinitialiser les filtres */}
+          {(selectedPeriod !== 'all' || filterType !== 'all' || selectedCategory !== 'all') && (
+            <div className="mt-3">
+              <button
+                onClick={() => {
+                  setSelectedPeriod('all');
+                  setFilterType('all');
+                  setSelectedCategory('all');
+                  setStartDate('');
+                  setEndDate('');
+                }}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                {t('transactions.resetFilters')}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Liste des transactions */}
