@@ -4,7 +4,7 @@ import { getCategories } from '../services/categoryService';
 import { getTransactions } from '../services/transactionService';
 import { getCurrentUser } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, RefreshCw, Calendar } from 'lucide-react';
+import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, RefreshCw, Calendar, LayoutGrid, List } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 export default function BudgetScreen() {
@@ -15,6 +15,7 @@ export default function BudgetScreen() {
   const [expandedBudgets, setExpandedBudgets] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [viewMode, setViewMode] = useState('separated'); // 'separated' ou 'hierarchical'
   const [editingBudget, setEditingBudget] = useState(null);
   const [periodType, setPeriodType] = useState('monthly');
   const [billingCycleDay, setBillingCycleDay] = useState(1);
@@ -215,7 +216,7 @@ export default function BudgetScreen() {
     return Object.values(grouped).sort((a, b) => b.total - a.total);
   };
 
-  const BudgetCard = ({ budget }) => {
+  const BudgetCard = ({ budget, isSubcategory = false, isHierarchical = false }) => {
     const status = getBudgetStatus(budget.percentage);
     const StatusIcon = status.icon;
     const progressWidth = Math.min(budget.percentage, 100);
@@ -224,7 +225,8 @@ export default function BudgetScreen() {
     const totalTransactions = transactionsBySubcategory.reduce((sum, group) => sum + group.transactions.length, 0);
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+      <div className={`${isHierarchical ? '' : 'bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow'} ${isSubcategory && !isHierarchical ? 'border-l-4' : ''}`}
+           style={isSubcategory && !isHierarchical ? { borderLeftColor: budget.category_color } : {}}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div 
@@ -430,6 +432,34 @@ export default function BudgetScreen() {
               )}
             </div>
             <div className="flex items-center gap-3">
+              {/* Boutons de basculement de vue */}
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('separated')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                    viewMode === 'separated' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Vue séparée"
+                >
+                  <LayoutGrid size={16} />
+                  Séparée
+                </button>
+                <button
+                  onClick={() => setViewMode('hierarchical')}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                    viewMode === 'hierarchical' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Vue hiérarchique"
+                >
+                  <List size={16} />
+                  Hiérarchique
+                </button>
+              </div>
+              
               <select
                 value={periodType}
                 onChange={(e) => setPeriodType(e.target.value)}
@@ -481,10 +511,146 @@ export default function BudgetScreen() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {budgets.map(budget => (
-              <BudgetCard key={budget.id} budget={budget} />
-            ))}
+          <div className="space-y-6">
+            {viewMode === 'separated' ? (
+              // Mode séparé (vue actuelle)
+              <>
+                {/* Grouper les budgets par catégorie parente */}
+                {(() => {
+                  // Séparer les budgets en catégories parentes et enfants
+                  const parentBudgets = budgets.filter(b => {
+                    const cat = categories.find(c => c.id === b.category_id);
+                    return cat && !cat.parent_id;
+                  });
+                  
+                  const childBudgets = budgets.filter(b => {
+                    const cat = categories.find(c => c.id === b.category_id);
+                    return cat && cat.parent_id;
+                  });
+
+                  return (
+                    <>
+                      {/* Budgets des catégories parentes */}
+                      {parentBudgets.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <div className="h-px bg-gray-300 flex-1"></div>
+                            <span>Catégories principales</span>
+                            <div className="h-px bg-gray-300 flex-1"></div>
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {parentBudgets.map(budget => (
+                              <BudgetCard key={budget.id} budget={budget} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Budgets des sous-catégories */}
+                      {childBudgets.length > 0 && (
+                        <div>
+                          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <div className="h-px bg-gray-300 flex-1"></div>
+                            <span>Sous-catégories</span>
+                            <div className="h-px bg-gray-300 flex-1"></div>
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {childBudgets.map(budget => {
+                              const cat = categories.find(c => c.id === budget.category_id);
+                              const parent = cat?.parent_id ? categories.find(c => c.id === cat.parent_id) : null;
+                              return (
+                                <div key={budget.id} className="relative">
+                                  {parent && (
+                                    <div className="mb-2 flex items-center gap-2 text-xs text-gray-500">
+                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: parent.color || '#6b7280' }}></div>
+                                      <span>{parent.name}</span>
+                                      <span>›</span>
+                                    </div>
+                                  )}
+                                  <BudgetCard budget={budget} isSubcategory={true} />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
+            ) : (
+              // Mode hiérarchique (groupé par parent)
+              <div className="space-y-6">
+                {(() => {
+                  // Grouper les budgets par catégorie parente
+                  const parentCategories = categories.filter(c => !c.parent_id);
+                  
+                  return parentCategories.map(parentCat => {
+                    // Budget de la catégorie parente
+                    const parentBudget = budgets.find(b => b.category_id === parentCat.id);
+                    
+                    // Budgets des sous-catégories
+                    const childCategories = categories.filter(c => c.parent_id === parentCat.id);
+                    const childBudgets = budgets.filter(b => 
+                      childCategories.some(cc => cc.id === b.category_id)
+                    );
+                    
+                    // N'afficher que si au moins un budget existe (parent ou enfant)
+                    if (!parentBudget && childBudgets.length === 0) return null;
+                    
+                    return (
+                      <div key={parentCat.id} className="bg-white rounded-lg shadow-sm border-2 border-gray-200 overflow-hidden">
+                        {/* Header de la catégorie parente */}
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-6 h-6 rounded-full shadow-sm" 
+                              style={{ backgroundColor: parentCat.color }}
+                            />
+                            <h3 className="text-lg font-bold text-gray-900">{parentCat.name}</h3>
+                            {(parentBudget || childBudgets.length > 0) && (
+                              <span className="ml-auto text-sm text-gray-500">
+                                {parentBudget ? '1' : '0'} principal · {childBudgets.length} sous-catégorie{childBudgets.length > 1 ? 's' : ''}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Contenu */}
+                        <div className="p-6 space-y-4">
+                          {/* Budget parent si existe */}
+                          {parentBudget && (
+                            <div className="pb-4 border-b border-gray-200">
+                              <BudgetCard budget={parentBudget} isHierarchical={true} />
+                            </div>
+                          )}
+                          
+                          {/* Budgets enfants */}
+                          {childBudgets.length > 0 && (
+                            <div className="space-y-3">
+                              {parentBudget && (
+                                <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                                  <div className="h-px bg-gray-300 flex-1"></div>
+                                  <span>Sous-catégories</span>
+                                  <div className="h-px bg-gray-300 flex-1"></div>
+                                </h4>
+                              )}
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {childBudgets.map(budget => (
+                                  <div key={budget.id} className="bg-gray-50 rounded-lg p-4">
+                                    <BudgetCard budget={budget} isSubcategory={true} isHierarchical={true} />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }).filter(Boolean);
+                })()}
+              </div>
+            )}
           </div>
         )}
       </div>
