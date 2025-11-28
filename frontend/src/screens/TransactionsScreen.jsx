@@ -12,13 +12,13 @@ export default function TransactionsScreen() {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => localStorage.getItem('transactionsSearchTerm') || '');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [filterType, setFilterType] = useState('all'); // all, expense, income
-  const [selectedCategory, setSelectedCategory] = useState('all'); // Filtre par catégorie
+  const [selectedPeriod, setSelectedPeriod] = useState(() => localStorage.getItem('transactionsSelectedPeriod') || 'all');
+  const [startDate, setStartDate] = useState(() => localStorage.getItem('transactionsStartDate') || '');
+  const [endDate, setEndDate] = useState(() => localStorage.getItem('transactionsEndDate') || '');
+  const [filterType, setFilterType] = useState(() => localStorage.getItem('transactionsFilterType') || 'all'); // all, expense, income
+  const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('transactionsSelectedCategory') || 'all'); // Filtre par catégorie
   const [billingCycleDay, setBillingCycleDay] = useState(1); // Jour de début du cycle
   const navigate = useNavigate();
 
@@ -28,6 +28,16 @@ export default function TransactionsScreen() {
     loadUserProfile();
   }, []);
 
+  // Persister les filtres dans localStorage
+  useEffect(() => {
+    localStorage.setItem('transactionsSearchTerm', searchTerm);
+    localStorage.setItem('transactionsSelectedPeriod', selectedPeriod);
+    localStorage.setItem('transactionsStartDate', startDate);
+    localStorage.setItem('transactionsEndDate', endDate);
+    localStorage.setItem('transactionsFilterType', filterType);
+    localStorage.setItem('transactionsSelectedCategory', selectedCategory);
+  }, [searchTerm, selectedPeriod, startDate, endDate, filterType, selectedCategory]);
+
   const loadUserProfile = async () => {
     try {
       const profile = await getUserProfile();
@@ -35,6 +45,21 @@ export default function TransactionsScreen() {
     } catch (error) {
       console.error(t('transactions.errorLoading'), error);
     }
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterType('all');
+    setSelectedCategory('all');
+    setSelectedPeriod('all');
+    setStartDate('');
+    setEndDate('');
+    localStorage.removeItem('transactionsSearchTerm');
+    localStorage.removeItem('transactionsFilterType');
+    localStorage.removeItem('transactionsSelectedCategory');
+    localStorage.removeItem('transactionsSelectedPeriod');
+    localStorage.removeItem('transactionsStartDate');
+    localStorage.removeItem('transactionsEndDate');
   };
 
   const loadCategories = async () => {
@@ -173,19 +198,26 @@ export default function TransactionsScreen() {
 
     // Filtre par catégorie
     if (selectedCategory !== 'all') {
-      // Vérifier si c'est la catégorie elle-même ou une sous-catégorie
-      const category = categories.find(c => c.id === transaction.category_id);
-      if (!category) return false;
-      
-      // Si la catégorie sélectionnée est une parente, inclure toutes ses sous-catégories
-      const selectedCat = categories.find(c => c.id === selectedCategory);
-      if (selectedCat && !selectedCat.parent_id) {
-        // C'est une catégorie parente, inclure elle-même et ses enfants
-        const isMatch = category.id === selectedCategory || category.parent_id === selectedCategory;
-        if (!isMatch) return false;
+      // Cas spécial : transactions sans catégorie
+      if (selectedCategory === 'uncategorized') {
+        if (transaction.category_id !== null && transaction.category_id !== undefined) {
+          return false;
+        }
       } else {
-        // C'est une sous-catégorie, match exact
-        if (category.id !== selectedCategory) return false;
+        // Vérifier si c'est la catégorie elle-même ou une sous-catégorie
+        const category = categories.find(c => c.id === transaction.category_id);
+        if (!category) return false;
+        
+        // Si la catégorie sélectionnée est une parente, inclure toutes ses sous-catégories
+        const selectedCat = categories.find(c => c.id === selectedCategory);
+        if (selectedCat && !selectedCat.parent_id) {
+          // C'est une catégorie parente, inclure elle-même et ses enfants
+          const isMatch = category.id === selectedCategory || category.parent_id === selectedCategory;
+          if (!isMatch) return false;
+        } else {
+          // C'est une sous-catégorie, match exact
+          if (category.id !== selectedCategory) return false;
+        }
       }
     }
 
@@ -253,7 +285,16 @@ export default function TransactionsScreen() {
 
         {/* Panneau de filtres */}
         <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">{t('transactions.filters')}</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700">{t('transactions.filters')}</h3>
+            <button
+              onClick={resetFilters}
+              className="flex items-center px-3 py-1.5 text-xs text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Réinitialiser les filtres
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Type de transaction */}
@@ -293,6 +334,7 @@ export default function TransactionsScreen() {
                   className="w-full px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">Toutes les catégories</option>
+                  <option value="uncategorized">⚠️ Sans catégorie</option>
                   {categories
                     .filter(c => !c.parent_id)
                     .map(parentCat => {

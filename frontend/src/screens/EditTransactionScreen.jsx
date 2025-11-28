@@ -95,7 +95,7 @@ export default function EditTransactionScreen() {
                   onClick={() => setType('expense')}
                 >
                   <Minus size={20} className="mr-2" />
-                  <span className="font-medium">{t('transactions.expense')}</span>
+                  <span className="font-medium">Dépense</span>
                 </button>
                 
                 <button
@@ -119,7 +119,7 @@ export default function EditTransactionScreen() {
               <input
                 type="text"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={t('transactions.descriptionPlaceholder')}
+                placeholder="Description de la transaction"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={100}
@@ -128,11 +128,11 @@ export default function EditTransactionScreen() {
 
             {/* Commerçant */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{t('transactions.merchantLabel')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Commerçant</label>
               <input
                 type="text"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={t('transactions.merchantPlaceholder')}
+                placeholder="Nom du marchand"
                 value={merchant}
                 onChange={(e) => setMerchant(e.target.value)}
                 maxLength={100}
@@ -146,7 +146,7 @@ export default function EditTransactionScreen() {
                 type="number"
                 step="0.01"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={t('transactions.amountPlaceholder')}
+                placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
