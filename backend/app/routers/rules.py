@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
-from datetime import datetime
+from datetime import datetime, date
 from bson import ObjectId
 
 from ..core.database import get_db
@@ -45,6 +45,9 @@ async def get_rules(
             "category_id": rule["category_id"],
             "category_name": category_name,
             "is_active": rule["is_active"],
+            "exceptions": rule.get("exceptions", []),
+            "start_date": rule.get("start_date"),
+            "end_date": rule.get("end_date"),
             "created_at": rule["created_at"],
             "updated_at": rule["updated_at"]
         })
@@ -78,6 +81,9 @@ async def create_rule(
         "match_type": rule.match_type,
         "category_id": rule.category_id,
         "is_active": rule.is_active,
+        "exceptions": rule.exceptions,
+        "start_date": rule.start_date.isoformat() if rule.start_date else None,
+        "end_date": rule.end_date.isoformat() if rule.end_date else None,
         "created_at": now,
         "updated_at": now
     }
@@ -100,6 +106,9 @@ async def create_rule(
         "category_id": created_rule["category_id"],
         "category_name": category_name,
         "is_active": created_rule["is_active"],
+        "exceptions": created_rule.get("exceptions", []),
+        "start_date": created_rule.get("start_date"),
+        "end_date": created_rule.get("end_date"),
         "created_at": created_rule["created_at"],
         "updated_at": created_rule["updated_at"]
     }
@@ -129,6 +138,12 @@ async def update_rule(
     
     # Préparer les données à mettre à jour
     update_data = {k: v for k, v in rule.dict(exclude_unset=True).items()}
+    
+    # Convertir les dates en format ISO string pour MongoDB
+    if "start_date" in update_data and update_data["start_date"] is not None:
+        update_data["start_date"] = update_data["start_date"].isoformat()
+    if "end_date" in update_data and update_data["end_date"] is not None:
+        update_data["end_date"] = update_data["end_date"].isoformat()
     
     # Vérifier la catégorie si elle est modifiée
     if "category_id" in update_data:
@@ -167,6 +182,9 @@ async def update_rule(
         "category_id": updated_rule["category_id"],
         "category_name": category_name,
         "is_active": updated_rule["is_active"],
+        "exceptions": updated_rule.get("exceptions", []),
+        "start_date": updated_rule.get("start_date"),
+        "end_date": updated_rule.get("end_date"),
         "created_at": updated_rule["created_at"],
         "updated_at": updated_rule["updated_at"]
     }
@@ -224,11 +242,35 @@ async def apply_rules_to_transaction(
     
     # Tester chaque règle
     description = transaction.get("description", "").upper()
+    transaction_date = transaction.get("date")
     matched_rule = None
     
     for rule in rules:
         pattern = rule["pattern"].upper()
         match_type = rule["match_type"]
+        
+        # Vérifier la période d'application
+        if rule.get("start_date"):
+            start_date = datetime.fromisoformat(rule["start_date"]).date() if isinstance(rule["start_date"], str) else rule["start_date"]
+            if transaction_date.date() < start_date:
+                continue
+        
+        if rule.get("end_date"):
+            end_date = datetime.fromisoformat(rule["end_date"]).date() if isinstance(rule["end_date"], str) else rule["end_date"]
+            if transaction_date.date() > end_date:
+                continue
+        
+        # Vérifier les exceptions
+        exceptions = rule.get("exceptions", [])
+        is_exception = False
+        for exception_pattern in exceptions:
+            exception_upper = exception_pattern.upper()
+            if exception_upper in description:
+                is_exception = True
+                break
+        
+        if is_exception:
+            continue
         
         matched = False
         if match_type == "contains":

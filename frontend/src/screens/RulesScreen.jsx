@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCategories } from '../services/categoryService';
 import { getRules, createRule, updateRule, deleteRule } from '../services/ruleService';
-import { Filter, Plus, Trash2, Edit, Save, X, CheckCircle } from 'lucide-react';
+import { Filter, Plus, Trash2, Edit, Save, X, CheckCircle, RotateCcw, Power } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 export default function RulesScreen() {
@@ -10,12 +10,16 @@ export default function RulesScreen() {
   const [rules, setRules] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
+  const [exceptionInput, setExceptionInput] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     pattern: '',
     match_type: 'contains', // contains, starts_with, ends_with, exact
     category_id: '',
-    is_active: true
+    is_active: true,
+    exceptions: [],
+    start_date: null,
+    end_date: null
   });
 
   useEffect(() => {
@@ -45,10 +49,17 @@ export default function RulesScreen() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Nettoyer les données avant l'envoi (convertir les chaînes vides en null)
+      const cleanedData = {
+        ...formData,
+        start_date: formData.start_date || null,
+        end_date: formData.end_date || null
+      };
+
       if (editingRule) {
-        await updateRule(editingRule.id, formData);
+        await updateRule(editingRule.id, cleanedData);
       } else {
-        await createRule(formData);
+        await createRule(cleanedData);
       }
       
       setShowModal(false);
@@ -79,7 +90,10 @@ export default function RulesScreen() {
       pattern: rule.pattern,
       match_type: rule.match_type,
       category_id: rule.category_id,
-      is_active: rule.is_active
+      is_active: rule.is_active,
+      exceptions: rule.exceptions || [],
+      start_date: rule.start_date || null,
+      end_date: rule.end_date || null
     });
     setShowModal(true);
   };
@@ -90,9 +104,50 @@ export default function RulesScreen() {
       pattern: '',
       match_type: 'contains',
       category_id: '',
-      is_active: true
+      is_active: true,
+      exceptions: [],
+      start_date: null,
+      end_date: null
     });
     setEditingRule(null);
+    setExceptionInput('');
+  };
+
+  const addException = () => {
+    if (exceptionInput.trim()) {
+      setFormData({
+        ...formData,
+        exceptions: [...formData.exceptions, exceptionInput.trim()]
+      });
+      setExceptionInput('');
+    }
+  };
+
+  const removeException = (index) => {
+    setFormData({
+      ...formData,
+      exceptions: formData.exceptions.filter((_, i) => i !== index)
+    });
+  };
+
+  const resetPeriod = () => {
+    setFormData({
+      ...formData,
+      start_date: null,
+      end_date: null
+    });
+  };
+
+  const toggleRuleActive = async (rule) => {
+    try {
+      await updateRule(rule.id, {
+        is_active: !rule.is_active
+      });
+      loadRules();
+    } catch (error) {
+      console.error('Erreur lors de la modification du statut:', error);
+      alert('Erreur lors de la modification du statut');
+    }
   };
 
   const getCategoryDisplayName = (categoryId) => {
@@ -192,6 +247,9 @@ export default function RulesScreen() {
                     Catégorie
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Période
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Statut
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -204,6 +262,11 @@ export default function RulesScreen() {
                   <tr key={rule.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{rule.name}</div>
+                      {rule.exceptions && rule.exceptions.length > 0 && (
+                        <div className="text-xs text-orange-600 mt-1">
+                          {rule.exceptions.length} exception(s)
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <code className="px-2 py-1 text-xs bg-gray-100 rounded text-gray-800">
@@ -219,6 +282,20 @@ export default function RulesScreen() {
                       <div className="text-sm text-gray-900">{rule.category_name}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      {rule.start_date || rule.end_date ? (
+                        <div className="text-xs text-gray-600">
+                          {rule.start_date && (
+                            <div>À partir du {new Date(rule.start_date).toLocaleDateString('fr-FR')}</div>
+                          )}
+                          {rule.end_date && (
+                            <div>Jusqu'au {new Date(rule.end_date).toLocaleDateString('fr-FR')}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">Toujours</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {rule.is_active ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircle className="h-3 w-3 mr-1" />
@@ -231,6 +308,17 @@ export default function RulesScreen() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => toggleRuleActive(rule)}
+                        className={`mr-3 ${
+                          rule.is_active 
+                            ? 'text-green-600 hover:text-green-900' 
+                            : 'text-gray-400 hover:text-gray-600'
+                        }`}
+                        title={rule.is_active ? 'Désactiver la règle' : 'Activer la règle'}
+                      >
+                        <Power className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => handleEdit(rule)}
                         className="text-blue-600 hover:text-blue-900 mr-3"
@@ -350,6 +438,100 @@ export default function RulesScreen() {
                       );
                     })}
                 </select>
+              </div>
+
+              {/* Exceptions */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Exceptions (motifs à exclure)
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={exceptionInput}
+                    onChange={(e) => setExceptionInput(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addException();
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: CARREFOUR CONTACT"
+                  />
+                  <button
+                    type="button"
+                    onClick={addException}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+                {formData.exceptions.length > 0 && (
+                  <div className="space-y-1">
+                    {formData.exceptions.map((exception, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                        <code className="text-xs text-gray-800">{exception}</code>
+                        <button
+                          type="button"
+                          onClick={() => removeException(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Si le libellé contient une de ces exceptions, la règle ne s'appliquera pas
+                </p>
+              </div>
+
+              {/* Période d'application */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Période d'application
+                  </label>
+                  {(formData.start_date || formData.end_date) && (
+                    <button
+                      type="button"
+                      onClick={resetPeriod}
+                      className="flex items-center text-xs text-gray-600 hover:text-gray-800"
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Date de début (optionnel)
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.start_date || ''}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value || null })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      Date de fin (optionnel)
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.end_date || ''}
+                      onChange={(e) => setFormData({ ...formData, end_date: e.target.value || null })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  La règle s'appliquera uniquement aux transactions dans cette période
+                </p>
               </div>
 
               {/* Statut */}

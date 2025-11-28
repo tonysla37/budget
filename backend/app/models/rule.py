@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import datetime
+from typing import Optional, List
+from datetime import datetime, date
 from bson import ObjectId
 
 class PyObjectId(ObjectId):
@@ -26,6 +26,9 @@ class Rule(BaseModel):
     match_type: str  # contains, starts_with, ends_with, exact
     category_id: str
     is_active: bool = True
+    exceptions: List[str] = Field(default_factory=list)  # Liste de patterns à exclure
+    start_date: Optional[date] = None  # Date de début d'application
+    end_date: Optional[date] = None  # Date de fin d'application
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
