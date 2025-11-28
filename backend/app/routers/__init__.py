@@ -1,1 +1,1 @@
-from app.routers import auth, users, transactions, categories, reports, budgets 
+from app.routers import auth, users, transactions, categories, reports, budgets, rules 

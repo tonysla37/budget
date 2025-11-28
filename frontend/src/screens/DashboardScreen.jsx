@@ -378,26 +378,26 @@ export default function DashboardScreen() {
 
             {/* Liste des budgets individuels */}
             {dashboardData.budget_info.budgets && dashboardData.budget_info.budgets.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Par catégorie</h3>
+              <div className="space-y-2">
+                <h3 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Par catégorie</h3>
                 {dashboardData.budget_info.budgets.map((budget, index) => (
-                  <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
+                    <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center">
                         <div
-                          className="w-4 h-4 rounded-full mr-3"
+                          className="w-3 h-3 rounded-full mr-2"
                           style={{ backgroundColor: budget.category_color }}
                         />
-                        <span className="font-medium text-gray-900">{budget.category_name}</span>
+                        <span className="font-medium text-sm text-gray-900">{budget.category_name}</span>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs text-gray-600">
                           {formatCurrency(budget.spent)} / {formatCurrency(budget.amount)}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
                             budget.percentage >= 100
@@ -409,7 +409,7 @@ export default function DashboardScreen() {
                           style={{ width: `${Math.min(budget.percentage, 100)}%` }}
                         />
                       </div>
-                      <span className={`text-sm font-bold min-w-[60px] text-right ${
+                      <span className={`text-xs font-bold min-w-[45px] text-right ${
                         budget.percentage >= 100
                           ? 'text-red-600'
                           : budget.percentage >= 80

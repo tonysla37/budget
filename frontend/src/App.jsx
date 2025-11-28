@@ -9,6 +9,7 @@ import AddTransactionScreen from './screens/AddTransactionScreen';
 import EditTransactionScreen from './screens/EditTransactionScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
 import BudgetScreen from './screens/BudgetScreen';
+import RulesScreen from './screens/RulesScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import Navigation from './components/Navigation';
@@ -84,6 +85,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <BudgetScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/rules" 
+            element={
+              <ProtectedRoute>
+                <RulesScreen />
               </ProtectedRoute>
             } 
           />
