@@ -5,7 +5,7 @@ import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getBankStyles } from '../utils/bankUtils';
-import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X } from 'lucide-react';
+import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X, Wallet } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 export default function TransactionsScreen() {
@@ -514,6 +514,13 @@ export default function TransactionsScreen() {
                           <>
                             <span className="mx-2">•</span>
                             <span>{transaction.merchant}</span>
+                          </>
+                        )}
+                        {transaction.account && (
+                          <>
+                            <span className="mx-2">•</span>
+                            <Wallet size={14} className="mr-1" />
+                            <span className="font-medium">{transaction.account.name}</span>
                           </>
                         )}
                       </div>

@@ -123,6 +123,7 @@ async def get_transactions(
         
         # Récupérer la connexion bancaire si elle existe
         bank_connection = None
+        bank_account = None
         if transaction.get("bank_connection_id"):
             # bank_connection_id est déjà un ObjectId dans la base
             bank_conn_id = transaction["bank_connection_id"]
@@ -130,6 +131,16 @@ async def get_transactions(
                 bank_conn_id = ObjectId(bank_conn_id)
             bank_connection = await bank_connections_collection.find_one({
                 "_id": bank_conn_id
+            })
+        
+        # Récupérer le compte bancaire si il existe
+        if transaction.get("bank_account_id"):
+            bank_accounts_collection = await db.get_collection("bank_accounts")
+            bank_acc_id = transaction["bank_account_id"]
+            if isinstance(bank_acc_id, str):
+                bank_acc_id = ObjectId(bank_acc_id)
+            bank_account = await bank_accounts_collection.find_one({
+                "_id": bank_acc_id
             })
         
         # Préparer la transaction
@@ -144,6 +155,17 @@ async def get_transactions(
                 "name": bank_connection.get("bank"),
                 "nickname": bank_connection.get("nickname"),
                 "connection_type": bank_connection.get("connection_type")
+            }
+        
+        # Ajouter les infos du compte bancaire
+        if bank_account:
+            transaction_data["account"] = {
+                "id": str(bank_account["_id"]),
+                "name": bank_account.get("name"),
+                "type": bank_account.get("account_type"),
+                "external_id": bank_account.get("external_id"),
+                "balance": bank_account.get("balance"),
+                "currency": bank_account.get("currency", "EUR")
             }
         
         result.append(transaction_data)

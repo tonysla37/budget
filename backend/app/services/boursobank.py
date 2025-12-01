@@ -277,36 +277,77 @@ class BoursobankMockConnector:
         await asyncio.sleep(0.5)
         
         now = datetime.now()
-        return [
-            {
-                'date': (now - timedelta(days=1)).isoformat(),
-                'description': 'VIR SEPA SALAIRE ENTREPRISE',
-                'amount': 2500.00,
-                'is_expense': False,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=2)).isoformat(),
-                'description': 'PRLV SEPA EDF',
-                'amount': 85.50,
-                'is_expense': True,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=3)).isoformat(),
-                'description': 'CB CARREFOUR CITY',
-                'amount': 42.30,
-                'is_expense': True,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=5)).isoformat(),
-                'description': 'CB SNCF PARIS',
-                'amount': 67.80,
-                'is_expense': True,
-                'account_id': account_id
-            }
-        ]
+        
+        # Transactions différentes selon le compte
+        if 'FR7612345678901234567890123' in account_id:  # Compte Courant
+            return [
+                {
+                    'date': (now - timedelta(days=1)).isoformat(),
+                    'description': 'VIR SEPA SALAIRE ENTREPRISE',
+                    'amount': 2500.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=2)).isoformat(),
+                    'description': 'PRLV SEPA LOYER',
+                    'amount': 850.00,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=3)).isoformat(),
+                    'description': 'CB CARREFOUR CITY',
+                    'amount': 42.30,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=5)).isoformat(),
+                    'description': 'CB SNCF PARIS',
+                    'amount': 67.80,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=7)).isoformat(),
+                    'description': 'PRLV SEPA EDF',
+                    'amount': 85.50,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=10)).isoformat(),
+                    'description': 'CB FNAC',
+                    'amount': 129.99,
+                    'is_expense': True,
+                    'account_id': account_id
+                }
+            ]
+        else:  # Livret BoursoBank+
+            return [
+                {
+                    'date': (now - timedelta(days=1)).isoformat(),
+                    'description': 'VIR INTERNE EPARGNE',
+                    'amount': 500.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=15)).isoformat(),
+                    'description': 'VIR INTERNE EPARGNE',
+                    'amount': 500.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=30)).isoformat(),
+                    'description': 'INTERETS LIVRET',
+                    'amount': 12.50,
+                    'is_expense': False,
+                    'account_id': account_id
+                }
+            ]
         
     def close(self):
         """Mock de fermeture"""

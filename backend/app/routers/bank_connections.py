@@ -232,7 +232,9 @@ async def sync_bank_connection(
     db = Depends(get_db)
 ):
     """Synchronise une connexion bancaire (récupère comptes et transactions)"""
-    user_id = str(current_user["_id"])
+    user_id = current_user["_id"]
+    if isinstance(user_id, str):
+        user_id = ObjectId(user_id)
     
     # Récupérer la connexion
     connections_collection = await db.get_collection("bank_connections")
@@ -254,24 +256,25 @@ async def sync_bank_connection(
         )
     
     # Déchiffrer les credentials
+    user_id_str = str(user_id)
     credentials = {}
     if connection.get("connection_type") == "api":
         if connection.get("encrypted_api_client_id"):
             credentials["client_id"] = encryption_service.decrypt(
-                connection["encrypted_api_client_id"], user_id
+                connection["encrypted_api_client_id"], user_id_str
             )
         if connection.get("encrypted_api_client_secret"):
             credentials["client_secret"] = encryption_service.decrypt(
-                connection["encrypted_api_client_secret"], user_id
+                connection["encrypted_api_client_secret"], user_id_str
             )
     else:
         if connection.get("encrypted_username"):
             credentials["username"] = encryption_service.decrypt(
-                connection["encrypted_username"], user_id
+                connection["encrypted_username"], user_id_str
             )
         if connection.get("encrypted_password"):
             credentials["password"] = encryption_service.decrypt(
-                connection["encrypted_password"], user_id
+                connection["encrypted_password"], user_id_str
             )
     
     # Importer et utiliser le connecteur approprié
@@ -322,12 +325,12 @@ async def sync_bank_connection(
         for account in accounts:
             # Vérifier si le compte existe déjà
             existing_account = await accounts_collection.find_one({
-                "connection_id": connection_id,
+                "connection_id": ObjectId(connection_id),
                 "external_id": account["id"]
             })
             
             account_data = {
-                "connection_id": connection_id,
+                "connection_id": ObjectId(connection_id),
                 "user_id": user_id,
                 "external_id": account["id"],
                 "name": account["name"],
@@ -345,20 +348,28 @@ async def sync_bank_connection(
                     {"_id": existing_account["_id"]},
                     {"$set": account_data}
                 )
+                bank_account_id = existing_account["_id"]
             else:
                 account_data["created_at"] = datetime.now()
-                await accounts_collection.insert_one(account_data)
+                result = await accounts_collection.insert_one(account_data)
+                bank_account_id = result.inserted_id
             
             # Récupérer les transactions
             transactions = await connector.get_transactions(account["id"])
             
             # Sauvegarder les transactions
             for trans in transactions:
+                # Créer un external_id unique basé sur la date (sans l'heure), description et montant absolu
+                transaction_date = datetime.fromisoformat(trans["date"])
+                date_str = transaction_date.date().isoformat()  # Format YYYY-MM-DD seulement
+                amount_abs = abs(trans["amount"])
+                external_id = f"{account['id']}_{date_str}_{amount_abs}_{trans['description'][:20]}"
+                
                 # Vérifier si la transaction existe déjà
                 existing_trans = await transactions_collection.find_one({
                     "user_id": user_id,
-                    "bank_connection_id": connection_id,
-                    "external_id": f"{account['id']}_{trans['date']}_{trans['amount']}"
+                    "bank_connection_id": ObjectId(connection_id),
+                    "external_id": external_id
                 })
                 
                 if not existing_trans:
@@ -366,11 +377,12 @@ async def sync_bank_connection(
                     is_expense = trans["amount"] < 0
                     transaction_data = {
                         "user_id": user_id,
-                        "bank_connection_id": connection_id,
-                        "external_id": f"{account['id']}_{trans['date']}_{trans['amount']}",
-                        "amount": abs(trans["amount"]),  # Toujours en valeur absolue
+                        "bank_connection_id": ObjectId(connection_id),
+                        "bank_account_id": bank_account_id,
+                        "external_id": external_id,
+                        "amount": amount_abs,  # Toujours en valeur absolue
                         "description": trans["description"],
-                        "date": datetime.fromisoformat(trans["date"]),
+                        "date": transaction_date,
                         "type": "expense" if is_expense else "income",
                         "category": None,  # Sera catégorisé par les règles
                         "created_at": datetime.now(),

@@ -253,12 +253,8 @@ class CICMockConnector:
     async def login(self, username: str, password: str) -> bool:
         """Mock de connexion"""
         await asyncio.sleep(0.5)  # Simuler un délai réseau
-        # Validation basique du format
-        if len(username) != 10 or not username.isdigit():
-            return False
-        if len(password) != 6 or not password.isdigit():
-            return False
-        return True
+        # Accepter n'importe quel identifiant sauf "invalid"
+        return password != "invalid"
         
     async def get_accounts(self) -> List[Dict[str, Any]]:
         """Mock de récupération des comptes"""
@@ -300,43 +296,95 @@ class CICMockConnector:
         await asyncio.sleep(0.5)
         
         now = datetime.now()
-        return [
-            {
-                'date': (now - timedelta(days=1)).isoformat(),
-                'description': 'VIR SALAIRE',
-                'amount': 2800.00,
-                'is_expense': False,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=2)).isoformat(),
-                'description': 'PRLV LOYER',
-                'amount': 950.00,
-                'is_expense': True,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=3)).isoformat(),
-                'description': 'CB AUCHAN',
-                'amount': 78.45,
-                'is_expense': True,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=4)).isoformat(),
-                'description': 'CB TOTAL ENERGIE',
-                'amount': 65.00,
-                'is_expense': True,
-                'account_id': account_id
-            },
-            {
-                'date': (now - timedelta(days=7)).isoformat(),
-                'description': 'PRLV ELECTRICITE',
-                'amount': 125.30,
-                'is_expense': True,
-                'account_id': account_id
-            }
-        ]
+        
+        # Transactions différentes selon le compte
+        if account_id == '12345678901':  # Compte Chèque
+            return [
+                {
+                    'date': (now - timedelta(days=1)).isoformat(),
+                    'description': 'VIR SALAIRE',
+                    'amount': 2800.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=2)).isoformat(),
+                    'description': 'PRLV LOYER',
+                    'amount': 950.00,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=3)).isoformat(),
+                    'description': 'CB AUCHAN',
+                    'amount': 78.45,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=4)).isoformat(),
+                    'description': 'PRLV SEPA INTERNET',
+                    'amount': 29.99,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=7)).isoformat(),
+                    'description': 'PRLV ELECTRICITE',
+                    'amount': 125.30,
+                    'is_expense': True,
+                    'account_id': account_id
+                }
+            ]
+        elif account_id == '12345678902':  # Livret A
+            return [
+                {
+                    'date': (now - timedelta(days=3)).isoformat(),
+                    'description': 'VIR EPARGNE MENSUELLE',
+                    'amount': 300.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=20)).isoformat(),
+                    'description': 'VIR EPARGNE MENSUELLE',
+                    'amount': 300.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=30)).isoformat(),
+                    'description': 'INTERETS LIVRET A',
+                    'amount': 25.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                }
+            ]
+        else:  # PEA (12345678903)
+            return [
+                {
+                    'date': (now - timedelta(days=5)).isoformat(),
+                    'description': 'ACHAT ACTIONS TOTAL',
+                    'amount': 1500.00,
+                    'is_expense': True,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=10)).isoformat(),
+                    'description': 'VENTE ACTIONS ORANGE',
+                    'amount': 800.00,
+                    'is_expense': False,
+                    'account_id': account_id
+                },
+                {
+                    'date': (now - timedelta(days=15)).isoformat(),
+                    'description': 'DIVIDENDES',
+                    'amount': 45.20,
+                    'is_expense': False,
+                    'account_id': account_id
+                }
+            ]
+        
         
     def close(self):
         """Mock de fermeture"""

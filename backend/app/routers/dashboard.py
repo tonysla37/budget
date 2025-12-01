@@ -236,6 +236,7 @@ async def get_dashboard_data(
         
         # Récupérer la collection des connexions bancaires pour ajouter les infos bank
         bank_connections_collection = await db.get_collection("bank_connections")
+        bank_accounts_collection = await db.get_collection("bank_accounts")
         
         # Préparer les transactions récentes
         recent_transactions_data = []
@@ -271,6 +272,25 @@ async def get_dashboard_data(
                         "name": bank_connection.get("bank"),
                         "nickname": bank_connection.get("nickname"),
                         "connection_type": bank_connection.get("connection_type")
+                    }
+            
+            # Récupérer le compte bancaire si il existe
+            if transaction.get("bank_account_id"):
+                bank_acc_id = transaction["bank_account_id"]
+                if isinstance(bank_acc_id, str):
+                    from bson import ObjectId
+                    bank_acc_id = ObjectId(bank_acc_id)
+                bank_account = await bank_accounts_collection.find_one({
+                    "_id": bank_acc_id
+                })
+                if bank_account:
+                    transaction_data["account"] = {
+                        "id": str(bank_account["_id"]),
+                        "name": bank_account.get("name"),
+                        "type": bank_account.get("account_type"),
+                        "external_id": bank_account.get("external_id"),
+                        "balance": bank_account.get("balance"),
+                        "currency": bank_account.get("currency", "EUR")
                     }
             
             if transaction.get("category_id"):

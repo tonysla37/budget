@@ -89,7 +89,9 @@ class Transaction(TransactionBase):
     category: Optional[Category] = None
     tags: List[Tag] = []
     bank_connection_id: Optional[str] = None  # ID de la connexion bancaire
+    bank_account_id: Optional[str] = None  # ID du compte bancaire
     bank: Optional[Dict[str, Any]] = None  # Infos de la banque (ajoutées dynamiquement)
+    account: Optional[Dict[str, Any]] = None  # Infos du compte bancaire (ajoutées dynamiquement)
 
     class Config:
         from_attributes = True

@@ -1,0 +1,17 @@
+[Unit]
+Description=Budget App Frontend (Vite Dev Server)
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/code/budget/frontend
+Environment="NODE_ENV=development"
+ExecStart=/usr/bin/npm run dev
+Restart=always
+RestartSec=10
+StandardOutput=append:/home/%i/code/budget/logs/frontend.log
+StandardError=append:/home/%i/code/budget/logs/frontend.log
+
+[Install]
+WantedBy=default.target
