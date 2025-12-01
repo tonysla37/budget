@@ -81,6 +81,9 @@ export const previewCSVImport = async (file) => {
     });
     
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('401: Session expirée');
+      }
       const error = await response.json();
       throw new Error(error.detail || 'Erreur lors de la prévisualisation');
     }
@@ -108,6 +111,9 @@ export const importCSV = async (file, bankConnectionId = null, bankAccountId = n
     });
     
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('401: Session expirée');
+      }
       const error = await response.json();
       throw new Error(error.detail || 'Erreur lors de l\'import');
     }

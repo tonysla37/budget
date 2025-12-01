@@ -22,6 +22,11 @@ export default function TransactionsScreen() {
   const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('transactionsSelectedCategory') || 'all'); // Filtre par catégorie
   const [selectedBank, setSelectedBank] = useState(() => localStorage.getItem('transactionsSelectedBank') || 'all'); // Filtre par banque
   const [billingCycleDay, setBillingCycleDay] = useState(1); // Jour de début du cycle
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(() => parseInt(localStorage.getItem('transactionsItemsPerPage')) || 50);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,7 +44,8 @@ export default function TransactionsScreen() {
     localStorage.setItem('transactionsFilterType', filterType);
     localStorage.setItem('transactionsSelectedCategory', selectedCategory);
     localStorage.setItem('transactionsSelectedBank', selectedBank);
-  }, [searchTerm, selectedPeriod, startDate, endDate, filterType, selectedCategory, selectedBank]);
+    localStorage.setItem('transactionsItemsPerPage', itemsPerPage.toString());
+  }, [searchTerm, selectedPeriod, startDate, endDate, filterType, selectedCategory, selectedBank, itemsPerPage]);
 
   const loadUserProfile = async () => {
     try {
@@ -249,6 +255,17 @@ export default function TransactionsScreen() {
     return true;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+  
+  // Réinitialiser à la page 1 si les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType, selectedCategory, selectedBank, selectedPeriod, startDate, endDate]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -270,6 +287,9 @@ export default function TransactionsScreen() {
               <h1 className="text-3xl font-bold text-gray-900">{t('transactions.title')}</h1>
               <p className="text-gray-600 mt-1">
                 {filteredTransactions.length} {t('common.search')} {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
+                {filteredTransactions.length > itemsPerPage && (
+                  <span> • Page {currentPage} / {totalPages}</span>
+                )}
               </p>
             </div>
             <button 
@@ -482,7 +502,7 @@ export default function TransactionsScreen() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {filteredTransactions.map((transaction) => {
+              {paginatedTransactions.map((transaction) => {
                 const bankStyles = getBankStyles(transaction.bank?.name);
                 return (
                 <div key={transaction.id} className="p-4 hover:bg-gray-50 transition-colors">
@@ -552,6 +572,98 @@ export default function TransactionsScreen() {
                 </div>
               );
               })}
+            </div>
+          )}
+          
+          {/* Pagination */}
+          {filteredTransactions.length > 0 && (
+            <div className="mt-6 flex items-center justify-between bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-200">
+              {/* Sélecteur de nombre d'éléments par page */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700">Afficher:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+                  className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                  <option value={500}>500</option>
+                </select>
+                <span className="text-sm text-gray-700">par page</span>
+              </div>
+              
+              {/* Info et navigation */}
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-700">
+                  {startIndex + 1} - {Math.min(endIndex, filteredTransactions.length)} sur {filteredTransactions.length}
+                </span>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ««
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+                  
+                  {/* Pages */}
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    // Afficher seulement quelques pages autour de la page actuelle
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-1 text-sm border rounded-md ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return <span key={page} className="px-2 text-gray-400">...</span>;
+                    }
+                    return null;
+                  })}
+                  
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    »»
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

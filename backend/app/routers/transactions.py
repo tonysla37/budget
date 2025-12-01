@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from datetime import datetime, date, UTC
+from datetime import datetime, date, UTC, timezone
 from bson import ObjectId
 import logging
 
@@ -57,7 +57,7 @@ def prepare_mongodb_document_for_response(document: Dict[str, Any]) -> Dict[str,
 @router.get("/", response_model=List[TransactionWithCategory])
 async def get_transactions(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,  # Limite augmentée pour gérer les gros imports
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     year: Optional[int] = None,
@@ -77,12 +77,12 @@ async def get_transactions(
     
     # Appliquer les filtres si fournis
     if start_date:
-        filter_query["date"] = {"$gte": datetime.combine(start_date, datetime.min.time())}
+        filter_query["date"] = {"$gte": start_date.strftime("%Y-%m-%d")}
     if end_date:
         if "date" in filter_query:
-            filter_query["date"]["$lte"] = datetime.combine(end_date, datetime.max.time())
+            filter_query["date"]["$lte"] = end_date.strftime("%Y-%m-%d")
         else:
-            filter_query["date"] = {"$lte": datetime.combine(end_date, datetime.max.time())}
+            filter_query["date"] = {"$lte": end_date.strftime("%Y-%m-%d")}
     
     # Filtre par mois et année
     if year and month:
@@ -92,7 +92,7 @@ async def get_transactions(
         else:
             end_of_month = datetime(year, month + 1, 1)
         
-        filter_query["date"] = {"$gte": start_of_month, "$lt": end_of_month}
+        filter_query["date"] = {"$gte": start_of_month.strftime("%Y-%m-%d"), "$lt": end_of_month.strftime("%Y-%m-%d")}
     
     if category_id:
         filter_query["category_id"] = ObjectId(category_id)
@@ -282,6 +282,80 @@ async def update_transaction(
     updated_transaction = await db.find_one("transactions", {"_id": ObjectId(transaction_id)})
     
     return prepare_mongodb_document_for_response(updated_transaction)
+
+
+@router.post("/bulk")
+async def bulk_import_transactions(
+    data: Dict[str, Any],
+    current_user: Dict = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Import en masse de transactions depuis le frontend.
+    Détecte les doublons via external_id.
+    """
+    user_id = current_user["_id"]
+    transactions = data.get("transactions", [])
+    bank_connection_id = data.get("bank_connection_id")
+    bank_account_id = data.get("bank_account_id")
+    category_id = data.get("category_id")
+    
+    if not transactions:
+        raise HTTPException(status_code=400, detail="Aucune transaction à importer")
+    
+    transactions_collection = await db.get_collection("transactions")
+    
+    imported = 0
+    skipped = 0
+    errors = []
+    
+    for trans in transactions:
+        try:
+            # Vérifier les doublons par external_id
+            external_id = trans.get("external_id")
+            if external_id:
+                existing = await transactions_collection.find_one({
+                    "user_id": user_id,
+                    "external_id": external_id
+                })
+                if existing:
+                    skipped += 1
+                    continue
+            
+            # Préparer la transaction
+            transaction_data = {
+                "user_id": user_id,
+                "date": trans.get("date"),
+                "description": trans.get("description", ""),
+                "amount": float(trans.get("amount", 0)),
+                "type": trans.get("type", "expense"),
+                "is_expense": trans.get("type") == "expense",
+                "category_id": ObjectId(category_id) if category_id else None,
+                "bank_connection_id": ObjectId(bank_connection_id) if bank_connection_id else None,
+                "bank_account_id": ObjectId(bank_account_id) if bank_account_id else None,
+                "external_id": external_id,
+                "tags": trans.get("tags", []),
+                "notes": trans.get("notes", ""),
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
+            }
+            
+            await transactions_collection.insert_one(transaction_data)
+            imported += 1
+            
+        except Exception as e:
+            errors.append(f"Erreur sur transaction {trans.get('description', 'inconnue')}: {str(e)}")
+            logger.error(f"Erreur import transaction: {str(e)}")
+    
+    logger.info(f"Import bulk - User: {user_id}, Importées: {imported}, Ignorées: {skipped}")
+    
+    return {
+        "success": True,
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "message": f"{imported} transaction(s) importée(s), {skipped} doublon(s) ignoré(s)"
+    }
 
 
 @router.delete("/purge")

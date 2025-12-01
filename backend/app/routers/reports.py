@@ -28,12 +28,16 @@ async def get_monthly_report(
     else:
         end_date = datetime(year, month + 1, 1)
     
+    # Convertir en strings pour la comparaison
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     # Agréger les données mensuelles
     user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
             "user_id": user_id,
-            "date": {"$gte": start_date, "$lt": end_date}
+            "date": {"$gte": start_date_str, "$lt": end_date_str}
         }},
         {"$group": {
             "_id": {
@@ -54,7 +58,7 @@ async def get_monthly_report(
     expenses_by_category = {}
     
     for result in results:
-        category_id = str(result["_id"]["category_id"]) if result["_id"]["category_id"] else "uncategorized"
+        category_id = str(result["_id"].get("category_id")) if result["_id"].get("category_id") else "uncategorized"
         amount = result["total_amount"]
         count = result["count"]
         
@@ -118,16 +122,16 @@ async def get_period_report(
     """
     Récupérer le rapport pour une période donnée.
     """
-    # Convertir les dates
-    start_datetime = datetime.combine(start_date, datetime.min.time())
-    end_datetime = datetime.combine(end_date, datetime.max.time())
+    # Convertir les dates en strings pour la comparaison
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
     
     # Agréger les données pour la période
     user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
             "user_id": user_id,
-            "date": {"$gte": start_datetime, "$lte": end_datetime}
+            "date": {"$gte": start_date_str, "$lte": end_date_str}
         }},
         {"$group": {
             "_id": {
@@ -148,7 +152,7 @@ async def get_period_report(
     expenses_by_category = {}
     
     for result in results:
-        category_id = str(result["_id"]["category_id"]) if result["_id"]["category_id"] else "uncategorized"
+        category_id = str(result["_id"].get("category_id")) if result["_id"].get("category_id") else "uncategorized"
         amount = result["total_amount"]
         count = result["count"]
         
@@ -215,16 +219,28 @@ async def get_trends_report(
     end_date = datetime.now()
     start_date = datetime(end_date.year, end_date.month - months + 1, 1)
     
+    # Convertir en strings
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     # Agréger les données par mois
+    # Note: $year et $month ne fonctionnent pas sur des strings, il faut parser la date
     pipeline = [
         {"$match": {
             "user_id": current_user["_id"],
-            "date": {"$gte": start_date, "$lte": end_date}
+            "date": {"$gte": start_date_str, "$lte": end_date_str}
+        }},
+        {"$addFields": {
+            "date_parts": {"$split": ["$date", "-"]}
+        }},
+        {"$addFields": {
+            "year": {"$toInt": {"$arrayElemAt": ["$date_parts", 0]}},
+            "month": {"$toInt": {"$arrayElemAt": ["$date_parts", 1]}}
         }},
         {"$group": {
             "_id": {
-                "year": {"$year": "$date"},
-                "month": {"$month": "$date"},
+                "year": "$year",
+                "month": "$month",
                 "is_expense": "$is_expense"
             },
             "total_amount": {"$sum": "$amount"},

@@ -99,6 +99,12 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     }
 
 
+@router.post("/logout")
+async def logout(current_user: Dict = Depends(get_current_user)):
+    """Déconnexion de l'utilisateur (côté serveur c'est juste une validation)."""
+    return {"message": "Déconnexion réussie"}
+
+
 @router.get("/me", response_model=UserSchema)
 async def get_current_user_info(current_user: Dict = Depends(get_current_user)):
     """Récupérer les informations de l'utilisateur connecté."""

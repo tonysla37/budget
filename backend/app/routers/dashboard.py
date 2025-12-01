@@ -13,6 +13,8 @@ router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 @router.get("/")
 async def get_dashboard_data(
     period: str = Query("current", description="Période: current, previous, year"),
+    start_date: Optional[str] = Query(None, description="Date de début (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="Date de fin (YYYY-MM-DD)"),
     current_user: Dict = Depends(get_current_user),
     db = Depends(get_db)
 ):
@@ -20,57 +22,66 @@ async def get_dashboard_data(
     Récupérer les données du tableau de bord.
     """
     try:
-        # Récupérer le billing_cycle_day de l'utilisateur
-        billing_cycle_day = current_user.get("billing_cycle_day", 1)
-        
-        # Calculer la période
-        now = datetime.now()
-        if period == "current":
-            # Utilise le billing_cycle_day pour déterminer le début du mois
-            if now.day >= billing_cycle_day:
-                start_date = datetime(now.year, now.month, billing_cycle_day)
-                # Mois suivant
-                if now.month == 12:
-                    end_date = datetime(now.year + 1, 1, billing_cycle_day)
+        # Si start_date et end_date sont fournis, utiliser ces dates
+        if start_date and end_date:
+            start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
+            end_datetime = datetime.strptime(end_date, "%Y-%m-%d")
+        else:
+            # Récupérer le billing_cycle_day de l'utilisateur
+            billing_cycle_day = current_user.get("billing_cycle_day", 1)
+            
+            # Calculer la période
+            now = datetime.now()
+            if period == "current":
+                # Utilise le billing_cycle_day pour déterminer le début du mois
+                if now.day >= billing_cycle_day:
+                    start_datetime = datetime(now.year, now.month, billing_cycle_day)
+                    # Mois suivant
+                    if now.month == 12:
+                        end_datetime = datetime(now.year + 1, 1, billing_cycle_day)
+                    else:
+                        end_datetime = datetime(now.year, now.month + 1, billing_cycle_day)
                 else:
-                    end_date = datetime(now.year, now.month + 1, billing_cycle_day)
-            else:
-                # On est avant le billing_cycle_day, donc période précédente
-                if now.month == 1:
-                    start_date = datetime(now.year - 1, 12, billing_cycle_day)
+                    # On est avant le billing_cycle_day, donc période précédente
+                    if now.month == 1:
+                        start_datetime = datetime(now.year - 1, 12, billing_cycle_day)
+                    else:
+                        start_datetime = datetime(now.year, now.month - 1, billing_cycle_day)
+                    end_datetime = datetime(now.year, now.month, billing_cycle_day)
+            elif period == "previous":
+                # Calculer le mois précédent en tenant compte du billing_cycle_day
+                if now.day >= billing_cycle_day:
+                    # Période actuelle, donc previous = mois -1
+                    if now.month == 1:
+                        start_datetime = datetime(now.year - 1, 12, billing_cycle_day)
+                        end_datetime = datetime(now.year, 1, billing_cycle_day)
+                    else:
+                        start_datetime = datetime(now.year, now.month - 1, billing_cycle_day)
+                        end_datetime = datetime(now.year, now.month, billing_cycle_day)
                 else:
-                    start_date = datetime(now.year, now.month - 1, billing_cycle_day)
-                end_date = datetime(now.year, now.month, billing_cycle_day)
-        elif period == "previous":
-            # Calculer le mois précédent en tenant compte du billing_cycle_day
-            if now.day >= billing_cycle_day:
-                # Période actuelle, donc previous = mois -1
-                if now.month == 1:
-                    start_date = datetime(now.year - 1, 12, billing_cycle_day)
-                    end_date = datetime(now.year, 1, billing_cycle_day)
-                else:
-                    start_date = datetime(now.year, now.month - 1, billing_cycle_day)
-                    end_date = datetime(now.year, now.month, billing_cycle_day)
-            else:
-                # On est déjà dans la période précédente, donc previous = mois -2
-                if now.month <= 2:
-                    start_date = datetime(now.year - 1, 12 if now.month == 1 else 11, billing_cycle_day)
-                    end_date = datetime(now.year - 1 if now.month == 1 else now.year, 12 if now.month == 1 else now.month - 1, billing_cycle_day)
-                else:
-                    start_date = datetime(now.year, now.month - 2, billing_cycle_day)
-                    end_date = datetime(now.year, now.month - 1, billing_cycle_day)
-        else:  # year
-            start_date = datetime(now.year, 1, 1)
-            end_date = datetime(now.year + 1, 1, 1)
+                    # On est déjà dans la période précédente, donc previous = mois -2
+                    if now.month <= 2:
+                        start_datetime = datetime(now.year - 1, 12 if now.month == 1 else 11, billing_cycle_day)
+                        end_datetime = datetime(now.year - 1 if now.month == 1 else now.year, 12 if now.month == 1 else now.month - 1, billing_cycle_day)
+                    else:
+                        start_datetime = datetime(now.year, now.month - 2, billing_cycle_day)
+                        end_datetime = datetime(now.year, now.month - 1, billing_cycle_day)
+            else:  # year
+                start_datetime = datetime(now.year, 1, 1)
+                end_datetime = datetime(now.year + 1, 1, 1)
 
         # Récupérer les transactions de la période
         collection = await db.get_collection("transactions")
+        
+        # Convertir les dates en strings pour la comparaison (les dates sont stockées en string dans MongoDB)
+        start_date_str = start_datetime.strftime("%Y-%m-%d")
+        end_date_str = end_datetime.strftime("%Y-%m-%d")
         
         # Pipeline pour les statistiques générales
         stats_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date, "$lt": end_date}
+                "date": {"$gte": start_date_str, "$lt": end_date_str}
             }},
             {"$addFields": {
                 "computed_is_expense": {
@@ -110,7 +121,7 @@ async def get_dashboard_data(
         category_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date, "$lt": end_date}
+                "date": {"$gte": start_date_str, "$lt": end_date_str}
             }},
             {"$addFields": {
                 "computed_is_expense": {
@@ -138,7 +149,7 @@ async def get_dashboard_data(
         income_category_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date, "$lt": end_date}
+                "date": {"$gte": start_date_str, "$lt": end_date_str}
             }},
             {"$addFields": {
                 "computed_is_expense": {
@@ -231,7 +242,7 @@ async def get_dashboard_data(
         # Récupérer les transactions récentes de la période
         recent_transactions = await collection.find({
             "user_id": current_user["_id"],
-            "date": {"$gte": start_date, "$lt": end_date}
+            "date": {"$gte": start_date_str, "$lt": end_date_str}
         }).sort("date", -1).limit(100).to_list(length=100)
         
         # Récupérer la collection des connexions bancaires pour ajouter les infos bank
@@ -332,8 +343,8 @@ async def get_dashboard_data(
                     {"is_recurring": True},  # Budgets récurrents
                     {  # Budgets ponctuels pour ce mois
                         "is_recurring": False,
-                        "year": start_date.year,
-                        "month": start_date.month
+                        "year": start_datetime.year,
+                        "month": start_datetime.month
                     }
                 ]
             else:  # year
@@ -417,9 +428,9 @@ async def get_dashboard_data(
             "recent_transactions": recent_transactions_data,
             "budget_info": budget_info,
             "period": {
-                "start": start_date,
-                "end": end_date,
-                "label": f"{start_date.strftime('%B %Y')}"
+                "start": start_datetime,
+                "end": end_datetime,
+                "label": f"{start_datetime.strftime('%B %Y')}"
             }
         }
         

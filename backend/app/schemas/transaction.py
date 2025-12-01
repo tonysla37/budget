@@ -88,7 +88,7 @@ class Transaction(TransactionBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     category: Optional[Category] = None
-    tags: List[Tag] = []
+    tags: Optional[List[Union[Tag, str]]] = []  # Peut être des objets Tag ou des strings
     bank_connection_id: Optional[str] = None  # ID de la connexion bancaire
     bank_account_id: Optional[str] = None  # ID du compte bancaire
     bank: Optional[Dict[str, Any]] = None  # Infos de la banque (ajoutées dynamiquement)

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getBankConnections, createBankConnection, deleteBankConnection, syncBankConnection, getBankAccounts, previewCSVImport, importCSV } from '../services/bankService';
-import { purgeAllTransactions } from '../services/transactionService';
+import { useNavigate } from 'react-router-dom';
+import { getBankConnections, createBankConnection, deleteBankConnection, syncBankConnection, getBankAccounts } from '../services/bankService';
+import { purgeAllTransactions, bulkImportTransactions } from '../services/transactionService';
+import { parseCSVFile } from '../services/csvParser';
 import { Plus, Trash2, RefreshCw, Lock, Eye, EyeOff, Building2, CheckCircle, AlertCircle, Wallet, CreditCard, PiggyBank, TrendingUp, Upload, FileText, AlertTriangle } from 'lucide-react';
 
 export default function BankConnectionsScreen() {
+  const navigate = useNavigate();
   const [connections, setConnections] = useState([]);
   const [accounts, setAccounts] = useState({});  // Stockage des comptes par connection_id
   const [showModal, setShowModal] = useState(false);
@@ -170,24 +173,48 @@ export default function BankConnectionsScreen() {
     setImportFile(file);
     
     try {
-      const preview = await previewCSVImport(file);
-      setImportPreview(preview);
+      // Parser le CSV côté frontend
+      const result = await parseCSVFile(file);
+      setImportPreview(result);
+      
+      // Auto-sélectionner la connexion bancaire si elle correspond
+      if (result.detected_bank && connections.length > 0) {
+        const bankName = result.detected_bank.toLowerCase();
+        const matchingConnection = connections.find(conn => {
+          const connName = (conn.nickname || conn.bank_name || '').toLowerCase();
+          // Rechercher boursobank, bourso, cic selon la banque détectée
+          if (bankName === 'boursobank') {
+            return connName.includes('bourso');
+          } else if (bankName === 'cic') {
+            return connName.includes('cic');
+          }
+          return connName.includes(bankName);
+        });
+        
+        if (matchingConnection) {
+          setSelectedConnection(matchingConnection.id);
+        }
+      }
     } catch (error) {
       console.error('Erreur lors de la prévisualisation:', error);
-      alert('Erreur lors de la prévisualisation du fichier');
+      alert('Erreur lors de la prévisualisation du fichier: ' + error.message);
       setImportFile(null);
     }
   };
 
   const handleImport = async () => {
-    if (!importFile) return;
+    if (!importPreview || !importPreview.transactions) return;
 
     setIsImporting(true);
     try {
-      const result = await importCSV(
-        importFile,
-        selectedConnection,
-        selectedAccount
+      // Envoyer les transactions au backend
+      const result = await bulkImportTransactions(
+        importPreview.transactions,
+        {
+          bankConnectionId: selectedConnection,
+          bankAccountId: selectedAccount,
+          categoryId: null
+        }
       );
 
       alert(`Import réussi !\n${result.imported} transactions importées\n${result.skipped} doublons ignorés`);
@@ -779,48 +806,52 @@ export default function BankConnectionsScreen() {
                     {importPreview.detected_bank && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">Banque détectée:</span>
-                        <span className="font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                        <span className={`font-medium px-2 py-1 rounded ${
+                          importPreview.detected_bank === 'boursobank' 
+                            ? 'bg-pink-100 text-pink-700' 
+                            : 'bg-blue-100 text-blue-700'
+                        }`}>
                           {importPreview.detected_bank === 'boursobank' ? '🏦 BoursoBank' : '🏛️ CIC'}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Format détecté:</span>
-                      <span className="font-medium">CSV (délimiteur: {importPreview.delimiter})</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Encodage:</span>
-                      <span className="font-medium">{importPreview.encoding}</span>
+                      <span className="font-medium">CSV</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Transactions détectées:</span>
-                      <span className="font-medium">{importPreview.total_rows}</span>
+                      <span className="font-medium">{importPreview.total_transactions || 0}</span>
                     </div>
                   </div>
 
-                  {importPreview.preview_rows && importPreview.preview_rows.length > 0 && (
+                  {importPreview.preview && importPreview.preview.length > 0 && (
                     <div className="mt-4">
-                      <p className="text-xs text-gray-500 mb-2">Aperçu (premières lignes):</p>
+                      <p className="text-xs text-gray-500 mb-2">Aperçu (premières transactions):</p>
                       <div className="bg-white rounded border border-gray-200 overflow-hidden">
                         <div className="max-h-48 overflow-y-auto">
                           <table className="min-w-full divide-y divide-gray-200 text-xs">
                             <thead className="bg-gray-50 sticky top-0">
                               <tr>
-                                {importPreview.headers.slice(0, 4).map((header, idx) => (
-                                  <th key={idx} className="px-2 py-1 text-left text-gray-600 font-medium">
-                                    {header}
-                                  </th>
-                                ))}
+                                <th className="px-2 py-1 text-left text-gray-600 font-medium">Date</th>
+                                <th className="px-2 py-1 text-left text-gray-600 font-medium">Description</th>
+                                <th className="px-2 py-1 text-left text-gray-600 font-medium">Montant</th>
+                                <th className="px-2 py-1 text-left text-gray-600 font-medium">Type</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                              {importPreview.preview_rows.slice(0, 5).map((row, idx) => (
+                              {importPreview.preview.map((trans, idx) => (
                                 <tr key={idx} className="hover:bg-gray-50">
-                                  {importPreview.headers.slice(0, 4).map((header, colIdx) => (
-                                    <td key={colIdx} className="px-2 py-1 text-gray-900 truncate max-w-xs">
-                                      {row[header] || '-'}
-                                    </td>
-                                  ))}
+                                  <td className="px-2 py-1 text-gray-900">{trans.date}</td>
+                                  <td className="px-2 py-1 text-gray-900 truncate max-w-xs">{trans.description}</td>
+                                  <td className="px-2 py-1 text-gray-900">{trans.amount.toFixed(2)}€</td>
+                                  <td className="px-2 py-1">
+                                    <span className={`px-2 py-0.5 text-xs rounded ${
+                                      trans.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                      {trans.type === 'income' ? 'Crédit' : 'Débit'}
+                                    </span>
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>

@@ -90,7 +90,7 @@ export const getTransactionsByCategory = async (categoryId, period = 'current') 
   }
 };
 
-// Purger TOUTES les transactions de l'utilisateur
+// Purger toutes les transactions
 export const purgeAllTransactions = async () => {
   try {
     return await apiCall('/api/transactions/purge', {
@@ -98,6 +98,24 @@ export const purgeAllTransactions = async () => {
     });
   } catch (error) {
     console.error('Erreur lors de la purge des transactions:', error);
+    throw error;
+  }
+};
+
+// Import en masse de transactions
+export const bulkImportTransactions = async (transactions, options = {}) => {
+  try {
+    return await apiCall('/api/transactions/bulk', {
+      method: 'POST',
+      body: JSON.stringify({
+        transactions,
+        bank_connection_id: options.bankConnectionId || null,
+        bank_account_id: options.bankAccountId || null,
+        category_id: options.categoryId || null
+      }),
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'import en masse:', error);
     throw error;
   }
 };
