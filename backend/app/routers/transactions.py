@@ -284,6 +284,35 @@ async def update_transaction(
     return prepare_mongodb_document_for_response(updated_transaction)
 
 
+@router.delete("/purge")
+async def purge_all_transactions(
+    current_user: Dict = Depends(get_current_user),
+    db = Depends(get_db)
+):
+    """
+    Supprime TOUTES les transactions de l'utilisateur.
+    ATTENTION: Cette action est irréversible !
+    """
+    user_id = current_user["_id"]
+    
+    # Récupère les collections
+    transactions_collection = await db.get_collection("transactions")
+    
+    # Compte le nombre de transactions avant suppression
+    count_before = await transactions_collection.count_documents({"user_id": user_id})
+    
+    # Supprime toutes les transactions de l'utilisateur
+    result = await transactions_collection.delete_many({"user_id": user_id})
+    
+    logger.info(f"Purge des transactions - Utilisateur: {user_id}, Supprimées: {result.deleted_count}")
+    
+    return {
+        "success": True,
+        "deleted_count": result.deleted_count,
+        "message": f"{result.deleted_count} transaction(s) supprimée(s)"
+    }
+
+
 @router.delete("/{transaction_id}")
 async def delete_transaction(
     transaction_id: str,
@@ -382,4 +411,5 @@ async def get_transaction_summary(
     
     summary["net_amount"] = summary["total_income"] - summary["total_expenses"]
     
-    return summary 
+    return summary
+ 

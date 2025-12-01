@@ -89,3 +89,15 @@ export const getTransactionsByCategory = async (categoryId, period = 'current') 
     throw error;
   }
 };
+
+// Purger TOUTES les transactions de l'utilisateur
+export const purgeAllTransactions = async () => {
+  try {
+    return await apiCall('/api/transactions/purge', {
+      method: 'DELETE'
+    });
+  } catch (error) {
+    console.error('Erreur lors de la purge des transactions:', error);
+    throw error;
+  }
+};

@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { getBankConnections, createBankConnection, deleteBankConnection, syncBankConnection, getBankAccounts } from '../services/bankService';
-import { Plus, Trash2, RefreshCw, Lock, Eye, EyeOff, Building2, CheckCircle, AlertCircle, Wallet, CreditCard, PiggyBank, TrendingUp } from 'lucide-react';
+import { getBankConnections, createBankConnection, deleteBankConnection, syncBankConnection, getBankAccounts, previewCSVImport, importCSV } from '../services/bankService';
+import { purgeAllTransactions } from '../services/transactionService';
+import { Plus, Trash2, RefreshCw, Lock, Eye, EyeOff, Building2, CheckCircle, AlertCircle, Wallet, CreditCard, PiggyBank, TrendingUp, Upload, FileText, AlertTriangle } from 'lucide-react';
 
 export default function BankConnectionsScreen() {
   const [connections, setConnections] = useState([]);
   const [accounts, setAccounts] = useState({});  // Stockage des comptes par connection_id
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [syncingId, setSyncingId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importPreview, setImportPreview] = useState(null);
+  const [selectedConnection, setSelectedConnection] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [showPurgeModal, setShowPurgeModal] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
   
   const [formData, setFormData] = useState({
     bank: 'boursobank',
@@ -149,6 +158,80 @@ export default function BankConnectionsScreen() {
     }
   };
 
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      alert('Veuillez sélectionner un fichier CSV');
+      return;
+    }
+
+    setImportFile(file);
+    
+    try {
+      const preview = await previewCSVImport(file);
+      setImportPreview(preview);
+    } catch (error) {
+      console.error('Erreur lors de la prévisualisation:', error);
+      alert('Erreur lors de la prévisualisation du fichier');
+      setImportFile(null);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importFile) return;
+
+    setIsImporting(true);
+    try {
+      const result = await importCSV(
+        importFile,
+        selectedConnection,
+        selectedAccount
+      );
+
+      alert(`Import réussi !\n${result.imported} transactions importées\n${result.skipped} doublons ignorés`);
+      
+      // Rafraîchir les données
+      if (selectedConnection) {
+        await loadAccounts(selectedConnection);
+      }
+      
+      // Fermer le modal
+      setShowImportModal(false);
+      setImportFile(null);
+      setImportPreview(null);
+      setSelectedConnection(null);
+      setSelectedAccount(null);
+    } catch (error) {
+      console.error('Erreur lors de l\'import:', error);
+      alert('Erreur lors de l\'import: ' + error.message);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handlePurgeTransactions = async () => {
+    setIsPurging(true);
+    try {
+      const result = await purgeAllTransactions();
+      alert(`Purge effectuée avec succès !\n${result.deleted_count} transaction(s) supprimée(s)`);
+      
+      // Fermer le modal
+      setShowPurgeModal(false);
+      
+      // Rafraîchir les comptes pour mettre à jour les soldes
+      for (const conn of connections) {
+        await loadAccounts(conn.id);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la purge:', error);
+      alert('Erreur lors de la purge: ' + error.message);
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       bank: 'boursobank',
@@ -209,13 +292,29 @@ export default function BankConnectionsScreen() {
                 Gérez vos connexions aux banques et synchronisez vos transactions
               </p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Ajouter une banque
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPurgeModal(true)}
+                className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Purger tout
+              </button>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                Importer CSV
+              </button>
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Ajouter une connexion
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -584,6 +683,243 @@ export default function BankConnectionsScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'import CSV */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Importer des transactions (CSV)</h2>
+              <p className="text-gray-600 mt-1">Importez vos transactions depuis un fichier CSV BoursoBank ou CIC</p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Sélection du fichier */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fichier CSV
+                </label>
+                <div className="mt-1 flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileSelect}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-lg file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100
+                      cursor-pointer"
+                  />
+                  {importFile && (
+                    <FileText className="h-5 w-5 text-green-600" />
+                  )}
+                </div>
+                {importFile && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    Fichier: <span className="font-medium">{importFile.name}</span>
+                  </p>
+                )}
+              </div>
+
+              {/* Sélection de la connexion (optionnel) */}
+              {connections.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Connexion bancaire (optionnel)
+                  </label>
+                  <select
+                    value={selectedConnection || ''}
+                    onChange={(e) => {
+                      setSelectedConnection(e.target.value || null);
+                      setSelectedAccount(null);
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Aucune connexion (transactions manuelles)</option>
+                    {connections.map((conn) => (
+                      <option key={conn.id} value={conn.id}>
+                        {getBankName(conn.bank)} - {conn.nickname || conn.username}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Sélection du compte si connexion sélectionnée */}
+              {selectedConnection && accounts[selectedConnection] && accounts[selectedConnection].length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Compte bancaire (optionnel)
+                  </label>
+                  <select
+                    value={selectedAccount || ''}
+                    onChange={(e) => setSelectedAccount(e.target.value || null)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Tous les comptes</option>
+                    {accounts[selectedConnection].map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} - {account.external_id}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Prévisualisation */}
+              {importPreview && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">Prévisualisation</h3>
+                  <div className="space-y-2 text-sm">
+                    {importPreview.detected_bank && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Banque détectée:</span>
+                        <span className="font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                          {importPreview.detected_bank === 'boursobank' ? '🏦 BoursoBank' : '🏛️ CIC'}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Format détecté:</span>
+                      <span className="font-medium">CSV (délimiteur: {importPreview.delimiter})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Encodage:</span>
+                      <span className="font-medium">{importPreview.encoding}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Transactions détectées:</span>
+                      <span className="font-medium">{importPreview.total_rows}</span>
+                    </div>
+                  </div>
+
+                  {importPreview.preview_rows && importPreview.preview_rows.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-500 mb-2">Aperçu (premières lignes):</p>
+                      <div className="bg-white rounded border border-gray-200 overflow-hidden">
+                        <div className="max-h-48 overflow-y-auto">
+                          <table className="min-w-full divide-y divide-gray-200 text-xs">
+                            <thead className="bg-gray-50 sticky top-0">
+                              <tr>
+                                {importPreview.headers.slice(0, 4).map((header, idx) => (
+                                  <th key={idx} className="px-2 py-1 text-left text-gray-600 font-medium">
+                                    {header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                              {importPreview.preview_rows.slice(0, 5).map((row, idx) => (
+                                <tr key={idx} className="hover:bg-gray-50">
+                                  {importPreview.headers.slice(0, 4).map((header, colIdx) => (
+                                    <td key={colIdx} className="px-2 py-1 text-gray-900 truncate max-w-xs">
+                                      {row[header] || '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || isImporting}
+                  className="flex-1 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isImporting ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Import en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Importer {importPreview ? `${importPreview.total_rows} transactions` : ''}
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportFile(null);
+                    setImportPreview(null);
+                    setSelectedConnection(null);
+                    setSelectedAccount(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation de purge */}
+      {showPurgeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Purger toutes les transactions ?</h2>
+                  <p className="text-sm text-gray-500 mt-1">Cette action est irréversible</p>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-red-800">
+                  <strong>⚠️ Attention :</strong> Cette action va supprimer <strong>TOUTES</strong> vos transactions (manuelles et bancaires).
+                  Vous ne pourrez pas récupérer ces données.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handlePurgeTransactions}
+                  disabled={isPurging}
+                  className="flex-1 flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isPurging ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Suppression en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Oui, tout supprimer
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPurgeModal(false)}
+                  disabled={isPurging}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

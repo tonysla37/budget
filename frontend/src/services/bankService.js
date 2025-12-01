@@ -66,3 +66,55 @@ export const getBankAccounts = async (connectionId) => {
     throw error;
   }
 };
+
+export const previewCSVImport = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/import/preview`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Erreur lors de la prévisualisation');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur lors de la prévisualisation du CSV:', error);
+    throw error;
+  }
+};
+
+export const importCSV = async (file, bankConnectionId = null, bankAccountId = null) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (bankConnectionId) formData.append('bank_connection_id', bankConnectionId);
+    if (bankAccountId) formData.append('bank_account_id', bankAccountId);
+    
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/import/execute`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Erreur lors de l\'import');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Erreur lors de l\'import du CSV:', error);
+    throw error;
+  }
+};
