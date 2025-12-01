@@ -59,7 +59,8 @@ class TransactionBase(BaseModel):
     amount: float
     description: str
     merchant: Optional[str] = None
-    is_expense: bool = True
+    is_expense: Optional[bool] = None  # Peut être None, calculé depuis type si absent
+    type: Optional[str] = None  # "income" ou "expense" pour les transactions bancaires
     is_recurring: bool = False
     category_id: Optional[str] = None
     external_id: Optional[str] = None

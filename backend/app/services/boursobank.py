@@ -285,42 +285,42 @@ class BoursobankMockConnector:
                     'date': (now - timedelta(days=1)).isoformat(),
                     'description': 'VIR SEPA SALAIRE ENTREPRISE',
                     'amount': 2500.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=2)).isoformat(),
                     'description': 'PRLV SEPA LOYER',
-                    'amount': 850.00,
-                    'is_expense': True,
+                    'amount': -850.00,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=3)).isoformat(),
                     'description': 'CB CARREFOUR CITY',
-                    'amount': 42.30,
-                    'is_expense': True,
+                    'amount': -42.30,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=5)).isoformat(),
                     'description': 'CB SNCF PARIS',
-                    'amount': 67.80,
-                    'is_expense': True,
+                    'amount': -67.80,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=7)).isoformat(),
                     'description': 'PRLV SEPA EDF',
-                    'amount': 85.50,
-                    'is_expense': True,
+                    'amount': -85.50,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=10)).isoformat(),
                     'description': 'CB FNAC',
-                    'amount': 129.99,
-                    'is_expense': True,
+                    'amount': -129.99,
+                    'type': 'expense',
                     'account_id': account_id
                 }
             ]
@@ -330,21 +330,21 @@ class BoursobankMockConnector:
                     'date': (now - timedelta(days=1)).isoformat(),
                     'description': 'VIR INTERNE EPARGNE',
                     'amount': 500.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=15)).isoformat(),
                     'description': 'VIR INTERNE EPARGNE',
                     'amount': 500.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=30)).isoformat(),
                     'description': 'INTERETS LIVRET',
                     'amount': 12.50,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 }
             ]

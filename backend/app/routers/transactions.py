@@ -145,6 +145,14 @@ async def get_transactions(
         
         # Préparer la transaction
         transaction_data = prepare_mongodb_document_for_response(transaction)
+        
+        # Calculer is_expense si absent (pour les transactions bancaires avec type)
+        if transaction_data.get("is_expense") is None and transaction_data.get("type"):
+            transaction_data["is_expense"] = transaction_data["type"] == "expense"
+        elif transaction_data.get("is_expense") is None:
+            # Par défaut, considérer comme une dépense si aucune info
+            transaction_data["is_expense"] = True
+        
         if category:
             transaction_data["category"] = prepare_mongodb_document_for_response(category)
         

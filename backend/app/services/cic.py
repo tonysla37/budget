@@ -304,35 +304,35 @@ class CICMockConnector:
                     'date': (now - timedelta(days=1)).isoformat(),
                     'description': 'VIR SALAIRE',
                     'amount': 2800.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=2)).isoformat(),
                     'description': 'PRLV LOYER',
-                    'amount': 950.00,
-                    'is_expense': True,
+                    'amount': -950.00,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=3)).isoformat(),
                     'description': 'CB AUCHAN',
-                    'amount': 78.45,
-                    'is_expense': True,
+                    'amount': -78.45,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=4)).isoformat(),
                     'description': 'PRLV SEPA INTERNET',
-                    'amount': 29.99,
-                    'is_expense': True,
+                    'amount': -29.99,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=7)).isoformat(),
                     'description': 'PRLV ELECTRICITE',
-                    'amount': 125.30,
-                    'is_expense': True,
+                    'amount': -125.30,
+                    'type': 'expense',
                     'account_id': account_id
                 }
             ]
@@ -342,21 +342,21 @@ class CICMockConnector:
                     'date': (now - timedelta(days=3)).isoformat(),
                     'description': 'VIR EPARGNE MENSUELLE',
                     'amount': 300.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=20)).isoformat(),
                     'description': 'VIR EPARGNE MENSUELLE',
                     'amount': 300.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=30)).isoformat(),
                     'description': 'INTERETS LIVRET A',
                     'amount': 25.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 }
             ]
@@ -365,22 +365,22 @@ class CICMockConnector:
                 {
                     'date': (now - timedelta(days=5)).isoformat(),
                     'description': 'ACHAT ACTIONS TOTAL',
-                    'amount': 1500.00,
-                    'is_expense': True,
+                    'amount': -1500.00,
+                    'type': 'expense',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=10)).isoformat(),
                     'description': 'VENTE ACTIONS ORANGE',
                     'amount': 800.00,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 },
                 {
                     'date': (now - timedelta(days=15)).isoformat(),
                     'description': 'DIVIDENDES',
                     'amount': 45.20,
-                    'is_expense': False,
+                    'type': 'income',
                     'account_id': account_id
                 }
             ]
