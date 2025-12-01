@@ -55,3 +55,14 @@ export const testBankConnection = async (id) => {
     throw error;
   }
 };
+
+export const getBankAccounts = async (connectionId) => {
+  try {
+    return await apiCall(`/api/bank-connections/${connectionId}/accounts`, {
+      method: 'GET'
+    });
+  } catch (error) {
+    console.error('Erreur lors de la récupération des comptes:', error);
+    throw error;
+  }
+};

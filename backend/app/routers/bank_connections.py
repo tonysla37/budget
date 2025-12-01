@@ -425,17 +425,24 @@ async def get_bank_accounts(
 ):
     """Récupère les comptes d'une connexion bancaire"""
     try:
-        user_id = str(current_user["_id"])
+        user_id = current_user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
         
         collection = await db.get_collection("bank_accounts")
         accounts = await collection.find({
-            "connection_id": connection_id,
+            "connection_id": ObjectId(connection_id),
             "user_id": user_id
         }).to_list(length=100)
         
         for account in accounts:
             account["id"] = str(account["_id"])
             del account["_id"]
+            # Convertir les ObjectId en string
+            if account.get("connection_id"):
+                account["connection_id"] = str(account["connection_id"])
+            if account.get("user_id"):
+                account["user_id"] = str(account["user_id"])
         
         return accounts
     except Exception as e:

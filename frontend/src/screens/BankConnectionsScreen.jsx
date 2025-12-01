@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getBankConnections, createBankConnection, deleteBankConnection, syncBankConnection } from '../services/bankService';
-import { Plus, Trash2, RefreshCw, Lock, Eye, EyeOff, Building2, CheckCircle, AlertCircle } from 'lucide-react';
+import { getBankConnections, createBankConnection, deleteBankConnection, syncBankConnection, getBankAccounts } from '../services/bankService';
+import { Plus, Trash2, RefreshCw, Lock, Eye, EyeOff, Building2, CheckCircle, AlertCircle, Wallet, CreditCard, PiggyBank, TrendingUp } from 'lucide-react';
 
 export default function BankConnectionsScreen() {
   const [connections, setConnections] = useState([]);
+  const [accounts, setAccounts] = useState({});  // Stockage des comptes par connection_id
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [syncingId, setSyncingId] = useState(null);
@@ -55,10 +56,29 @@ export default function BankConnectionsScreen() {
       setIsLoading(true);
       const data = await getBankConnections();
       setConnections(data || []);
+      
+      // Charger les comptes pour chaque connexion
+      for (const connection of data || []) {
+        if (connection.accounts_count > 0) {
+          loadAccounts(connection.id);
+        }
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des connexions:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadAccounts = async (connectionId) => {
+    try {
+      const accountsData = await getBankAccounts(connectionId);
+      setAccounts(prev => ({
+        ...prev,
+        [connectionId]: accountsData || []
+      }));
+    } catch (error) {
+      console.error('Erreur lors du chargement des comptes:', error);
     }
   };
 
@@ -103,8 +123,9 @@ export default function BankConnectionsScreen() {
       const result = await syncBankConnection(connectionId);
       
       if (result.success) {
-        alert(`Synchronisation réussie: ${result.new_transactions} nouvelles transactions`);
+        alert(`Synchronisation réussie: ${result.new_transactions} nouvelle(s) transaction(s), ${result.updated_accounts} compte(s) mis à jour`);
         loadConnections();
+        loadAccounts(connectionId);  // Recharger les comptes après sync
       } else {
         alert('Erreur lors de la synchronisation');
       }
@@ -148,6 +169,32 @@ export default function BankConnectionsScreen() {
 
   const getConnectionTypeInfo = (type) => {
     return connectionTypes.find(t => t.id === type);
+  };
+
+  const getAccountIcon = (accountType) => {
+    switch (accountType) {
+      case 'checking':
+        return <Wallet className="h-4 w-4" />;
+      case 'savings':
+        return <PiggyBank className="h-4 w-4" />;
+      case 'securities':
+        return <TrendingUp className="h-4 w-4" />;
+      case 'credit_card':
+        return <CreditCard className="h-4 w-4" />;
+      default:
+        return <Wallet className="h-4 w-4" />;
+    }
+  };
+
+  const formatAccountType = (type) => {
+    const types = {
+      'checking': 'Compte courant',
+      'savings': 'Compte épargne',
+      'securities': 'Compte titres',
+      'credit_card': 'Carte de crédit',
+      'loan': 'Prêt'
+    };
+    return types[type] || type;
   };
 
   return (
@@ -261,6 +308,48 @@ export default function BankConnectionsScreen() {
                       </div>
                     )}
                   </div>
+
+                  {/* Liste des comptes synchronisés */}
+                  {accounts[connection.id] && accounts[connection.id].length > 0 && (
+                    <div className="mb-4 space-y-2">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Comptes synchronisés
+                      </div>
+                      {accounts[connection.id].map((account) => (
+                        <div 
+                          key={account.id} 
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-200"
+                        >
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className="text-gray-600">
+                              {getAccountIcon(account.account_type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
+                                {account.name}
+                              </div>
+                              {account.external_id && (
+                                <div className="text-xs text-gray-500 truncate">
+                                  {account.external_id}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right ml-2">
+                            <div className="text-sm font-semibold text-gray-900">
+                              {new Intl.NumberFormat('fr-FR', { 
+                                style: 'currency', 
+                                currency: account.currency || 'EUR' 
+                              }).format(account.balance)}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {formatAccountType(account.account_type)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <button
