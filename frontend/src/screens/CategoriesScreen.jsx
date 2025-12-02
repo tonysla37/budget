@@ -196,7 +196,7 @@ const CategoriesScreen = () => {
           {hierarchicalCategories.map(category => (
             <div key={category.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
               {/* Catégorie parente */}
-              <div className="p-6">
+              <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center flex-1">
                     {category.subcategories.length > 0 && (
@@ -212,11 +212,11 @@ const CategoriesScreen = () => {
                       </button>
                     )}
                     <div 
-                      className="w-4 h-4 rounded-full mr-3" 
+                      className="w-3 h-3 rounded-full mr-2" 
                       style={{ backgroundColor: category.color }}
                     ></div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
+                      <h3 className="text-base font-semibold text-gray-900">{category.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
                           category.type === 'income' 
@@ -233,10 +233,10 @@ const CategoriesScreen = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
                     <button 
                       onClick={() => handleAddSubcategory(category)}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                       title={t('categories.addSubcategory')}
                     >
                       <Plus className="h-4 w-4" />
@@ -259,10 +259,10 @@ const CategoriesScreen = () => {
 
               {/* Sous-catégories */}
               {expandedCategories.has(category.id) && category.subcategories.length > 0 && (
-                <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="border-t border-gray-200 bg-gray-50 px-4 py-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                     {category.subcategories.map(subcategory => (
-                      <div key={subcategory.id} className="bg-white rounded-lg border border-gray-200 p-4">
+                      <div key={subcategory.id} className="bg-white rounded-lg border border-gray-200 p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center flex-1">
                             <div 

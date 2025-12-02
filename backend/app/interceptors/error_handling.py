@@ -78,7 +78,7 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         technical_details={
             "errors": exc.errors(),
-            "body": exc.body if settings.DEBUG else None,
+            "body": getattr(exc, 'body', None) if settings.DEBUG else None,
             "correlation_id": getattr(request.state, "correlation_id", None)
         }
     )

@@ -26,11 +26,11 @@ class BudgetCreate(BaseModel):
     month: Optional[int] = Field(None, ge=1, le=12, description="Mois pour budget ponctuel (1-12, requis si is_recurring=False)")
 
 class BudgetUpdate(BaseModel):
-    amount: Optional[float] = Field(None, gt=0)
-    period_type: Optional[str] = Field(None, pattern="^(monthly|yearly)$")
+    amount: Optional[float] = None
+    period_type: Optional[str] = None
     is_recurring: Optional[bool] = None
     year: Optional[int] = None
-    month: Optional[int] = Field(None, ge=1, le=12)
+    month: Optional[int] = None
 
 class BudgetResponse(BaseModel):
     id: str

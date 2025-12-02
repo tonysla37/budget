@@ -1,50 +1,50 @@
-[2025-08-23 23:29:32] [restart] === Démarrage du script restart ===
-[2025-08-23 23:29:32] [restart] Répertoire du projet: /home/tonya/Code/budget
-[2025-08-23 23:29:32] [restart] Fichier de log: /home/tonya/Code/budget/logs/restart.log
-[2025-08-23 23:29:32] [restart] [DEBUG] ------- INFORMATIONS SYSTÈME -------
-[2025-08-23 23:29:32] [restart] [DEBUG] OS: Linux LAPTOP-SHL6ULTM 6.6.87.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun  5 18:30:46 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
-[2025-08-23 23:29:32] [restart] [DEBUG] Python: Python 3.12.3
-[2025-08-23 23:29:32] [restart] [DEBUG] Node: v20.19.4
-[2025-08-23 23:29:33] [restart] [DEBUG] NPM: 10.8.2
-[2025-08-23 23:29:33] [restart] [DEBUG] MongoDB: db version v7.0.23
-[2025-08-23 23:29:33] [restart] [DEBUG] MongoDB status: running
-[2025-08-23 23:29:33] [restart] [DEBUG] Espace disque: /dev/sdd       1007G  5.6G  951G   1% /
-[2025-08-23 23:29:33] [restart] [DEBUG] Mémoire: Mem:           7.6Gi       3.1Gi       835Mi       3.7Mi       3.9Gi       4.5Gi
-[2025-08-23 23:29:33] [restart] [DEBUG] ----------------------------------
-[2025-08-23 23:29:33] [restart] === Redémarrage de l'application Budget ===
-[2025-08-23 23:29:33] [restart] Étape 1: Arrêt des services existants...
-[2025-08-23 23:29:33] [restart] Arrêt du backend...
-[2025-08-23 23:29:33] [restart] Arrêt des processus Backend uvicorn (PID: 181294)...
-[0;32m[2025-08-23 23:29:35] [restart] SUCCÈS: Tous les processus Backend uvicorn arrêtés[0m
-[2025-08-23 23:29:35] [restart] Aucun processus Script de déploiement backend trouvé
-[2025-08-23 23:29:35] [restart] Aucun processus Uvicorn Python trouvé
-[2025-08-23 23:29:35] [restart] Arrêt du frontend...
-[2025-08-23 23:29:35] [restart] Aucun processus Expo trouvé
-[2025-08-23 23:29:35] [restart] Aucun processus Expo CLI trouvé
-[2025-08-23 23:29:35] [restart] Aucun processus React Native trouvé
-[2025-08-23 23:29:35] [restart] Aucun processus NPM Start trouvé
-[2025-08-23 23:29:35] [restart] Aucun processus Script de déploiement frontend trouvé
-[2025-08-23 23:29:35] [restart] Aucun processus Node Expo trouvé
-[2025-08-23 23:29:35] [restart] Arrêt des processus Vite (PID: 181344
-181345)...
-[0;32m[2025-08-23 23:29:37] [restart] SUCCÈS: Tous les processus Vite arrêtés[0m
-[2025-08-23 23:29:37] [restart] Arrêt des scripts de déploiement globaux...
-[2025-08-23 23:29:37] [restart] Aucun processus Script de déploiement principal trouvé
-[2025-08-23 23:29:37] [restart] Aucun processus Scripts de test trouvé
-[2025-08-23 23:29:37] [restart] Arrêt des processus sur les ports spécifiques...
-[2025-08-23 23:29:38] [restart] Attente de l'arrêt complet des processus...
-[2025-08-23 23:29:43] [restart] Vérification de l'arrêt des processus...
-[0;32m[2025-08-23 23:29:43] [restart] SUCCÈS: Port 8000 libéré[0m
-[0;32m[2025-08-23 23:29:43] [restart] SUCCÈS: Port 19006 libéré[0m
-[0;32m[2025-08-23 23:29:43] [restart] SUCCÈS: Port 19007 libéré[0m
-[2025-08-23 23:29:43] [restart] Étape 2: Redémarrage des services...
-[2025-08-23 23:29:43] [restart] Lancement du script de déploiement...
-[2025-08-23 23:29:53] [restart] Étape 3: Vérification du redémarrage...
-[0;32m[2025-08-23 23:30:03] [restart] SUCCÈS: Backend redémarré avec succès[0m
-[0;32m[2025-08-23 23:30:03] [restart] SUCCÈS: Frontend redémarré avec succès[0m
-[0;32m[2025-08-23 23:30:03] [restart] SUCCÈS: === Redémarrage terminé ===[0m
-[2025-08-23 23:30:03] [restart] URLs d'accès :
-[2025-08-23 23:30:03] [restart]   - Frontend: http://localhost:19006 (ou 19007)
-[2025-08-23 23:30:03] [restart]   - Backend API: http://localhost:8000
-[2025-08-23 23:30:03] [restart]   - Documentation: http://localhost:8000/docs
-[2025-08-23 23:30:03] [restart]   - Health check: http://localhost:8000/api/health
+[2025-12-02 16:39:54] [restart] === Démarrage du script restart ===
+[2025-12-02 16:39:54] [restart] Répertoire du projet: /home/lab-telegraf/code/budget
+[2025-12-02 16:39:54] [restart] Fichier de log: /home/lab-telegraf/code/budget/logs/restart.log
+[2025-12-02 16:39:54] [restart] [DEBUG] ------- INFORMATIONS SYSTÈME -------
+[2025-12-02 16:39:54] [restart] [DEBUG] OS: Linux lab-telegraf-VMware-Virtual-Platform 6.14.0-36-generic #36~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Oct 15 15:45:17 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+[2025-12-02 16:39:54] [restart] [DEBUG] Python: Python 3.12.3
+[2025-12-02 16:39:54] [restart] [DEBUG] Node: v18.19.1
+[2025-12-02 16:39:55] [restart] [DEBUG] NPM: 9.2.0
+[2025-12-02 16:39:55] [restart] [DEBUG] MongoDB: db version v7.0.26
+[2025-12-02 16:39:55] [restart] [DEBUG] MongoDB status: running
+[2025-12-02 16:39:55] [restart] [DEBUG] Espace disque: /dev/sda2           30G     14G   15G  48% /
+[2025-12-02 16:39:55] [restart] [DEBUG] Mémoire: Mem:           7,8Gi       4,5Gi       1,6Gi        32Mi       2,0Gi       3,3Gi
+[2025-12-02 16:39:55] [restart] [DEBUG] ----------------------------------
+[2025-12-02 16:39:55] [restart] === Redémarrage de l'application Budget ===
+[2025-12-02 16:39:55] [restart] Étape 1: Arrêt des services existants...
+[2025-12-02 16:39:55] [restart] Arrêt du backend...
+[2025-12-02 16:39:55] [restart] Arrêt des processus Backend uvicorn (PID: 200110)...
+[0;32m[2025-12-02 16:39:58] [restart] SUCCÈS: Tous les processus Backend uvicorn arrêtés[0m
+[2025-12-02 16:39:58] [restart] Aucun processus Script de déploiement backend trouvé
+[2025-12-02 16:39:58] [restart] Aucun processus Uvicorn Python trouvé
+[2025-12-02 16:39:58] [restart] Arrêt du frontend...
+[2025-12-02 16:39:58] [restart] Aucun processus Expo trouvé
+[2025-12-02 16:39:58] [restart] Aucun processus Expo CLI trouvé
+[2025-12-02 16:39:58] [restart] Aucun processus React Native trouvé
+[2025-12-02 16:39:58] [restart] Aucun processus NPM Start trouvé
+[2025-12-02 16:39:58] [restart] Aucun processus Script de déploiement frontend trouvé
+[2025-12-02 16:39:58] [restart] Aucun processus Node Expo trouvé
+[2025-12-02 16:39:58] [restart] Arrêt des processus Vite (PID: 186331
+186332)...
+[0;32m[2025-12-02 16:40:00] [restart] SUCCÈS: Tous les processus Vite arrêtés[0m
+[2025-12-02 16:40:00] [restart] Arrêt des scripts de déploiement globaux...
+[2025-12-02 16:40:00] [restart] Aucun processus Script de déploiement principal trouvé
+[2025-12-02 16:40:00] [restart] Aucun processus Scripts de test trouvé
+[2025-12-02 16:40:00] [restart] Arrêt des processus sur les ports spécifiques...
+[2025-12-02 16:40:01] [restart] Attente de l'arrêt complet des processus...
+[2025-12-02 16:40:06] [restart] Vérification de l'arrêt des processus...
+[0;32m[2025-12-02 16:40:06] [restart] SUCCÈS: Port 8000 libéré[0m
+[0;32m[2025-12-02 16:40:06] [restart] SUCCÈS: Port 19006 libéré[0m
+[0;32m[2025-12-02 16:40:06] [restart] SUCCÈS: Port 19007 libéré[0m
+[2025-12-02 16:40:06] [restart] Étape 2: Redémarrage des services...
+[2025-12-02 16:40:06] [restart] Lancement du script de déploiement...
+[2025-12-02 16:40:16] [restart] Étape 3: Vérification du redémarrage...
+[0;32m[2025-12-02 16:40:27] [restart] SUCCÈS: Backend redémarré avec succès[0m
+[0;32m[2025-12-02 16:40:27] [restart] SUCCÈS: Frontend redémarré avec succès[0m
+[0;32m[2025-12-02 16:40:27] [restart] SUCCÈS: === Redémarrage terminé ===[0m
+[2025-12-02 16:40:27] [restart] URLs d'accès :
+[2025-12-02 16:40:27] [restart]   - Frontend: http://localhost:19006 (ou 19007)
+[2025-12-02 16:40:27] [restart]   - Backend API: http://localhost:8000
+[2025-12-02 16:40:27] [restart]   - Documentation: http://localhost:8000/docs
+[2025-12-02 16:40:27] [restart]   - Health check: http://localhost:8000/api/health

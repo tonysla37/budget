@@ -285,7 +285,7 @@ async def update_budget(
     # Mettre à jour le budget
     await budgets_collection.update_one(
         {"_id": ObjectId(budget_id)},
-        update_data
+        {"$set": update_data}
     )
     
     # Récupérer le budget mis à jour
@@ -334,7 +334,10 @@ async def update_budget(
         spent=spent,
         remaining=remaining,
         percentage=percentage,
-        period_type=updated_budget["period_type"]
+        period_type=updated_budget["period_type"],
+        is_recurring=updated_budget.get("is_recurring", True),
+        year=updated_budget.get("year"),
+        month=updated_budget.get("month")
     )
 
 @router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
