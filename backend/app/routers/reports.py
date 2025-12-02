@@ -28,12 +28,16 @@ async def get_monthly_report(
     else:
         end_date = datetime(year, month + 1, 1)
     
+    # Convertir en strings pour MongoDB
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     # Agréger les données mensuelles
     user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
             "user_id": user_id,
-            "date": {"$gte": start_date, "$lt": end_date}
+            "date": {"$gte": start_date_str, "$lt": end_date_str}
         }},
         {"$addFields": {
             "computed_is_expense": {
@@ -135,16 +139,18 @@ async def get_period_report(
     """
     Récupérer le rapport pour une période donnée.
     """
-    # Convertir date en datetime pour la comparaison
+    # Convertir date en datetime pour la comparaison puis en string pour MongoDB
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
+    start_date_str = start_datetime.strftime("%Y-%m-%d")
+    end_date_str = end_datetime.strftime("%Y-%m-%d")
     
     # Agréger les données pour la période
     user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
             "user_id": user_id,
-            "date": {"$gte": start_datetime, "$lte": end_datetime}
+            "date": {"$gte": start_date_str, "$lte": end_date_str}
         }},
         {"$addFields": {
             "computed_is_expense": {
@@ -241,11 +247,15 @@ async def get_trends_report(
     end_date = datetime.now()
     start_date = datetime(end_date.year, end_date.month - months + 1, 1)
     
+    # Convertir en strings pour MongoDB
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     # Agréger les données par mois
     pipeline = [
         {"$match": {
             "user_id": current_user["_id"],
-            "date": {"$gte": start_date, "$lte": end_date}
+            "date": {"$gte": start_date_str, "$lte": end_date_str}
         }},
         {"$group": {
             "_id": {

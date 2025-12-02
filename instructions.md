@@ -379,36 +379,6 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
   - **Scripts de test** : DOIVENT préserver les mots de passe existants en base
   - **Changement de mot de passe** : Utiliser `scripts/change_password.py` ou le frontend
 
-### Uniformisation des Couleurs et Styles Visuels
-
-- Centraliser les constantes de couleurs dans des fichiers utilitaires (ex: `bankUtils.js`)
-- Réutiliser les mêmes classes Tailwind et couleurs sur tous les écrans
-- BoursoBank : pink-500, CIC : blue-500, Manual/Other : gray-400
-- Ne jamais coder en dur les couleurs dans les composants individuels
-
-### Checklist de Cohérence (À Vérifier Avant Chaque Commit)
-
-- [ ] Les noms de variables dates sont cohérents (`start_date`/`end_date` en backend, `startDate`/`endDate` en frontend)
-- [ ] **Toutes les comparaisons de dates MongoDB utilisent des datetime objects** (PAS de strings)
-- [ ] Tous les IDs sont convertis en ObjectId avant les requêtes MongoDB (`isinstance(id, str)`)
-- [ ] Les agrégations gèrent les deux formats de transactions (type vs is_expense)
-- [ ] Les couleurs utilisent les constantes centralisées
-- [ ] Les schémas Pydantic reflètent la structure réelle de MongoDB
-- [ ] Les endpoints API utilisent snake_case pour les paramètres
-- [ ] Le frontend utilise camelCase pour l'état, snake_case pour les APIs
-- [ ] **Aucun script Python à la racine de `/backend`**
-- [ ] **Aucun fichier de test (.csv, .json) à la racine de `/backend`**
-- [ ] **Tous les scripts dans `/scripts`**
-- [ ] **Toutes les données de test dans `/scripts/test_data/`**
-- [ ] **Pas de dossier `/backend/scripts/`**
-- [ ] **Les tests unitaires dans `/backend/app/tests/`**
-- [ ] **Documentation des scripts à jour dans `/scripts/README.md`**
-- [ ] **Le backend utilise TOUJOURS le venv à la racine (`$PROJECT_ROOT/venv/bin/python`)**
-- [ ] **Fichiers de test YAML : hash bcrypt valides** (format `$2b$12$...`, pas `b2/tBBq`)
-- [ ] **Après migration du venv, redémarrer le backend : `./scripts/deploy.sh`**
-- [ ] **Les scripts de test préservent les mots de passe existants** (ne pas écraser avec YAML)
-- [ ] **bcrypt==4.0.1 dans requirements.txt** (pas de version >= 5.0.0)
-
 ### Identifiants de Test
 
 **⚠️ Important** : Données de test avec hash bcrypt valide
