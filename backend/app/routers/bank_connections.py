@@ -60,7 +60,10 @@ async def create_bank_connection(
 ):
     """Crée une nouvelle connexion bancaire"""
     try:
-        user_id = str(current_user["_id"])
+        # Garder user_id comme ObjectId pour cohérence avec le reste de la base
+        user_id = current_user["_id"]
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
         
         # Préparer les données de base
         connection_data = {
@@ -75,24 +78,25 @@ async def create_bank_connection(
             "updated_at": datetime.now()
         }
         
-        # Chiffrer les credentials selon le type de connexion
+        # Chiffrer les credentials selon le type de connexion (utiliser string pour le chiffrement)
+        user_id_str = str(user_id)
         if connection.connection_type == "api":
             if connection.api_client_id:
                 connection_data["encrypted_api_client_id"] = encryption_service.encrypt(
-                    connection.api_client_id, user_id
+                    connection.api_client_id, user_id_str
                 )
             if connection.api_client_secret:
                 connection_data["encrypted_api_client_secret"] = encryption_service.encrypt(
-                    connection.api_client_secret, user_id
+                    connection.api_client_secret, user_id_str
                 )
         else:
             if connection.username:
                 connection_data["encrypted_username"] = encryption_service.encrypt(
-                    connection.username, user_id
+                    connection.username, user_id_str
                 )
             if connection.password:
                 connection_data["encrypted_password"] = encryption_service.encrypt(
-                    connection.password, user_id
+                    connection.password, user_id_str
                 )
         
         # Insérer dans la base de données

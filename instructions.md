@@ -123,6 +123,21 @@ def serialize_objectid(obj):
 - Aide à maintenir un backlog de fonctionnalités et de corrections de bugs
 - Guide sur l'implémentation d'une méthodologie Agile adaptée au développement solo ou en petite équipe
 
+## INTERFACE UTILISATEUR ET UX
+
+### Messages et Notifications
+- **INTERDIT** : Utiliser `window.alert()`, `window.confirm()`, ou `window.prompt()` pour afficher des messages
+- **OBLIGATOIRE** : Utiliser des encarts (div stylisés) intégrés dans la page pour tous les messages utilisateur
+- **Types d'encarts** :
+  - **Succès** : Fond vert clair, bordure verte, icône ✅
+  - **Erreur** : Fond rouge clair, bordure rouge, icône ❌
+  - **Avertissement** : Fond jaune/orange clair, bordure orange, icône ⚠️
+  - **Information** : Fond bleu clair, bordure bleue, icône ℹ️
+- **Positionnement** : Les messages doivent être intégrés dans le flux de la page, pas en overlay/modal sauf cas exceptionnel
+- **Auto-dismiss** : Les messages de succès doivent disparaître automatiquement après 3-5 secondes
+- **Persistence** : Les messages d'erreur restent affichés jusqu'à action utilisateur ou nouvelle tentative
+- **Exemples de référence** : Voir `ChangePasswordScreen.jsx` pour une implémentation conforme
+
 ## COHÉRENCE ET STANDARDS
 
 ### Principes Généraux
@@ -235,15 +250,32 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
   - Exemple : `user_id` peut être string dans le JWT mais doit être ObjectId pour les requêtes MongoDB
 
 - **Dates** :
-  - MongoDB stocke : strings "YYYY-MM-DD"
-  - Backend manipule : datetime objects (pour calculs uniquement)
-  - Backend queries : strings (conversion obligatoire via `.strftime("%Y-%m-%d")`)
-  - Frontend : strings ISO "YYYY-MM-DD"
+  - **MongoDB stocke** : ISODate (datetime objects) - format `ISODate('2025-12-02T11:12:57.519Z')`
+  - **Backend manipule** : datetime objects Python
+  - **Backend queries** : datetime objects directement (PAS de conversion en string)
+  - **Frontend** : strings ISO "YYYY-MM-DD" pour affichage et saisie
+  - **IMPORTANT** : Les comparaisons MongoDB doivent utiliser datetime, pas strings :
+    ```python
+    # ✅ CORRECT
+    start_datetime = datetime(2025, 12, 1)
+    db.transactions.find({"date": {"$gte": start_datetime}})
+    
+    # ❌ INCORRECT
+    start_date_str = "2025-12-01"
+    db.transactions.find({"date": {"$gte": start_date_str}})
+    ```
 
 - **Transactions** :
   - Format moderne : `{"type": "income"}` ou `{"type": "expense"}`
   - Format legacy : `{"is_expense": true}` ou `{"is_expense": false}`
   - Toujours gérer les deux formats dans les agrégations
+
+- **Mots de passe (bcrypt)** :
+  - **Version bcrypt** : 4.0.1 (compatible avec passlib 1.7.4)
+  - **INTERDIT** : bcrypt >= 5.0.0 (incompatible avec passlib)
+  - **Hash valide** : Format `$2b$12$...` (60 caractères)
+  - **Scripts de test** : DOIVENT préserver les mots de passe existants en base
+  - **Changement de mot de passe** : Utiliser `scripts/change_password.py` ou le frontend
 
 ### Uniformisation des Couleurs et Styles Visuels
 
@@ -255,7 +287,7 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
 ### Checklist de Cohérence (À Vérifier Avant Chaque Commit)
 
 - [ ] Les noms de variables dates sont cohérents (`start_date`/`end_date` en backend, `startDate`/`endDate` en frontend)
-- [ ] Toutes les comparaisons de dates MongoDB utilisent des strings (`start_date_str`)
+- [ ] **Toutes les comparaisons de dates MongoDB utilisent des datetime objects** (PAS de strings)
 - [ ] Tous les IDs sont convertis en ObjectId avant les requêtes MongoDB (`isinstance(id, str)`)
 - [ ] Les agrégations gèrent les deux formats de transactions (type vs is_expense)
 - [ ] Les couleurs utilisent les constantes centralisées
@@ -272,6 +304,8 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
 - [ ] **Le backend utilise TOUJOURS le venv à la racine (`$PROJECT_ROOT/venv/bin/python`)**
 - [ ] **Fichiers de test YAML : hash bcrypt valides** (format `$2b$12$...`, pas `b2/tBBq`)
 - [ ] **Après migration du venv, redémarrer le backend : `./scripts/deploy.sh`**
+- [ ] **Les scripts de test préservent les mots de passe existants** (ne pas écraser avec YAML)
+- [ ] **bcrypt==4.0.1 dans requirements.txt** (pas de version >= 5.0.0)
 
 ### Identifiants de Test
 

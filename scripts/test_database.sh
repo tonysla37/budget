@@ -215,14 +215,29 @@ try:
     client = pymongo.MongoClient('mongodb://$MONGO_HOST:$MONGO_PORT/')
     db = client.$MONGO_DB
     
+    # PRÉSERVER LES MOTS DE PASSE EXISTANTS
+    print('📋 Sauvegarde des mots de passe existants...')
+    existing_passwords = {}
+    for user in db.users.find({}):
+        existing_passwords[str(user['_id'])] = user.get('hashed_password')
+    
+    if existing_passwords:
+        print(f'   Trouvé {len(existing_passwords)} mots de passe à préserver')
+    
     # Vider les collections existantes
-    db.users.delete_many({})
     db.categories.delete_many({})
     db.transactions.delete_many({})
+    db.users.delete_many({})
     
     # Convertir les chaînes _id en ObjectId pour MongoDB
     for user in data['users']:
-        user['_id'] = ObjectId(user['_id'])
+        user_id_str = user['_id']
+        user['_id'] = ObjectId(user_id_str)
+        
+        # RESTAURER LE MOT DE PASSE EXISTANT SI DISPONIBLE
+        if user_id_str in existing_passwords:
+            user['hashed_password'] = existing_passwords[user_id_str]
+            print(f'   ✅ Mot de passe préservé pour {user.get(\"email\", \"utilisateur\")}')
     
     for category in data['categories']:
         category['_id'] = ObjectId(category['_id'])
