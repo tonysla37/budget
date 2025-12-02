@@ -22,6 +22,8 @@ export default function BankConnectionsScreen() {
   const [isImporting, setIsImporting] = useState(false);
   const [showPurgeModal, setShowPurgeModal] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [message, setMessage] = useState(null); // { type: 'success' | 'error', text: string }
   
   const [formData, setFormData] = useState({
     bank: 'boursobank',
@@ -120,10 +122,11 @@ export default function BankConnectionsScreen() {
       resetForm();
       loadConnections();
       
-      alert('Connexion bancaire ajoutée avec succès');
+      setMessage({ type: 'success', text: 'Connexion bancaire ajoutée avec succès' });
+      setTimeout(() => setMessage(null), 5000);
     } catch (error) {
       console.error('Erreur lors de la création de la connexion:', error);
-      alert('Erreur lors de la création de la connexion: ' + (error.message || 'Erreur inconnue'));
+      setMessage({ type: 'error', text: 'Erreur lors de la création de la connexion: ' + (error.message || 'Erreur inconnue') });
     } finally {
       setIsLoading(false);
     }
@@ -135,29 +138,35 @@ export default function BankConnectionsScreen() {
       const result = await syncBankConnection(connectionId);
       
       if (result.success) {
-        alert(`Synchronisation réussie: ${result.new_transactions} nouvelle(s) transaction(s), ${result.updated_accounts} compte(s) mis à jour`);
+        setMessage({ 
+          type: 'success', 
+          text: `Synchronisation réussie: ${result.new_transactions} nouvelle(s) transaction(s), ${result.updated_accounts} compte(s) mis à jour` 
+        });
+        setTimeout(() => setMessage(null), 5000);
         loadConnections();
         loadAccounts(connectionId);  // Recharger les comptes après sync
       } else {
-        alert('Erreur lors de la synchronisation');
+        setMessage({ type: 'error', text: 'Erreur lors de la synchronisation' });
       }
     } catch (error) {
       console.error('Erreur lors de la synchronisation:', error);
-      alert('Erreur lors de la synchronisation');
+      setMessage({ type: 'error', text: 'Erreur lors de la synchronisation' });
     } finally {
       setSyncingId(null);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette connexion bancaire ?')) {
-      try {
-        await deleteBankConnection(id);
-        loadConnections();
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-        alert('Erreur lors de la suppression');
-      }
+    try {
+      await deleteBankConnection(id);
+      setMessage({ type: 'success', text: 'Connexion bancaire supprimée avec succès' });
+      setTimeout(() => setMessage(null), 5000);
+      setDeleteConfirmId(null);
+      loadConnections();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      setMessage({ type: 'error', text: 'Erreur lors de la suppression' });
+      setDeleteConfirmId(null);
     }
   };
 
@@ -166,7 +175,7 @@ export default function BankConnectionsScreen() {
     if (!file) return;
 
     if (!file.name.endsWith('.csv')) {
-      alert('Veuillez sélectionner un fichier CSV');
+      setMessage({ type: 'error', text: 'Veuillez sélectionner un fichier CSV' });
       return;
     }
 
@@ -197,7 +206,7 @@ export default function BankConnectionsScreen() {
       }
     } catch (error) {
       console.error('Erreur lors de la prévisualisation:', error);
-      alert('Erreur lors de la prévisualisation du fichier: ' + error.message);
+      setMessage({ type: 'error', text: 'Erreur lors de la prévisualisation du fichier: ' + error.message });
       setImportFile(null);
     }
   };
@@ -217,7 +226,11 @@ export default function BankConnectionsScreen() {
         }
       );
 
-      alert(`Import réussi !\n${result.imported} transactions importées\n${result.skipped} doublons ignorés`);
+      setMessage({ 
+        type: 'success', 
+        text: `Import réussi ! ${result.imported} transactions importées, ${result.skipped} doublons ignorés` 
+      });
+      setTimeout(() => setMessage(null), 5000);
       
       // Rafraîchir les données
       if (selectedConnection) {
@@ -232,17 +245,17 @@ export default function BankConnectionsScreen() {
       setSelectedAccount(null);
     } catch (error) {
       console.error('Erreur lors de l\'import:', error);
-      alert('Erreur lors de l\'import: ' + error.message);
+      setMessage({ type: 'error', text: 'Erreur lors de l\'import: ' + error.message });
     } finally {
-      setIsImporting(false);
-    }
-  };
-
   const handlePurgeTransactions = async () => {
     setIsPurging(true);
     try {
       const result = await purgeAllTransactions();
-      alert(`Purge effectuée avec succès !\n${result.deleted_count} transaction(s) supprimée(s)`);
+      setMessage({ 
+        type: 'success', 
+        text: `Purge effectuée avec succès ! ${result.deleted_count} transaction(s) supprimée(s)` 
+      });
+      setTimeout(() => setMessage(null), 5000);
       
       // Fermer le modal
       setShowPurgeModal(false);
@@ -253,7 +266,7 @@ export default function BankConnectionsScreen() {
       }
     } catch (error) {
       console.error('Erreur lors de la purge:', error);
-      alert('Erreur lors de la purge: ' + error.message);
+      setMessage({ type: 'error', text: 'Erreur lors de la purge: ' + error.message });
     } finally {
       setIsPurging(false);
     }
@@ -348,6 +361,34 @@ export default function BankConnectionsScreen() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Message d'alerte */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            message.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {message.type === 'success' ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium">{message.text}</p>
+              </div>
+              <button
+                onClick={() => setMessage(null)}
+                className="ml-3 flex-shrink-0"
+              >
+                <Plus className="h-5 w-5 rotate-45 opacity-50 hover:opacity-100" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {isLoading && connections.length === 0 ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
@@ -486,12 +527,33 @@ export default function BankConnectionsScreen() {
                       <RefreshCw className={`h-4 w-4 mr-1 ${syncingId === connection.id ? 'animate-spin' : ''}`} />
                       Synchroniser
                     </button>
-                    <button
-                      onClick={() => handleDelete(connection.id)}
-                      className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    
+                    {deleteConfirmId === connection.id ? (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => handleDelete(connection.id)}
+                          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+                          title="Confirmer la suppression"
+                        >
+                          Confirmer
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                          title="Annuler"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeleteConfirmId(connection.id)}
+                        className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                        title="Supprimer la connexion"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -956,4 +1018,7 @@ export default function BankConnectionsScreen() {
       )}
     </div>
   );
+}
+
+}
 }
