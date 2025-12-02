@@ -13,6 +13,7 @@ import RulesScreen from './screens/RulesScreen';
 import BankConnectionsScreen from './screens/BankConnectionsScreen';
 import ReportsScreen from './screens/ReportsScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import Navigation from './components/Navigation';
 import './App.css';
 
@@ -118,6 +119,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <SettingsScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/change-password" 
+            element={
+              <ProtectedRoute>
+                <ChangePasswordScreen />
               </ProtectedRoute>
             } 
           />

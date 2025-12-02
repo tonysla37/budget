@@ -7,7 +7,7 @@ Type=simple
 User=%i
 WorkingDirectory=/home/%i/code/budget/backend
 Environment="PYTHONUNBUFFERED=1"
-ExecStart=/home/%i/code/budget/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+ExecStart=/home/%i/code/budget/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=10
 StandardOutput=append:/home/%i/code/budget/logs/backend.log

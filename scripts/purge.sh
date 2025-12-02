@@ -22,10 +22,10 @@ bash "$SCRIPT_DIR/stop.sh"
 
 # 2. Supprimer les environnements virtuels
 log "2. Suppression des environnements virtuels..."
-if [ -d "$BACKEND_DIR/venv" ]; then
-    log "Suppression de l'environnement virtuel backend..."
-    rm -rf "$BACKEND_DIR/venv"
-    log_success "Environnement virtuel backend supprimé"
+if [ -d "$PROJECT_ROOT/venv" ]; then
+    log "Suppression de l'environnement virtuel..."
+    rm -rf "$PROJECT_ROOT/venv"
+    log_success "Environnement virtuel supprimé"
 fi
 
 if [ -d "$SCRIPT_DIR/.venv" ]; then

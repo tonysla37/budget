@@ -285,7 +285,7 @@ async def update_budget(
     # Mettre à jour le budget
     await budgets_collection.update_one(
         {"_id": ObjectId(budget_id)},
-        {"$set": update_data}
+        update_data
     )
     
     # Récupérer le budget mis à jour

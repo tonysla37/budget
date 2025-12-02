@@ -51,6 +51,18 @@ class UserUpdate(BaseModel):
         return v
 
 
+class ChangePasswordRequest(BaseModel):
+    """Schema for password change request."""
+    current_password: str
+    new_password: str
+    
+    @field_validator('new_password')
+    def validate_new_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Le nouveau mot de passe doit contenir au moins 6 caractères')
+        return v
+
+
 class User(UserBase):
     """Schema for user response."""
     id: str

@@ -44,7 +44,7 @@ async def update_user_settings(
     # Mettre à jour l'utilisateur
     result = await database.users.update_one(
         {"_id": current_user["_id"]},
-        {"$set": update_data}
+        update_data
     )
     
     if result.matched_count == 0:

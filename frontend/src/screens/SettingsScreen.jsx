@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSettings, updateSettings } from '../services/settingsService';
-import { Save, Calendar, User, Mail, LogOut } from 'lucide-react';
+import { Save, Calendar, User, Mail, LogOut, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../i18n';
 
@@ -247,6 +247,14 @@ export default function SettingsScreen() {
           >
             <Save className="h-5 w-5 mr-2" />
             {isSaving ? t('settings.saving') : t('settings.save')}
+          </button>
+
+          <button
+            onClick={() => navigate('/change-password')}
+            className="flex items-center justify-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+          >
+            <Lock className="h-5 w-5 mr-2" />
+            Changer le mot de passe
           </button>
 
           <button

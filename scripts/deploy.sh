@@ -46,16 +46,17 @@ stop_existing_services() {
 start_backend() {
     log "Démarrage du backend..."
     
-    cd "$BACKEND_DIR" || handle_error "Impossible d'accéder au répertoire backend"
-    
-    # Vérifier si l'environnement virtuel existe
-    if [ ! -d "venv" ]; then
-        log "Création de l'environnement virtuel Python..."
+    # Vérifier si l'environnement virtuel existe à la racine
+    if [ ! -d "$PROJECT_ROOT/venv" ]; then
+        log "Création de l'environnement virtuel Python à la racine..."
+        cd "$PROJECT_ROOT" || handle_error "Impossible d'accéder à la racine du projet"
         python3 -m venv venv || handle_error "Impossible de créer l'environnement virtuel"
     fi
     
     # Activer l'environnement virtuel
-    source venv/bin/activate || handle_error "Impossible d'activer l'environnement virtuel"
+    source "$PROJECT_ROOT/venv/bin/activate" || handle_error "Impossible d'activer l'environnement virtuel"
+    
+    cd "$BACKEND_DIR" || handle_error "Impossible d'accéder au répertoire backend"
     
     # Installer les dépendances
     log "Installation des dépendances Python..."
@@ -65,9 +66,9 @@ start_backend() {
     # Définir PYTHONPATH
     export PYTHONPATH=$BACKEND_DIR:$PYTHONPATH
     
-    # Démarrer l'application
+    # Démarrer l'application avec le venv à la racine
     log "Démarrage de l'application backend..."
-    python -m uvicorn app.main:app --reload --host 0.0.0.0 --port $API_PORT &
+    "$PROJECT_ROOT/venv/bin/python" -m uvicorn app.main:app --reload --host 0.0.0.0 --port $API_PORT &
     BACKEND_PID=$!
     
     # Attendre que le backend soit disponible

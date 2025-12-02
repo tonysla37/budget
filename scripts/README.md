@@ -92,6 +92,22 @@ Tests MongoDB
 - Teste les opérations CRUD
 - Teste les requêtes d'agrégation
 
+**⚠️ Identifiants de Test** :
+- Email : `test@example.com`
+- Mot de passe : Défini par l'utilisateur (hash actuel en base)
+- Hash bcrypt actuel : `$2b$12$r0R5jej5gtHHJwt4RiSFh.eiYwSG7TsM1DA93yqDYu1bwekobcG8G`
+
+**💡 Pour changer le mot de passe** :
+```bash
+# Via script Python
+venv/bin/python scripts/change_password.py test@example.com NouveauMotDePasse
+
+# Ou via l'interface web (après connexion)
+# Paramètres → Changer le mot de passe
+```
+
+**⚠️ Important** : Après avoir changé le mot de passe, mettre à jour le hash dans `scripts/test_data/users.yaml` pour éviter qu'il soit réinitialisé lors des tests.
+
 ---
 
 ## 🔧 Scripts Utilitaires
@@ -132,6 +148,8 @@ Test de connexion MongoDB
 
 ```bash
 python3 scripts/test_mongodb.py
+# ou avec le venv activé
+venv/bin/python scripts/test_mongodb.py
 ```
 
 ### `view_users.py`
@@ -154,6 +172,21 @@ Suppression interactive
 ```bash
 python3 scripts/delete_user.py [email_ou_id]
 ```
+
+### `change_password.py`
+Changer le mot de passe d'un utilisateur
+
+```bash
+python3 scripts/change_password.py <email> <nouveau_mot_de_passe>
+# ou avec le venv
+venv/bin/python scripts/change_password.py test@example.com MonNouveauMDP
+```
+
+**Utilisation** :
+- Génère automatiquement un hash bcrypt valide
+- Demande confirmation avant modification
+- Affiche le nouveau hash pour vérification
+- Met à jour le champ `updated_at`
 
 ### `generate_realistic_data.py`
 Génère 6 mois de données réalistes
@@ -226,6 +259,9 @@ python3 scripts/view_users.py
 - `migrate_add_bank_to_transactions.py` - Migration unique
 - `test_bank_connections.py` - Imports cassés
 
+**💡 Note** : Utiliser `change_password.py` pour gérer les mots de passe utilisateur
+
+
 ---
 
 ## ✅ Scripts Validés
@@ -237,7 +273,8 @@ python3 scripts/view_users.py
 - ✅ Tests fonctionnels passés
 - ✅ 13 scripts obsolètes supprimés
 - ✅ 10 scripts shell conservés
-- ✅ 7 scripts Python conservés (tous dans /scripts)
+- ✅ 8 scripts Python conservés (tous dans /scripts)
+- ✅ Script `change_password.py` ajouté
 
 ---
 

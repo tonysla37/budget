@@ -53,11 +53,11 @@ install_mongodb_ubuntu() {
 install_python_dependencies() {
     log "Vérification des dépendances Python..."
     
-    # Vérifier si un environnement virtuel existe déjà dans le répertoire des scripts
-    local venv_dir="$SCRIPT_DIR/.venv"
+    # Utiliser le venv à la racine du projet
+    local venv_dir="$PROJECT_ROOT/venv"
     
     if [ ! -d "$venv_dir" ]; then
-        log "Création d'un environnement virtuel Python dans $venv_dir..."
+        log "Création d'un environnement virtuel Python à la racine..."
         
         # Vérifier que python3-venv est installé
         if ! python3 -m venv --help &> /dev/null; then
@@ -66,15 +66,16 @@ install_python_dependencies() {
             sudo apt install -y python3-venv python3-pip
         fi
         
-        # Créer l'environnement virtuel dans le répertoire des scripts
-        python3 -m venv "$venv_dir"
+        # Créer l'environnement virtuel à la racine du projet
+        cd "$PROJECT_ROOT" || handle_error "Impossible d'accéder à la racine du projet"
+        python3 -m venv venv
         if [ $? -ne 0 ]; then
             handle_error "Échec de la création de l'environnement virtuel"
         fi
         
-        log_success "Environnement virtuel créé dans $venv_dir"
+        log_success "Environnement virtuel créé à la racine"
     else
-        log "Environnement virtuel existant trouvé dans $venv_dir"
+        log "Environnement virtuel existant trouvé à la racine"
     fi
     
     # Activer l'environnement virtuel
@@ -172,10 +173,22 @@ fi
 # Installer les dépendances Python
 install_python_dependencies
 
+# Avertissement avant importation
+echo ""
+echo "⚠️  ATTENTION: Ce script va supprimer et réimporter les données de test !"
+echo "   Les collections suivantes seront affectées:"
+echo "   - users (suppression complète)"
+echo "   - categories (suppression complète)"
+echo "   - transactions (suppression complète)"
+echo ""
+echo "💡 Pour changer le mot de passe sans perdre de données:"
+echo "   venv/bin/python scripts/change_password.py <email> <nouveau_mdp>"
+echo ""
+
 # Charger les données de test dans MongoDB
 log "Importation des données de test dans MongoDB..."
 # Activer l'environnement virtuel pour l'exécution Python
-source "$SCRIPT_DIR/.venv/bin/activate"
+source "$PROJECT_ROOT/venv/bin/activate"
 python -c "
 import yaml
 import json
@@ -247,7 +260,7 @@ fi
 # Exécuter des tests de base de données
 log "Exécution des tests de base de données..."
 # Activer l'environnement virtuel pour l'exécution Python
-source "$SCRIPT_DIR/.venv/bin/activate"
+source "$PROJECT_ROOT/venv/bin/activate"
 
 # Créer un fichier Python temporaire pour les tests
 cat > "$SCRIPT_DIR/temp_db_tests.py" << 'EOF'

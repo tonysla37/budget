@@ -269,6 +269,32 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
 - [ ] **Pas de dossier `/backend/scripts/`**
 - [ ] **Les tests unitaires dans `/backend/app/tests/`**
 - [ ] **Documentation des scripts à jour dans `/scripts/README.md`**
+- [ ] **Le backend utilise TOUJOURS le venv à la racine (`$PROJECT_ROOT/venv/bin/python`)**
+- [ ] **Fichiers de test YAML : hash bcrypt valides** (format `$2b$12$...`, pas `b2/tBBq`)
+- [ ] **Après migration du venv, redémarrer le backend : `./scripts/deploy.sh`**
+
+### Identifiants de Test
+
+**⚠️ Important** : Données de test avec hash bcrypt valide
+
+- **Email** : `test@example.com`
+- **Mot de passe** : Défini par l'utilisateur (changeable via script ou interface web)
+- **Hash bcrypt actuel** : `$2b$12$r0R5jej5gtHHJwt4RiSFh.eiYwSG7TsM1DA93yqDYu1bwekobcG8G`
+
+**Changement de mot de passe** :
+```bash
+# Via script
+venv/bin/python scripts/change_password.py test@example.com NouveauMDP
+
+# Ou via interface web : Paramètres → Changer le mot de passe
+```
+
+**Après changement** : Mettre à jour le hash dans `scripts/test_data/users.yaml` pour éviter la réinitialisation lors des tests.
+
+**Problème fréquent** : 
+- Erreur "hash could not be identified" → Hash invalide en base (vérifier `scripts/test_data/users.yaml`)
+- Erreur "401 Unauthorized" après migration venv → Backend utilise ancien venv, exécuter `./scripts/deploy.sh`
+
 
 ## DOCUMENTATION ET KNOWLEDGE MANAGEMENT
 - Génère automatiquement une documentation technique pour chaque module développé à la racine dans le répertoire dénommé `docs`
@@ -365,6 +391,7 @@ Pour chaque projet tu respectes la structure suivante à la racine du projet :
 
 ```
 projet/
+├── venv/              # Environnement virtuel Python (RACINE du projet)
 ├── backend/           # Code source backend (API, services)
 │   ├── app/           # Code applicatif
 │   │   ├── routers/   # Endpoints API
@@ -376,8 +403,7 @@ projet/
 │   │   ├── tests/     # Tests unitaires
 │   │   └── interceptors/  # Logging, error handling, monitoring
 │   ├── requirements.txt
-│   ├── .env.example
-│   └── venv/          # Environnement virtuel Python
+│   └── .env.example
 ├── frontend/          # Code source frontend (UI, composants)
 │   ├── src/
 │   │   ├── components/
@@ -426,7 +452,17 @@ projet/
   from app.core.config import settings
   ```
 
-#### 2. Organisation des Fichiers de Test
+#### 2. Organisation de l'Environnement Virtuel Python
+- **L'environnement virtuel Python (`venv/`) doit être à la RACINE du projet**
+- **INTERDIT** : `/backend/venv/`
+- **Création** : `python3 -m venv venv` (à la racine)
+- **Activation** : `source venv/bin/activate` (depuis la racine)
+- **Utilisation dans les scripts** :
+  - Depuis la racine : `venv/bin/python script.py`
+  - Dans les scripts shell : `source "$PROJECT_ROOT/venv/bin/activate"`
+- **Raison** : Partage des dépendances entre backend et scripts Python, structure simplifiée
+
+#### 3. Organisation des Fichiers de Test
 - **Données de test** : `/scripts/test_data/` (YAML, CSV)
 - **Tests unitaires** : `/backend/app/tests/`
 - **Scripts de test** : `/scripts/test_*.sh`

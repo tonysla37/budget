@@ -212,11 +212,11 @@ async def update_category(
     # Préparer les données de mise à jour
     update_data = category_update.model_dump(exclude_unset=True)
     
-    # Mettre à jour la catégorie
+    # Mettre à jour la catégorie (update_one ajoute déjà $set)
     await db.update_one(
         "categories",
         {"_id": ObjectId(category_id)},
-        {"$set": update_data}
+        update_data
     )
     
     # Récupérer la catégorie mise à jour

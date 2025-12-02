@@ -12,7 +12,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 init_script
 
 # Variables spécifiques aux tests backend
-VENV_DIR="$BACKEND_DIR/venv"
+VENV_DIR="$PROJECT_ROOT/venv"
 MONGO_PORT=27017
 MONGO_HOST="localhost"
 MONGO_DB="budget_db"

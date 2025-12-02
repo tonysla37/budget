@@ -157,11 +157,9 @@ async def update_rule(
     if update_data:
         update_data["updated_at"] = datetime.utcnow()
         await rules_collection.update_one(
-            {"_id": ObjectId(rule_id)},
-            {"$set": update_data}
-        )
-    
-    # Récupérer la règle mise à jour
+        {"_id": ObjectId(rule_id)},
+        update_data
+    )    # Récupérer la règle mise à jour
     updated_rule = await rules_collection.find_one({"_id": ObjectId(rule_id)})
     
     # Obtenir le nom de la catégorie
