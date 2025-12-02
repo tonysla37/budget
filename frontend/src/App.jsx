@@ -11,6 +11,7 @@ import CategoriesScreen from './screens/CategoriesScreen';
 import BudgetScreen from './screens/BudgetScreen';
 import RulesScreen from './screens/RulesScreen';
 import BankConnectionsScreen from './screens/BankConnectionsScreen';
+import BankConnectionsScreenDebug from './screens/BankConnectionsScreenDebug';
 import ReportsScreen from './screens/ReportsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import ChangePasswordScreen from './screens/ChangePasswordScreen';

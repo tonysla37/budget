@@ -1,8 +1,8 @@
 users:
-  - _id: "68833617fe0fd7afbb170f41"
-    email: "test@example.com"
-    hashed_password: "$2b$12$r0R5jej5gtHHJwt4RiSFh.eiYwSG7TsM1DA93yqDYu1bwekobcG8G"
-    first_name: "Test"
-    last_name: "User"
-    is_active: true
-    created_at: "2025-07-25T07:45:27.536324+00:00"
+- _id: 68833617fe0fd7afbb170f41
+  created_at: '2025-07-25T07:45:27.536324+00:00'
+  email: test@example.com
+  first_name: Test
+  hashed_password: $2b$12$KdREFoTnq4GM7fgHuz2FyeCFC13.wARwLXcS3SxDI02BVgwYFYJPq
+  is_active: true
+  last_name: User

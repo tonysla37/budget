@@ -24,6 +24,18 @@ async def lifespan(app: FastAPI):
         await mongodb.connect_to_database()
         await create_indexes(mongodb)
         logger.info("Application démarrée avec succès - MongoDB connecté")
+        
+        # Afficher les identifiants de test
+        logger.info("=" * 70)
+        logger.info("🔐 IDENTIFIANTS DE TEST")
+        logger.info("=" * 70)
+        logger.info("  Email    : test@example.com")
+        logger.info("  Password : test")
+        logger.info("=" * 70)
+        logger.info("  ⚠️  Ces identifiants sont pour le développement uniquement")
+        logger.info("  📝 Voir IDENTIFIANTS_TEST.md pour plus d'informations")
+        logger.info("=" * 70)
+        
     except Exception as e:
         logger.error(f"Erreur lors du démarrage de l'application: {str(e)}")
         raise

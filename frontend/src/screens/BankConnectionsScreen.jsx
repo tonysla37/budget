@@ -247,6 +247,10 @@ export default function BankConnectionsScreen() {
       console.error('Erreur lors de l\'import:', error);
       setMessage({ type: 'error', text: 'Erreur lors de l\'import: ' + error.message });
     } finally {
+      setIsImporting(false);
+    }
+  };
+
   const handlePurgeTransactions = async () => {
     setIsPurging(true);
     try {
@@ -1018,7 +1022,4 @@ export default function BankConnectionsScreen() {
       )}
     </div>
   );
-}
-
-}
 }

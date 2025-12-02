@@ -2,7 +2,7 @@ import { apiCall } from '../config/api.config';
 
 export const getBankConnections = async () => {
   try {
-    return await apiCall('/api/bank-connections/', {
+    return await apiCall('/api/bank-connections', {
       method: 'GET'
     });
   } catch (error) {
@@ -13,7 +13,7 @@ export const getBankConnections = async () => {
 
 export const createBankConnection = async (connectionData) => {
   try {
-    return await apiCall('/api/bank-connections/', {
+    return await apiCall('/api/bank-connections', {
       method: 'POST',
       body: JSON.stringify(connectionData)
     });

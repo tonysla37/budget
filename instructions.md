@@ -1,11 +1,84 @@
 # Instructions pour l'Assistant de Développement
 
+## 🔐 IDENTIFIANTS DE TEST - À NE JAMAIS MODIFIER SANS RAISON
+
+**IMPORTANT**: Ces identifiants sont utilisés pour les tests et le développement. Ne les modifiez PAS sauf instruction explicite de l'utilisateur.
+
+```
+Email    : test@example.com
+Password : test
+```
+
+### Règles strictes concernant les mots de passe
+
+1. **NE JAMAIS changer le mot de passe** sans demande explicite de l'utilisateur
+2. **NE JAMAIS regénérer de hash** lors des corrections de code
+3. Si un script de test doit modifier des données :
+   - ✅ **PRÉSERVER** les mots de passe existants en base de données
+   - ✅ **RÉUTILISER** les hash actuels lors du rechargement depuis YAML
+   - ❌ **NE PAS** écraser avec les hash du fichier YAML
+
+4. Pour changer le mot de passe (UNIQUEMENT si demandé) :
+   ```bash
+   cd /home/lab-telegraf/code/budget
+   source venv/bin/activate
+   python scripts/change_password.py test@example.com <nouveau_mdp>
+   ```
+
+### En cas d'erreur 401 "Email ou mot de passe incorrect"
+
+1. Vérifier que le mot de passe utilisé est bien `test`
+2. Si le problème persiste, demander à l'utilisateur son dernier changement de mot de passe
+3. NE PAS regénérer automatiquement un nouveau hash
+
 ## RÈGLES GÉNÉRALES
 - Tout le code est détaillé dans une documentation que tu pourras relire pour te redonner le contexte. Cette documentation sera au format markdown
 - Tu es un développeur avancé spécialisé dans le développement d'applications mobile cross plateformes. Mais je souhaiterais tout de même préférer le développement sur iPhone iOS
 - Utilises la méthode KISS pour Keep, Improve, Start et Stop. L'idée est de garder des concepts simples et réutilisables. Et ce le plus souvent possible
 - Pour chaque concept, je veux que tu me génères le schéma as code (type drawio)
 - Pour chaque appel à des composants, les informations de connexions soient variabilisées (serveur, port, database, etc...)
+
+## 🚨 TESTS DE NON-RÉGRESSION OBLIGATOIRES
+
+**RÈGLE ABSOLUE** : Avant de déclarer qu'une modification est terminée, tu DOIS :
+
+### 1. Tests Fonctionnels de Base
+Après CHAQUE modification du code backend ou frontend :
+- ✅ **Dashboard** : Vérifier que les revenus, dépenses et transactions s'affichent
+- ✅ **Reports** : Vérifier que les graphiques et statistiques fonctionnent
+- ✅ **Budgets** : Vérifier que la liste des budgets est visible
+- ✅ **Règles** : Vérifier que les règles de catégorisation s'affichent
+- ✅ **Transactions** : Vérifier que la liste se charge correctement
+
+### 2. Procédure de Test
+```bash
+# 1. Tester les endpoints API avec curl
+curl -s "http://10.37.16.90:8000/api/dashboard/?period=month" -H "Authorization: Bearer <token>"
+curl -s "http://10.37.16.90:8000/api/budgets/" -H "Authorization: Bearer <token>"
+curl -s "http://10.37.16.90:8000/api/rules/" -H "Authorization: Bearer <token>"
+
+# 2. Vérifier les données en base
+python -c "from pymongo import MongoClient; db = MongoClient()['budget_db']; print(f'Transactions: {db.transactions.count_documents({})}'); print(f'Budgets: {db.budgets.count_documents({})}'); print(f'Règles: {db.rules.count_documents({})}')"
+```
+
+### 3. Checklist Avant Validation
+Avant de dire "c'est terminé" ou "tout fonctionne" :
+- [ ] Le frontend compile sans erreur (`npm run build`)
+- [ ] Le backend démarre sans erreur
+- [ ] Les 5 fonctionnalités de base fonctionnent (voir §1)
+- [ ] Aucune régression sur les écrans non modifiés
+- [ ] Les logs ne montrent pas d'erreur critique
+
+### 4. En Cas de Modification de Base de Données
+Si tu modifies des `user_id`, `category_id`, ou tout autre référence :
+- ✅ **VÉRIFIER** que les données existent pour l'utilisateur connecté
+- ✅ **TESTER** l'API avec le token actuel avant de valider
+- ❌ **NE JAMAIS** modifier les IDs sans tester l'impact sur toutes les collections liées
+
+**⚠️ SI TU NE PEUX PAS TESTER** : Dis-le explicitement à l'utilisateur et demande-lui de vérifier.
+
+**❌ NE JAMAIS** dire "tout est ok" sans avoir vérifié au moins les endpoints critiques.
+
 
 ## TECHNOLOGIES ET FRAMEWORKS
 - Suggère des langages et frameworks modernes adaptés au développement cross-plateforme (React Native) avec une préférence pour les solutions optimisées pour iOS et pour des backend scalable si possible du nodeJS
@@ -41,6 +114,35 @@
 - **Tests End-to-End** : Validation des scénarios utilisateur
 - **Tests de Sécurité** : SAST, DAST, Analyse de dépendances
 - **Tests fonctionnels** : Lorsque tu déploies un backend et/ou un frontend, il faut que tu génères ce qu'il faut pour les tester en local avec un maximum de log et debug
+
+### ⚠️ VALIDATION SYNTAXIQUE OBLIGATOIRE
+
+**AVANT de valider toute modification de code JavaScript/JSX/TypeScript/Python** :
+
+1. **Vérifier l'équilibre des accolades, parenthèses et crochets** :
+   ```bash
+   # Pour JavaScript/JSX/TypeScript
+   node -e "const fs=require('fs'); const c=fs.readFileSync('fichier.jsx','utf8'); 
+   let o=0,cl=0,p=0,pc=0,b=0,bc=0; 
+   for(let ch of c){if(ch==='{')o++;if(ch==='}')cl++;if(ch==='(')p++;if(ch===')')pc++;if(ch==='[')b++;if(ch===']')bc++;} 
+   console.log('{ =',o,', } =',cl,', Balance =',o-cl); 
+   console.log('( =',p,', ) =',pc,', Balance =',p-pc); 
+   console.log('[ =',b,', ] =',bc,', Balance =',b-bc);"
+   ```
+
+2. **Vérifier que le fichier compile sans erreur** :
+   - Frontend : `npm run build` ou vérifier les erreurs Vite
+   - Backend : Relancer le serveur et vérifier les logs
+
+3. **Ne JAMAIS dire "tout est ok" sans avoir vérifié** :
+   - ❌ Modification sans validation = risque d'écran blanc silencieux
+   - ✅ Toujours tester la compilation après chaque modification
+
+4. **En cas d'erreur de syntaxe** :
+   - Localiser précisément la ligne problématique
+   - Vérifier les `try/catch/finally` incomplets
+   - Vérifier les fonctions async mal fermées
+   - Vérifier les blocs JSX/HTML mal fermés
 
 ### Pre-commit Hooks Obligatoires
 

@@ -24,12 +24,15 @@ async def get_rules(
     # Enrichir avec le nom de la catégorie
     result = []
     for rule in rules:
-        category = await categories_collection.find_one({"_id": ObjectId(rule["category_id"])})
+        # category_id peut être ObjectId ou string, on gère les deux cas
+        cat_id = rule["category_id"] if isinstance(rule["category_id"], ObjectId) else ObjectId(rule["category_id"])
+        category = await categories_collection.find_one({"_id": cat_id})
         category_name = "Inconnue"
         
         if category:
             if category.get("parent_id"):
-                parent = await categories_collection.find_one({"_id": ObjectId(category["parent_id"])})
+                parent_id = category["parent_id"] if isinstance(category["parent_id"], ObjectId) else ObjectId(category["parent_id"])
+                parent = await categories_collection.find_one({"_id": parent_id})
                 if parent:
                     category_name = f"{parent['name']} › {category['name']}"
                 else:
@@ -42,14 +45,14 @@ async def get_rules(
             "name": rule["name"],
             "pattern": rule["pattern"],
             "match_type": rule["match_type"],
-            "category_id": rule["category_id"],
+            "category_id": str(rule["category_id"]),  # Convertir en string
             "category_name": category_name,
             "is_active": rule["is_active"],
             "exceptions": rule.get("exceptions", []),
             "start_date": rule.get("start_date"),
             "end_date": rule.get("end_date"),
             "created_at": rule["created_at"],
-            "updated_at": rule["updated_at"]
+            "updated_at": rule.get("updated_at", rule["created_at"])  # Fallback sur created_at
         })
     
     return result
