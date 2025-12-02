@@ -42,6 +42,62 @@
 - **Tests de Sécurité** : SAST, DAST, Analyse de dépendances
 - **Tests fonctionnels** : Lorsque tu déploies un backend et/ou un frontend, il faut que tu génères ce qu'il faut pour les tester en local avec un maximum de log et debug
 
+### Pre-commit Hooks Obligatoires
+
+Configuration dans `.pre-commit-config.yaml` :
+
+#### Hooks Python (Backend)
+- **Black** : Formatage automatique du code
+- **Flake8** : Linting (max-line-length=100)
+- **isort** : Tri des imports (profile=black)
+- **pytest** : Exécution des tests unitaires sur les fichiers modifiés
+
+#### Hooks JavaScript (Frontend)
+- **Prettier** : Formatage automatique
+- **ESLint** : Linting React/JSX
+
+#### Hooks Généraux
+- **trailing-whitespace** : Supprime les espaces en fin de ligne
+- **end-of-file-fixer** : Ajoute newline en fin de fichier
+- **check-yaml** : Validation YAML
+- **check-json** : Validation JSON
+- **check-added-large-files** : Bloque les fichiers > 1MB
+- **check-merge-conflict** : Détecte les conflits de merge
+- **detect-private-key** : Détecte les clés privées
+- **detect-secrets** : Détecte les secrets hardcodés
+
+#### Hooks Personnalisés MongoDB
+- **mongodb-date-check** : Vérifie que les queries MongoDB utilisent des strings pour les dates (pas datetime)
+- **objectid-isinstance-check** : Vérifie que les conversions ObjectId utilisent `isinstance()` avant conversion
+
+### Utilitaires Réutilisables
+
+#### `/backend/app/utils/mongodb.py`
+
+Fonctions utilitaires obligatoires pour la cohérence MongoDB :
+
+```python
+def ensure_objectid(value: Union[str, ObjectId, None]) -> Union[ObjectId, None]:
+    """Convertit string en ObjectId si nécessaire"""
+    
+def to_mongo_date(date_value: Union[datetime, date, str, None]) -> Union[str, None]:
+    """Convertit date en string MongoDB "YYYY-MM-DD\""""
+    
+def ensure_objectid_dict(data: dict, fields: list) -> dict:
+    """Convertit plusieurs champs en ObjectId"""
+    
+def to_mongo_date_range(start_date, end_date) -> dict:
+    """Crée un filtre de plage de dates MongoDB"""
+    
+def serialize_objectid(obj):
+    """Convertit récursivement ObjectId en string"""
+```
+
+**Utilisation obligatoire** :
+- Toujours utiliser `to_mongo_date()` avant les queries MongoDB sur des dates
+- Toujours utiliser `ensure_objectid()` avant les queries MongoDB sur des IDs
+- Utiliser `serialize_objectid()` pour sérialiser les réponses API
+
 ## SÉCURITÉ
 - Rappelle régulièrement les bonnes pratiques de sécurité pour la gestion des données persistantes
 - Chiffrement en transit (TLS 1.3+)
@@ -206,6 +262,13 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
 - [ ] Les schémas Pydantic reflètent la structure réelle de MongoDB
 - [ ] Les endpoints API utilisent snake_case pour les paramètres
 - [ ] Le frontend utilise camelCase pour l'état, snake_case pour les APIs
+- [ ] **Aucun script Python à la racine de `/backend`**
+- [ ] **Aucun fichier de test (.csv, .json) à la racine de `/backend`**
+- [ ] **Tous les scripts dans `/scripts`**
+- [ ] **Toutes les données de test dans `/scripts/test_data/`**
+- [ ] **Pas de dossier `/backend/scripts/`**
+- [ ] **Les tests unitaires dans `/backend/app/tests/`**
+- [ ] **Documentation des scripts à jour dans `/scripts/README.md`**
 
 ## DOCUMENTATION ET KNOWLEDGE MANAGEMENT
 - Génère automatiquement une documentation technique pour chaque module développé à la racine dans le répertoire dénommé `docs`
@@ -261,6 +324,41 @@ bank_connection = await collection.find_one({"_id": bank_conn_id})
   - Toujours demander confirmation avant de changer une URL
   - Si une URL doit être changée, expliquer pourquoi et proposer la nouvelle valeur
 
+### Gestion des Scripts Obsolètes
+
+Lors de l'audit et du nettoyage des scripts :
+
+#### Critères pour Identifier les Scripts Obsolètes
+- **Doublons** : Scripts avec la même fonctionnalité (ex: test_final.sh et test_all.sh)
+- **API obsolète** : Scripts testant des endpoints qui n'existent plus
+- **Trop spécifiques** : Scripts pour des cas d'usage très particuliers non documentés
+- **Migrations uniques** : Scripts de migration déjà exécutés (ex: migrate_add_bank_to_transactions.py)
+- **Debug uniquement** : Scripts de debug non utilisés en production (ex: test_password.py)
+- **Imports cassés** : Scripts avec des dépendances manquantes ou imports incorrects
+- **Fonctionnalités déplacées** : Scripts remplacés par des commandes API (ex: create_user.py → POST /auth/register)
+
+#### Scripts à Toujours Conserver
+- **Déploiement** : deploy.sh, restart.sh, stop.sh
+- **Tests** : test_all.sh, test_backend.sh, test_frontend.sh, test_database.sh
+- **Utilitaires système** : common.sh, purge.sh, info.sh
+- **Outils de développement** : Scripts de génération de données, vérification de base de données
+- **Scripts documentés** : Tous les scripts référencés dans README.md ou documentation
+
+#### Process de Nettoyage
+1. **Lister tous les scripts** (shell et Python)
+2. **Tester chaque script** (compilation, syntaxe, exécution)
+3. **Identifier les obsolètes** selon les critères ci-dessus
+4. **Demander confirmation** avant suppression
+5. **Supprimer et commiter** avec message détaillé
+6. **Mettre à jour la documentation** (scripts/README.md)
+
+#### Documentation Post-Nettoyage
+Dans `scripts/README.md`, toujours documenter :
+- Liste des scripts conservés avec description
+- Liste des scripts supprimés avec raison
+- Date de la dernière validation
+- Workflows recommandés
+
 ## STRUCTURE DE PROJET OBLIGATOIRE
 
 Pour chaque projet tu respectes la structure suivante à la racine du projet :
@@ -268,23 +366,92 @@ Pour chaque projet tu respectes la structure suivante à la racine du projet :
 ```
 projet/
 ├── backend/           # Code source backend (API, services)
+│   ├── app/           # Code applicatif
+│   │   ├── routers/   # Endpoints API
+│   │   ├── services/  # Logique métier
+│   │   ├── models/    # Modèles de données
+│   │   ├── schemas/   # Schémas Pydantic
+│   │   ├── core/      # Configuration, database
+│   │   ├── utils/     # Utilitaires (mongodb.py, etc.)
+│   │   ├── tests/     # Tests unitaires
+│   │   └── interceptors/  # Logging, error handling, monitoring
+│   ├── requirements.txt
+│   ├── .env.example
+│   └── venv/          # Environnement virtuel Python
 ├── frontend/          # Code source frontend (UI, composants)
+│   ├── src/
+│   │   ├── components/
+│   │   ├── screens/
+│   │   ├── services/
+│   │   ├── contexts/
+│   │   └── utils/
+│   ├── package.json
+│   └── node_modules/
 ├── docs/              # Documentation utilisateur et technique
 │   ├── README.md      # Documentation principale du projet
 │   ├── QUICKSTART.md  # Guide de démarrage rapide
 │   ├── FRONTEND.md    # Documentation frontend
 │   └── TESTS.md       # Rapports de tests et validation
-├── scripts/           # Scripts de déploiement, tests, maintenance
-│   ├── README.md      # Documentation des scripts
-│   ├── deploy.sh      # Déploiement
-│   ├── test_*.sh      # Scripts de test
-│   └── test_data/     # Données de test
+├── scripts/           # TOUS les scripts (shell + Python)
+│   ├── README.md      # Documentation complète des scripts
+│   ├── common.sh      # Bibliothèque de fonctions
+│   ├── deploy.sh      # Déploiement complet
+│   ├── restart.sh     # Redémarrage
+│   ├── stop.sh        # Arrêt des services
+│   ├── purge.sh       # Nettoyage complet
+│   ├── test_*.sh      # Scripts de test (all, backend, frontend, database)
+│   ├── info.sh        # Documentation interactive
+│   ├── *.py           # Scripts Python (test_mongodb.py, view_users.py, etc.)
+│   └── test_data/     # Données de test (YAML, CSV)
 ├── logs/              # Logs d'exécution des applications
 ├── shared/            # Code partagé entre backend et frontend
+├── .pre-commit-config.yaml  # Configuration des hooks pre-commit
 ├── .ai-work/          # Logs et actions de l'IA (exclu du git)
-│   └── UNIFORMISATION.md  # Rapports d'uniformisation
+│   └── *.md           # Rapports d'uniformisation, audits, etc.
 └── instructions.md    # Instructions pour l'assistant IA
 ```
+
+### RÈGLES D'ORGANISATION STRICTES
+
+#### 1. Organisation des Scripts
+- **TOUS les scripts (shell ET Python) doivent être dans `/scripts`**
+- **INTERDIT** : Aucun script à la racine de `/backend`
+- **INTERDIT** : Sous-dossier `/backend/scripts/`
+- Les scripts Python dans `/scripts` utilisent `sys.path.insert()` pour importer depuis `/backend/app`
+- Exemple :
+  ```python
+  import sys
+  import os
+  sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+  from app.core.config import settings
+  ```
+
+#### 2. Organisation des Fichiers de Test
+- **Données de test** : `/scripts/test_data/` (YAML, CSV)
+- **Tests unitaires** : `/backend/app/tests/`
+- **Scripts de test** : `/scripts/test_*.sh`
+- **INTERDIT** : Fichiers de test (*.csv, *.json, test_*.py) à la racine de `/backend`
+
+#### 3. Backend Propre
+Le répertoire `/backend` ne doit contenir à sa racine que :
+- ✅ `app/` (code applicatif)
+- ✅ `venv/` (environnement virtuel)
+- ✅ `requirements.txt`
+- ✅ `.env.example`
+- ✅ Configuration de service (ex: `budget-backend.service`)
+- ❌ Aucun script Python (*.py)
+- ❌ Aucun fichier de test (*.csv, *.json, test_*.py)
+- ❌ Aucun sous-dossier `scripts/`
+
+#### 4. Checklist de Nettoyage (À Vérifier Régulièrement)
+- [ ] Aucun fichier `.py` à la racine de `/backend` (sauf configuration)
+- [ ] Aucun fichier de test (`.csv`, `.json`, `test_data.json`) dans `/backend`
+- [ ] Pas de dossier `/backend/scripts/`
+- [ ] Tous les scripts shell dans `/scripts`
+- [ ] Tous les scripts Python dans `/scripts`
+- [ ] Toutes les données de test dans `/scripts/test_data/`
+- [ ] Documentation des scripts à jour dans `/scripts/README.md`
+- [ ] Les chemins dans `.pre-commit-config.yaml` pointent vers `/scripts`
 
 **Aucun fichier ne doit se trouver sans un sous-dossier. Il doit forcément être dans un répertoire cité ci-dessus.**
 
