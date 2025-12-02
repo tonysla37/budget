@@ -39,9 +39,18 @@ async def get_monthly_report(
             "user_id": user_id,
             "date": {"$gte": start_date_str, "$lt": end_date_str}
         }},
+        {"$addFields": {
+            "computed_is_expense": {
+                "$cond": [
+                    {"$eq": [{"$type": "$is_expense"}, "bool"]},
+                    "$is_expense",
+                    {"$eq": ["$type", "expense"]}
+                ]
+            }
+        }},
         {"$group": {
             "_id": {
-                "is_expense": "$is_expense",
+                "is_expense": "$computed_is_expense",
                 "category_id": "$category_id"
             },
             "total_amount": {"$sum": "$amount"},
@@ -52,6 +61,14 @@ async def get_monthly_report(
     
     collection = await db.get_collection("transactions")
     results = await collection.aggregate(pipeline).to_list(length=None)
+    
+    # Debug
+    import logging
+    logger = logging.getLogger("budget-api")
+    logger.info(f"Reports monthly - year={year}, month={month}, start={start_date_str}, end={end_date_str}")
+    logger.info(f"Reports monthly - Results count: {len(results)}")
+    if results:
+        logger.info(f"Reports monthly - First result: {results[0]}")
     
     # Organiser les données par type (revenus/dépenses)
     income_by_category = {}
@@ -133,9 +150,18 @@ async def get_period_report(
             "user_id": user_id,
             "date": {"$gte": start_date_str, "$lte": end_date_str}
         }},
+        {"$addFields": {
+            "computed_is_expense": {
+                "$cond": [
+                    {"$eq": [{"$type": "$is_expense"}, "bool"]},
+                    "$is_expense",
+                    {"$eq": ["$type", "expense"]}
+                ]
+            }
+        }},
         {"$group": {
             "_id": {
-                "is_expense": "$is_expense",
+                "is_expense": "$computed_is_expense",
                 "category_id": "$category_id"
             },
             "total_amount": {"$sum": "$amount"},

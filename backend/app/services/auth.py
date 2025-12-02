@@ -89,7 +89,11 @@ async def get_user(user_id: str, db_session) -> Optional[Dict]:
     """
     Récupère un utilisateur par son ID.
     """
-    user = await db_session.find_one("users", {"_id": ObjectId(user_id)})
+    # Convertir en ObjectId si nécessaire
+    if isinstance(user_id, str):
+        user_id = ObjectId(user_id)
+    
+    user = await db_session.find_one("users", {"_id": user_id})
     return user
 
 
@@ -144,9 +148,14 @@ async def update_user(user_id: str, user_data: Dict, db_session) -> Optional[Dic
     
     update_data["updated_at"] = datetime.now(timezone.utc)
     
+    # Convertir en ObjectId si nécessaire
+    user_id_obj = user_id
+    if isinstance(user_id_obj, str):
+        user_id_obj = ObjectId(user_id_obj)
+    
     await db_session.update_one(
         "users",
-        {"_id": ObjectId(user_id)},
+        {"_id": user_id_obj},
         {"$set": update_data}
     )
     
@@ -157,5 +166,9 @@ async def delete_user(user_id: str, db_session) -> bool:
     """
     Supprime un utilisateur.
     """
-    result = await db_session.delete_one("users", {"_id": ObjectId(user_id)})
+    # Convertir en ObjectId si nécessaire
+    if isinstance(user_id, str):
+        user_id = ObjectId(user_id)
+    
+    result = await db_session.delete_one("users", {"_id": user_id})
     return result.deleted_count > 0

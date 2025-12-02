@@ -49,6 +49,10 @@ async def get_budgets(
     # Calculer les dates de la période
     start_date, end_date = get_period_dates(period_type, billing_cycle_day)
     
+    # Convertir les dates en strings pour MongoDB
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     # Récupérer les collections
     budgets_collection = await database.get_collection("budgets")
     categories_collection = await database.get_collection("categories")
@@ -88,7 +92,7 @@ async def get_budgets(
                     "user_id": current_user["_id"],
                     "category_id": {"$in": category_ids},
                     "is_expense": True,
-                    "date": {"$gte": start_date, "$lt": end_date}
+                    "date": {"$gte": start_date_str, "$lt": end_date_str}
                 }
             },
             {
@@ -199,13 +203,17 @@ async def create_budget(
     billing_cycle_day = current_user.get("billing_cycle_day", 1)
     start_date, end_date = get_period_dates(budget_data.period_type, billing_cycle_day)
     
+    # Convertir les dates en strings pour MongoDB
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     pipeline = [
         {
             "$match": {
                 "user_id": current_user["_id"],
                 "category_id": ObjectId(budget_data.category_id),
                 "is_expense": True,
-                "date": {"$gte": start_date, "$lt": end_date}
+                "date": {"$gte": start_date_str, "$lt": end_date_str}
             }
         },
         {
@@ -290,13 +298,17 @@ async def update_budget(
     billing_cycle_day = current_user.get("billing_cycle_day", 1)
     start_date, end_date = get_period_dates(updated_budget["period_type"], billing_cycle_day)
     
+    # Convertir les dates en strings pour MongoDB
+    start_date_str = start_date.strftime("%Y-%m-%d")
+    end_date_str = end_date.strftime("%Y-%m-%d")
+    
     pipeline = [
         {
             "$match": {
                 "user_id": current_user["_id"],
                 "category_id": updated_budget["category_id"],
                 "is_expense": True,
-                "date": {"$gte": start_date, "$lt": end_date}
+                "date": {"$gte": start_date_str, "$lt": end_date_str}
             }
         },
         {

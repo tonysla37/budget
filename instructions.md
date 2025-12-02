@@ -68,6 +68,8 @@
 - Guide sur l'implémentation d'une méthodologie Agile adaptée au développement solo ou en petite équipe
 
 ## COHÉRENCE ET STANDARDS
+
+### Principes Généraux
 - Maintiens une cohérence stricte dans les conventions de nommage à travers tout le projet
 - Assure une uniformité dans le style de code en suivant les standards de la communauté pour chaque langage
 - Propose des configurations de linters et formatters automatiques (ESLint, SwiftLint, Prettier)
@@ -75,17 +77,135 @@
 - Aide à créer et maintenir un guide de style de code spécifique au projet
 - **Il est impératif de garantir une cohérence entre le backend et le frontend** : Lorsque par exemple, tu utilises MongoDB en backend, il faut s'assurer que côté frontend tu réalises bien des appels MongoDB et non SQLAlchemy ou autre
 - Il faut donc s'assurer en relisant les codes pour être cohérent
-- **Cohérence des types de données entre backend et frontend** :
-  - Les IDs MongoDB sont stockés comme ObjectId dans la base de données
-  - Les APIs les renvoient comme strings (sérialisés)
+
+### Conventions de Nommage des Variables
+
+#### 1. Variables de Dates et Périodes
+
+**RÈGLE OBLIGATOIRE** : Toujours utiliser le snake_case pour les dates dans les APIs et le code backend/frontend
+
+- **Backend Python** :
+  - `start_date` / `end_date` : Pour les paramètres de fonction et variables locales
+  - `start_date_str` / `end_date_str` : Pour les dates converties en string pour MongoDB
+  - `start_datetime` / `end_datetime` : Pour les objets datetime Python (utilisés uniquement pour calculs, puis convertis en string)
+  
+- **Frontend JavaScript** :
+  - `startDate` / `endDate` : Variables d'état React (camelCase JS)
+  - `start_date` / `end_date` : Dans les appels API (snake_case pour cohérence backend)
+  - Exemple :
+    ```javascript
+    const [startDate, setStartDate] = useState('');  // État React en camelCase
+    apiCall(`/api/endpoint?start_date=${startDate}`);  // API en snake_case
+    ```
+
+- **INTERDIT** : Mélanger les formats (startDate dans backend, start_datetime dans API, etc.)
+
+**Pattern de conversion des dates (Backend)** :
+```python
+# 1. Récupérer les paramètres (date ou string)
+start_date: date = Query(...)
+
+# 2. Convertir en datetime pour calculs si nécessaire
+start_datetime = datetime.combine(start_date, datetime.min.time())
+
+# 3. TOUJOURS convertir en string pour MongoDB
+start_date_str = start_datetime.strftime("%Y-%m-%d")
+
+# 4. Utiliser dans les queries MongoDB
+{"date": {"$gte": start_date_str, "$lt": end_date_str}}
+```
+
+**Raison** : MongoDB stocke les dates comme strings "YYYY-MM-DD", pas comme datetime objects. Toute comparaison doit se faire en string.
+
+#### 2. Variables d'IDs
+
+**RÈGLE** : Toujours vérifier et convertir les types d'IDs avant les requêtes MongoDB
+
+- **user_id** : Peut être string (JWT) ou ObjectId (MongoDB)
+  ```python
+  user_id = current_user["_id"]
+  if isinstance(user_id, str):
+      user_id = ObjectId(user_id)
+  ```
+
+- **bank_connection_id**, **category_id**, etc. : Même logique
+  ```python
+  if isinstance(bank_connection_id, str):
+      bank_connection_id = ObjectId(bank_connection_id)
+  ```
+
+**Pattern obligatoire pour enrichissement de données** :
+```python
+# Récupérer un ID depuis un document MongoDB
+bank_conn_id = transaction.get("bank_connection_id")
+
+# TOUJOURS vérifier le type avant requête
+if isinstance(bank_conn_id, str):
+    bank_conn_id = ObjectId(bank_conn_id)
+
+# Requête MongoDB avec ObjectId
+bank_connection = await collection.find_one({"_id": bank_conn_id})
+```
+
+#### 3. Variables de Types de Transactions
+
+**RÈGLE** : Gérer la coexistence de deux formats legacy
+
+- **Format moderne** : `type: "income" | "expense"` (string)
+- **Format legacy** : `is_expense: boolean`
+
+**Pattern d'agrégation MongoDB** :
+```python
+{
+    "$addFields": {
+        "computed_is_expense": {
+            "$cond": [
+                {"$eq": [{"$type": "$is_expense"}, "bool"]},
+                "$is_expense",
+                {"$eq": ["$type", "expense"]}
+            ]
+        }
+    }
+}
+```
+
+### Cohérence des Types de Données
+
+- **IDs MongoDB** :
+  - Stockés comme ObjectId dans la base de données
+  - Renvoyés comme strings par les APIs (sérialisés)
   - Le frontend les utilise comme strings
   - Lors des requêtes MongoDB, toujours convertir les IDs strings en ObjectId avec `ObjectId(id_string)`
   - Exemple : `user_id` peut être string dans le JWT mais doit être ObjectId pour les requêtes MongoDB
-- **Uniformisation des couleurs et styles visuels** :
-  - Centraliser les constantes de couleurs dans des fichiers utilitaires (ex: `bankUtils.js`)
-  - Réutiliser les mêmes classes Tailwind et couleurs sur tous les écrans
-  - BoursoBank : pink-500, CIC : blue-500, Manual/Other : gray-400
-  - Ne jamais coder en dur les couleurs dans les composants individuels
+
+- **Dates** :
+  - MongoDB stocke : strings "YYYY-MM-DD"
+  - Backend manipule : datetime objects (pour calculs uniquement)
+  - Backend queries : strings (conversion obligatoire via `.strftime("%Y-%m-%d")`)
+  - Frontend : strings ISO "YYYY-MM-DD"
+
+- **Transactions** :
+  - Format moderne : `{"type": "income"}` ou `{"type": "expense"}`
+  - Format legacy : `{"is_expense": true}` ou `{"is_expense": false}`
+  - Toujours gérer les deux formats dans les agrégations
+
+### Uniformisation des Couleurs et Styles Visuels
+
+- Centraliser les constantes de couleurs dans des fichiers utilitaires (ex: `bankUtils.js`)
+- Réutiliser les mêmes classes Tailwind et couleurs sur tous les écrans
+- BoursoBank : pink-500, CIC : blue-500, Manual/Other : gray-400
+- Ne jamais coder en dur les couleurs dans les composants individuels
+
+### Checklist de Cohérence (À Vérifier Avant Chaque Commit)
+
+- [ ] Les noms de variables dates sont cohérents (`start_date`/`end_date` en backend, `startDate`/`endDate` en frontend)
+- [ ] Toutes les comparaisons de dates MongoDB utilisent des strings (`start_date_str`)
+- [ ] Tous les IDs sont convertis en ObjectId avant les requêtes MongoDB (`isinstance(id, str)`)
+- [ ] Les agrégations gèrent les deux formats de transactions (type vs is_expense)
+- [ ] Les couleurs utilisent les constantes centralisées
+- [ ] Les schémas Pydantic reflètent la structure réelle de MongoDB
+- [ ] Les endpoints API utilisent snake_case pour les paramètres
+- [ ] Le frontend utilise camelCase pour l'état, snake_case pour les APIs
 
 ## DOCUMENTATION ET KNOWLEDGE MANAGEMENT
 - Génère automatiquement une documentation technique pour chaque module développé à la racine dans le répertoire dénommé `docs`
