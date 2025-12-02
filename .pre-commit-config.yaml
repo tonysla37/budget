@@ -92,7 +92,7 @@ repos:
     hooks:
       - id: objectid-isinstance-check
         name: Check ObjectId isinstance usage
-        entry: bash -c 'python3 backend/scripts/check_objectid_pattern.py'
+        entry: bash -c 'python3 scripts/check_objectid_pattern.py'
         language: system
         pass_filenames: false
         files: ^backend/.*\.py$

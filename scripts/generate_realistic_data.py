@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 """
 Script pour générer 6 mois de données de transactions réalistes pour un cadre standard
+Usage: cd scripts && python3 generate_realistic_data.py
 """
 import asyncio
+import sys
+import os
 from datetime import datetime, timedelta
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.core.config import settings
 import random
+
+# Ajouter le répertoire backend au path pour les imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+
+from app.core.config import settings
 
 # Salaire mensuel d'un cadre standard
 SALAIRE_MENSUEL = 3200

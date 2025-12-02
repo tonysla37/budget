@@ -123,41 +123,43 @@ Bibliothèque de fonctions (ne pas exécuter directement)
 
 ---
 
-## 🐍 Scripts Python Backend
+## 🐍 Scripts Python
+
+Tous les scripts Python se trouvent maintenant dans `/scripts`.
 
 ### `test_mongodb.py`
 Test de connexion MongoDB
 
 ```bash
-cd backend && venv/bin/python test_mongodb.py
+python3 scripts/test_mongodb.py
 ```
 
 ### `view_users.py`
 Affiche tous les utilisateurs
 
 ```bash
-cd backend && venv/bin/python view_users.py
+python3 scripts/view_users.py
 ```
 
 ### `check_users.py`
 Vérification rapide
 
 ```bash
-cd backend && venv/bin/python check_users.py
+python3 scripts/check_users.py
 ```
 
 ### `delete_user.py`
 Suppression interactive
 
 ```bash
-cd backend && venv/bin/python delete_user.py [email_ou_id]
+python3 scripts/delete_user.py [email_ou_id]
 ```
 
 ### `generate_realistic_data.py`
 Génère 6 mois de données réalistes
 
 ```bash
-cd backend && venv/bin/python generate_realistic_data.py
+python3 scripts/generate_realistic_data.py
 ```
 
 **Données** :
@@ -165,18 +167,18 @@ cd backend && venv/bin/python generate_realistic_data.py
 - Catégories : alimentation, transport, logement, loisirs, etc.
 - Merchants réalistes
 
-### `scripts/generate_encryption_key.py`
+### `generate_encryption_key.py`
 Génère une clé de chiffrement
 
 ```bash
 python3 scripts/generate_encryption_key.py
 ```
 
-### `backend/scripts/check_objectid_pattern.py`
+### `check_objectid_pattern.py`
 Validation du pattern ObjectId (pre-commit hook)
 
 ```bash
-python3 backend/scripts/check_objectid_pattern.py
+python3 scripts/check_objectid_pattern.py
 ```
 
 ---
@@ -197,9 +199,8 @@ python3 backend/scripts/check_objectid_pattern.py
 
 ### Génération de Données
 ```bash
-cd backend
-venv/bin/python generate_realistic_data.py
-venv/bin/python view_users.py
+python3 scripts/generate_realistic_data.py
+python3 scripts/view_users.py
 ```
 
 ---
@@ -236,7 +237,7 @@ venv/bin/python view_users.py
 - ✅ Tests fonctionnels passés
 - ✅ 13 scripts obsolètes supprimés
 - ✅ 10 scripts shell conservés
-- ✅ 6 scripts Python conservés
+- ✅ 7 scripts Python conservés (tous dans /scripts)
 
 ---
 
