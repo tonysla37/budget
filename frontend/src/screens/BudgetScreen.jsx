@@ -80,6 +80,8 @@ export default function BudgetScreen() {
         getCategories(),
         getTransactions()
       ]);
+      console.log('Categories loaded:', categoriesData);
+      console.log('Categories after filter:', categoriesData.filter(cat => cat.type === 'expense'));
       setBudgets(budgetsData);
       setCategories(categoriesData.filter(cat => cat.type === 'expense'));
       setTransactions(transactionsData);
@@ -413,9 +415,16 @@ export default function BudgetScreen() {
     );
   }
 
-  const availableCategories = categories.filter(
-    cat => !budgets.some(b => b.category_id === cat.id)
-  );
+  const availableCategories = editingBudget 
+    ? categories // En mode édition, montrer toutes les catégories
+    : categories.filter(
+        cat => !budgets.some(b => 
+          b.category_id === cat.id && 
+          b.period_type === periodType && 
+          b.is_recurring === formData.is_recurring &&
+          (!formData.is_recurring ? (b.year === formData.year && b.month === formData.month) : true)
+        )
+      );
 
   // Fonction pour obtenir le nom complet de la catégorie
   const getCategoryDisplayName = (category) => {

@@ -59,15 +59,6 @@ const Navigation = () => {
           </li>
           <li>
             <Link 
-              to="/add-transaction" 
-              className={`nav-link ${isActive('/add-transaction') ? 'active' : ''}`}
-              onClick={closeMenu}
-            >
-              {t('nav.addTransaction')}
-            </Link>
-          </li>
-          <li>
-            <Link 
               to="/categories" 
               className={`nav-link ${isActive('/categories') ? 'active' : ''}`}
               onClick={closeMenu}
