@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getCategories } from '../services/categoryService';
-import { getRules, createRule, updateRule, deleteRule } from '../services/ruleService';
+import { getRules, createRule, updateRule, deleteRule, applyRuleToAllTransactions } from '../services/ruleService';
 import { Filter, Plus, Trash2, Edit, Save, X, CheckCircle, RotateCcw, Power } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
@@ -11,6 +11,7 @@ export default function RulesScreen() {
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [exceptionInput, setExceptionInput] = useState('');
+  const [applyToExisting, setApplyToExisting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     pattern: '',
@@ -56,10 +57,19 @@ export default function RulesScreen() {
         end_date: formData.end_date || null
       };
 
+      let ruleId;
       if (editingRule) {
         await updateRule(editingRule.id, cleanedData);
+        ruleId = editingRule.id;
       } else {
-        await createRule(cleanedData);
+        const newRule = await createRule(cleanedData);
+        ruleId = newRule.id;
+      }
+      
+      // Appliquer aux transactions existantes si demandé
+      if (applyToExisting && ruleId) {
+        const result = await applyRuleToAllTransactions(ruleId);
+        alert(`Règle ${editingRule ? 'modifiée' : 'créée'} avec succès !\n${result.message}`);
       }
       
       setShowModal(false);
@@ -111,6 +121,7 @@ export default function RulesScreen() {
     });
     setEditingRule(null);
     setExceptionInput('');
+    setApplyToExisting(false);
   };
 
   const addException = () => {
@@ -545,6 +556,20 @@ export default function RulesScreen() {
                 />
                 <label htmlFor="is_active" className="ml-2 block text-sm text-gray-700">
                   Règle active
+                </label>
+              </div>
+
+              {/* Appliquer aux transactions existantes */}
+              <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <input
+                  type="checkbox"
+                  id="apply_to_existing"
+                  checked={applyToExisting}
+                  onChange={(e) => setApplyToExisting(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="apply_to_existing" className="ml-2 block text-sm text-gray-700">
+                  {editingRule ? 'Réappliquer cette règle aux transactions existantes' : 'Appliquer cette règle aux transactions existantes'}
                 </label>
               </div>
 
