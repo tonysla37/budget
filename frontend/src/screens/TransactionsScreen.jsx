@@ -723,7 +723,7 @@ export default function TransactionsScreen() {
                     </div>
                     
                     {/* Catégorie - Dropdown ou affichage */}
-                    <div className="flex-shrink-0 w-48">
+                    <div className="flex-shrink-0 w-44 mr-2">
                       {isEditingCategory ? (
                         <select
                           autoFocus
@@ -781,13 +781,13 @@ export default function TransactionsScreen() {
                     
                     {/* Compte */}
                     {transaction.account && (
-                      <div className="flex-shrink-0 w-24">
+                      <div className="flex-shrink-0 w-20 mr-2">
                         <span className="text-xs text-gray-600 truncate">{transaction.account.name}</span>
                       </div>
                     )}
                     
                     {/* Montant */}
-                    <div className="flex-shrink-0 w-24 text-right">
+                    <div className="flex-shrink-0 w-28 text-right">
                       <div className={`text-base font-bold ${transaction.is_expense ? 'text-red-600' : 'text-green-600'}`}>
                         {transaction.is_expense ? '-' : '+'}{formatCurrency(Math.abs(transaction.amount))}
                       </div>
