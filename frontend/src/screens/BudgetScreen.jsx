@@ -523,6 +523,12 @@ export default function BudgetScreen() {
           // Calculer le total des budgets alloués (uniquement catégories principales)
           const totalBudgetsAlloues = mainCategoryBudgets.reduce((sum, b) => sum + b.amount, 0);
           
+          // Calculer séparément les budgets récurrents et ponctuels
+          const budgetsRecurrents = mainCategoryBudgets.filter(b => b.is_recurring);
+          const budgetsPonctuels = mainCategoryBudgets.filter(b => !b.is_recurring);
+          const totalBudgetsRecurrents = budgetsRecurrents.reduce((sum, b) => sum + b.amount, 0);
+          const totalBudgetsPonctuels = budgetsPonctuels.reduce((sum, b) => sum + b.amount, 0);
+          
           // Calculer le total des revenus pour la période
           const startStr = periodDates.start.toISOString().split('T')[0];
           const endStr = periodDates.end.toISOString().split('T')[0];
@@ -537,47 +543,74 @@ export default function BudgetScreen() {
           // Calculer le total dépensé (uniquement catégories principales - déjà agrégé par le backend)
           const totalDepense = mainCategoryBudgets.reduce((sum, b) => sum + b.spent, 0);
           
-          // Calculer le reste disponible
-          const resteDisponible = totalRevenus - totalBudgetsAlloues;
-          const pourcentageAlloue = totalRevenus > 0 ? (totalBudgetsAlloues / totalRevenus * 100) : 0;
+          // Calculer le reste disponible (deux versions)
+          const resteDisponibleRecurrents = totalRevenus - totalBudgetsRecurrents;
+          const resteDisponibleTotal = totalRevenus - totalBudgetsAlloues;
+          const pourcentageAlloueRecurrents = totalRevenus > 0 ? (totalBudgetsRecurrents / totalRevenus * 100) : 0;
+          const pourcentageAlloueTotal = totalRevenus > 0 ? (totalBudgetsAlloues / totalRevenus * 100) : 0;
           const pourcentageDepense = totalBudgetsAlloues > 0 ? (totalDepense / totalBudgetsAlloues * 100) : 0;
           
           return (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border-2 border-blue-200 p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-blue-600" />
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border-2 border-blue-200 p-4 mb-4">
+              <h3 className="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-blue-600" />
                 Synthèse {periodType === 'monthly' ? 'mensuelle' : 'annuelle'}
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {/* Revenus */}
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-600 mb-1">Revenus</p>
-                  <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenus)}</p>
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-xs text-gray-600 mb-1">Revenus</p>
+                  <p className="text-xl font-bold text-green-600">{formatCurrency(totalRevenus)}</p>
                 </div>
                 
-                {/* Budgets alloués */}
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-600 mb-1">Budgets alloués</p>
-                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalBudgetsAlloues)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{pourcentageAlloue.toFixed(1)}% des revenus</p>
+                {/* Budgets récurrents */}
+                <div className="bg-white rounded-lg p-3 border border-purple-200">
+                  <p className="text-xs text-gray-600 mb-1">Budgets récurrents</p>
+                  <p className="text-xl font-bold text-purple-600">{formatCurrency(totalBudgetsRecurrents)}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{pourcentageAlloueRecurrents.toFixed(1)}% des revenus</p>
+                </div>
+                
+                {/* Budgets alloués (total) */}
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-xs text-gray-600 mb-1">Budgets alloués (total)</p>
+                  <p className="text-xl font-bold text-blue-600">{formatCurrency(totalBudgetsAlloues)}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{pourcentageAlloueTotal.toFixed(1)}% des revenus</p>
+                  {totalBudgetsPonctuels > 0 && (
+                    <p className="text-[10px] text-purple-600">dont {formatCurrency(totalBudgetsPonctuels)} ponctuels</p>
+                  )}
                 </div>
                 
                 {/* Dépenses réelles */}
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-600 mb-1">Dépenses réelles</p>
-                  <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalDepense)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{pourcentageDepense.toFixed(1)}% des budgets</p>
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-xs text-gray-600 mb-1">Dépenses réelles</p>
+                  <p className="text-xl font-bold text-orange-600">{formatCurrency(totalDepense)}</p>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{pourcentageDepense.toFixed(1)}% des budgets</p>
                 </div>
                 
-                {/* Reste disponible */}
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <p className="text-sm text-gray-600 mb-1">Reste disponible</p>
-                  <p className={`text-2xl font-bold ${resteDisponible >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {formatCurrency(Math.abs(resteDisponible))}
+                {/* Reste disponible / Manque (récurrents seuls) */}
+                <div className="bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-xs text-gray-600 mb-1">
+                    {resteDisponibleRecurrents >= 0 ? 'Reste (récurrents)' : 'Manque (récurrents)'}
                   </p>
-                  {resteDisponible < 0 && (
-                    <p className="text-xs text-red-500 mt-1">⚠️ Sur-allocation</p>
+                  <p className={`text-xl font-bold ${resteDisponibleRecurrents >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(Math.abs(resteDisponibleRecurrents))}
+                  </p>
+                  {resteDisponibleRecurrents < 0 && (
+                    <p className="text-[10px] text-red-500 mt-0.5">⚠️ Dépassement</p>
+                  )}
+                </div>
+                
+                {/* Reste disponible / Manque (tous budgets) */}
+                <div className="bg-white rounded-lg p-3 border-2 border-indigo-300 shadow-sm">
+                  <p className="text-xs text-gray-600 mb-1">
+                    {resteDisponibleTotal >= 0 ? 'Reste disponible (total)' : 'Manque (total)'}
+                  </p>
+                  <p className={`text-xl font-bold ${resteDisponibleTotal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(Math.abs(resteDisponibleTotal))}
+                  </p>
+                  {resteDisponibleTotal < 0 && (
+                    <p className="text-[10px] text-red-500 mt-0.5">⚠️ Sur-allocation</p>
                   )}
                 </div>
               </div>
