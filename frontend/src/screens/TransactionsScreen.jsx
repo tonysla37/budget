@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getTransactions, deleteTransaction } from '../services/transactionService';
+import { getTransactions, deleteTransaction, updateTransaction } from '../services/transactionService';
 import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -22,6 +22,7 @@ export default function TransactionsScreen() {
   const [selectedCategory, setSelectedCategory] = useState(() => localStorage.getItem('transactionsSelectedCategory') || 'all'); // Filtre par catégorie
   const [selectedBank, setSelectedBank] = useState(() => localStorage.getItem('transactionsSelectedBank') || 'all'); // Filtre par banque
   const [billingCycleDay, setBillingCycleDay] = useState(1); // Jour de début du cycle
+  const [editingCategoryId, setEditingCategoryId] = useState(null); // ID de la transaction en cours d'édition
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,6 +110,19 @@ export default function TransactionsScreen() {
         console.error('Erreur lors de la suppression:', error);
         alert(t('transactions.deleteError'));
       }
+    }
+  };
+
+  const handleCategoryChange = async (transactionId, newCategoryId) => {
+    try {
+      await updateTransaction(transactionId, { 
+        category_id: newCategoryId === 'uncategorized' ? null : newCategoryId 
+      });
+      setEditingCategoryId(null);
+      await loadTransactions();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la catégorie:', error);
+      alert('Erreur lors de la mise à jour de la catégorie');
     }
   };
 
@@ -411,26 +425,38 @@ export default function TransactionsScreen() {
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">
                   {t('transactions.periodLabel')}
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[
-                    { key: 'all', label: t('transactions.periodAll') },
-                    { key: 'current', label: t('transactions.periodCurrent') },
-                    { key: 'last', label: t('transactions.periodLast') },
-                    { key: 'thisYear', label: t('transactions.periodYear') },
-                    { key: 'custom', label: t('transactions.periodCustom') }
-                  ].map(period => (
-                    <button
-                      key={period.key}
-                      onClick={() => setSelectedPeriod(period.key)}
-                      className={`px-3 py-1.5 text-xs rounded-md border font-medium transition-colors ${
-                        selectedPeriod === period.key
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {period.label}
-                    </button>
-                  ))}
+                <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { key: 'all', label: t('transactions.periodAll') },
+                      { key: 'current', label: t('transactions.periodCurrent') },
+                      { key: 'last', label: t('transactions.periodLast') },
+                      { key: 'thisYear', label: t('transactions.periodYear') }
+                    ].map(period => (
+                      <button
+                        key={period.key}
+                        onClick={() => setSelectedPeriod(period.key)}
+                        className={`px-3 py-1.5 text-xs rounded-md border font-medium transition-colors ${
+                          selectedPeriod === period.key
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {period.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setSelectedPeriod('custom')}
+                    className={`w-full px-3 py-1.5 text-xs rounded-md border font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                      selectedPeriod === 'custom'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Calendar size={12} />
+                    {t('transactions.periodCustom')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -504,69 +530,109 @@ export default function TransactionsScreen() {
             <div className="divide-y divide-gray-200">
               {paginatedTransactions.map((transaction) => {
                 const bankStyles = getBankStyles(transaction.bank?.name);
+                const isEditingCategory = editingCategoryId === transaction.id;
                 return (
-                <div key={transaction.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center mb-2 gap-2">
-                        {/* Tag de la banque d'origine ou manuel */}
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
-                          {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
-                           transaction.bank?.name === 'cic' ? 'CIC' : 
-                           transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
-                        </span>
-                        <h3 className="text-lg font-medium text-gray-900">{transaction.description}</h3>
-                        {/* Tag de la catégorie */}
-                        {transaction.category && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            <div 
-                              className="w-2 h-2 rounded-full mr-1.5" 
-                              style={{ backgroundColor: transaction.category.color || '#6b7280' }}
-                            />
-                            {getTransactionCategoryName(transaction)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar size={14} className="mr-1" />
-                        <span>{formatDate(transaction.date)}</span>
+                <div key={transaction.id} className="px-3 py-2 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    {/* Date à gauche */}
+                    <div className="flex-shrink-0 w-16 text-xs text-gray-500">
+                      {formatDate(transaction.date)}
+                    </div>
+                    
+                    {/* Tag banque */}
+                    <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-medium rounded ${bankStyles.badge}`}>
+                      {transaction.bank?.name === 'boursobank' ? 'BOURSO' : 
+                       transaction.bank?.name === 'cic' ? 'CIC' : 
+                       transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                    </span>
+                    
+                    {/* Description et informations */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{transaction.description}</h3>
                         {transaction.merchant && (
-                          <>
-                            <span className="mx-2">•</span>
-                            <span>{transaction.merchant}</span>
-                          </>
-                        )}
-                        {transaction.account && (
-                          <>
-                            <span className="mx-2">•</span>
-                            <Wallet size={14} className="mr-1" />
-                            <span className="font-medium">{transaction.account.name}</span>
-                          </>
+                          <span className="text-xs text-gray-500 truncate">• {transaction.merchant}</span>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center ml-4">
-                      <div className="text-right mr-4">
-                        <div className={`text-xl font-bold ${transaction.is_expense ? 'text-red-600' : 'text-green-600'}`}>
-                          {transaction.is_expense ? '-' : '+'}{formatCurrency(Math.abs(transaction.amount))}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => navigate('/edit-transaction', { state: { transaction } })}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title={t('transactions.editTitle')}
+                    
+                    {/* Catégorie - Dropdown ou affichage */}
+                    <div className="flex-shrink-0 w-48">
+                      {isEditingCategory ? (
+                        <select
+                          autoFocus
+                          value={transaction.category_id || 'uncategorized'}
+                          onChange={(e) => handleCategoryChange(transaction.id, e.target.value)}
+                          onBlur={() => setEditingCategoryId(null)}
+                          className="w-full px-2 py-1 text-xs border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
-                          <Edit size={18} />
-                        </button>
+                          <option value="uncategorized">⚠️ Sans catégorie</option>
+                          {categories
+                            .filter(c => !c.parent_id)
+                            .map(parentCat => {
+                              const childCategories = categories.filter(c => c.parent_id === parentCat.id);
+                              return (
+                                <optgroup key={parentCat.id} label={parentCat.name}>
+                                  <option value={parentCat.id}>{parentCat.name}</option>
+                                  {childCategories.map(childCat => (
+                                    <option key={childCat.id} value={childCat.id}>
+                                      &nbsp;&nbsp;› {childCat.name}
+                                    </option>
+                                  ))}
+                                </optgroup>
+                              );
+                            })}
+                        </select>
+                      ) : (
                         <button
-                          onClick={() => handleDeleteTransaction(transaction.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title={t('transactions.deleteTitle')}
+                          onClick={() => setEditingCategoryId(transaction.id)}
+                          className="w-full text-left px-2 py-1 rounded hover:bg-gray-100 transition-colors"
                         >
-                          <Trash2 size={18} />
+                          {transaction.category ? (
+                            <span className="inline-flex items-center text-xs text-gray-800">
+                              <div 
+                                className="w-2 h-2 rounded-full mr-1.5 flex-shrink-0" 
+                                style={{ backgroundColor: transaction.category.color || '#6b7280' }}
+                              />
+                              <span className="truncate">{getTransactionCategoryName(transaction)}</span>
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">⚠️ Sans catégorie</span>
+                          )}
                         </button>
+                      )}
+                    </div>
+                    
+                    {/* Compte */}
+                    {transaction.account && (
+                      <div className="flex-shrink-0 w-24">
+                        <span className="text-xs text-gray-600 truncate">{transaction.account.name}</span>
                       </div>
+                    )}
+                    
+                    {/* Montant */}
+                    <div className="flex-shrink-0 w-24 text-right">
+                      <div className={`text-base font-bold ${transaction.is_expense ? 'text-red-600' : 'text-green-600'}`}>
+                        {transaction.is_expense ? '-' : '+'}{formatCurrency(Math.abs(transaction.amount))}
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex-shrink-0 flex gap-1">
+                      <button
+                        onClick={() => navigate('/edit-transaction', { state: { transaction } })}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title={t('transactions.editTitle')}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTransaction(transaction.id)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title={t('transactions.deleteTitle')}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 </div>
