@@ -4,7 +4,7 @@ import { getCategories } from '../services/categoryService';
 import { getTransactions } from '../services/transactionService';
 import { getCurrentUser } from '../services/authService';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { getBankStyles } from '../utils/bankUtils';
+import { getBankStyles, getBankDisplayName } from '../utils/bankUtils';
 import { Wallet, Plus, Pencil, Trash2, AlertTriangle, CheckCircle2, AlertCircle, ChevronDown, ChevronUp, RefreshCw, Calendar, LayoutGrid, List } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
@@ -370,10 +370,8 @@ export default function BudgetScreen() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               {/* Tag de la banque ou manuel */}
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
-                                {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
-                                 transaction.bank?.name === 'cic' ? 'CIC' : 
-                                 transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                              <span className={`px-2 py-0.5 text-xs rounded ${bankStyles.badge}`}>
+                                {transaction.bank?.name ? getBankDisplayName(transaction.bank.name) : 'MANUEL'}
                               </span>
                               <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
                             </div>

@@ -335,20 +335,40 @@ async def get_dashboard_data(
             # Construire le filtre pour les budgets en fonction de la période
             budget_filter = {"user_id": current_user["_id"]}
             
-            # Pour la période actuelle, on cherche :
-            # 1. Les budgets récurrents (is_recurring=True)
-            # 2. Les budgets ponctuels pour ce mois/année spécifique
+            # Pour la période actuelle/précédente (mensuelle), on cherche :
+            # 1. Les budgets récurrents mensuels (is_recurring=True, period_type=monthly)
+            # 2. Les budgets ponctuels pour ce mois spécifique
+            # NOTE: Pour les budgets, on utilise le MOIS CALENDAIRE, pas le billing_cycle
+            now = datetime.now()
+            current_year = now.year
+            current_month = now.month
+            
             if period in ["current", "previous"]:
+                # Calculer le mois à utiliser pour les budgets ponctuels
+                if period == "current":
+                    budget_year = current_year
+                    budget_month = current_month
+                else:  # previous
+                    if current_month == 1:
+                        budget_year = current_year - 1
+                        budget_month = 12
+                    else:
+                        budget_year = current_year
+                        budget_month = current_month - 1
+                
                 budget_filter["$or"] = [
-                    {"is_recurring": True},  # Budgets récurrents
-                    {  # Budgets ponctuels pour ce mois
+                    {
+                        "is_recurring": True,
+                        "period_type": "monthly"
+                    },
+                    {  # Budgets ponctuels pour ce mois calendaire
                         "is_recurring": False,
-                        "year": start_datetime.year,
-                        "month": start_datetime.month
+                        "year": budget_year,
+                        "month": budget_month
                     }
                 ]
             else:  # year
-                # Pour l'année, on prend tous les budgets récurrents
+                # Pour l'année, on prend les budgets annuels récurrents ou les budgets mensuels * 12
                 budget_filter["is_recurring"] = True
             
             budgets_cursor = budgets_collection.find(budget_filter)
@@ -370,12 +390,19 @@ async def get_dashboard_data(
                     if not category:
                         continue
                     
+                    # Ne compter que les budgets des catégories PRINCIPALES (sans parent)
+                    # pour éviter de compter 2 fois (les sous-catégories sont déjà agrégées)
+                    if category.get("parent_id"):
+                        continue
+                    
                     # Calculer les dépenses pour cette catégorie
-                    spent = expenses_dict.get(str(budget["category_id"]), 0)
+                    budget_category_id = str(budget["category_id"])
+                    spent = expenses_dict.get(budget_category_id, 0)
                     
                     # Ajouter les dépenses des sous-catégories
                     for cat_id, cat_data in category_map.items():
-                        if cat_data.get("parent_id") == str(budget["category_id"]):
+                        parent_id = cat_data.get("parent_id")
+                        if parent_id and str(parent_id) == budget_category_id:
                             spent += expenses_dict.get(cat_id, 0)
                     
                     # Calculer le montant du budget selon la période

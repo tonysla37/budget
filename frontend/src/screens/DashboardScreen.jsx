@@ -4,7 +4,7 @@ import { getDashboardData } from '../services/dashboardService';
 import { getCategories } from '../services/categoryService';
 import { formatCurrency, formatPercentage, formatDate } from '../utils/formatters';
 import { getCurrentPeriod, getPeriodLabel } from '../utils/dateUtils';
-import { getBankStyles } from '../utils/bankUtils';
+import { getBankStyles, getBankDisplayName } from '../utils/bankUtils';
 import { useTranslation } from '../i18n';
 import { TrendingUp, TrendingDown, Wallet, Save, Plus, RefreshCw } from 'lucide-react';
 
@@ -289,10 +289,8 @@ export default function DashboardScreen() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             {/* Tag de la banque ou manuel */}
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
-                              {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
-                               transaction.bank?.name === 'cic' ? 'CIC' : 
-                               transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                            <span className={`px-2 py-0.5 text-xs rounded ${bankStyles.badge}`}>
+                              {transaction.bank?.name ? getBankDisplayName(transaction.bank.name) : 'MANUEL'}
                             </span>
                             <p className="font-medium text-sm text-gray-900 truncate">{transaction.description}</p>
                           </div>
@@ -501,10 +499,8 @@ export default function DashboardScreen() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         {/* Tag de la banque d'origine ou manuel */}
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${bankStyles.badge}`}>
-                          {transaction.bank?.name === 'boursobank' ? 'BOURSOBANK' : 
-                           transaction.bank?.name === 'cic' ? 'CIC' : 
-                           transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                        <span className={`px-2 py-0.5 text-xs rounded ${bankStyles.badge}`}>
+                          {transaction.bank?.name ? getBankDisplayName(transaction.bank.name) : 'MANUEL'}
                         </span>
                         <p className="font-medium text-gray-900">{transaction.description}</p>
                       </div>

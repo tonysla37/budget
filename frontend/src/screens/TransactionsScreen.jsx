@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getTransactions, deleteTransaction, updateTransaction } from '../services/transactionService';
-import { getCategories } from '../services/categoryService';
+import { getCategories, createCategory } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
 import { createRule, applyRuleToAllTransactions } from '../services/ruleService';
 import { formatCurrency, formatDate } from '../utils/formatters';
-import { getBankStyles } from '../utils/bankUtils';
+import { getBankStyles, getBankDisplayName } from '../utils/bankUtils';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X, Wallet, Sparkles } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
@@ -33,6 +33,17 @@ export default function TransactionsScreen() {
     category_id: '',
     applyToExisting: true
   });
+  
+  // Modal création catégorie
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    type: 'expense',
+    parent_id: '',
+    color: '#3b82f6',
+    icon: '📦'
+  });
+  const [creatingForTransaction, setCreatingForTransaction] = useState(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -182,6 +193,51 @@ export default function TransactionsScreen() {
     } catch (error) {
       console.error('Erreur lors de la création de la règle:', error);
       alert('Erreur lors de la création de la règle');
+    }
+  };
+
+  // Fonction pour ouvrir la modal de création de catégorie
+  const openCategoryModal = (transaction) => {
+    setCreatingForTransaction(transaction);
+    setCategoryForm({
+      name: '',
+      type: transaction.is_expense ? 'expense' : 'income',
+      parent_id: '',
+      color: '#3b82f6',
+      icon: '📦'
+    });
+    setShowCategoryModal(true);
+  };
+
+  // Fonction pour créer une catégorie
+  const handleCreateCategory = async () => {
+    if (!categoryForm.name) {
+      alert('Veuillez entrer un nom de catégorie');
+      return;
+    }
+
+    try {
+      const newCategory = await createCategory({
+        name: categoryForm.name,
+        type: categoryForm.type,
+        parent_id: categoryForm.parent_id ? categoryForm.parent_id : null,
+        color: categoryForm.color,
+        icon: categoryForm.icon
+      });
+
+      // Recharger les catégories
+      await loadCategories();
+      
+      // Si on créait pour une transaction, l'assigner automatiquement
+      if (creatingForTransaction && newCategory.id) {
+        await handleCategoryChange(creatingForTransaction.id, newCategory.id);
+      }
+      
+      setShowCategoryModal(false);
+      alert('Catégorie créée avec succès !');
+    } catch (error) {
+      console.error('Erreur lors de la création de la catégorie:', error);
+      alert('Erreur lors de la création de la catégorie');
     }
   };
 
@@ -600,9 +656,7 @@ export default function TransactionsScreen() {
                     
                     {/* Tag banque */}
                     <span className={`flex-shrink-0 px-2 py-0.5 text-[10px] font-medium rounded ${bankStyles.badge}`}>
-                      {transaction.bank?.name === 'boursobank' ? 'BOURSO' : 
-                       transaction.bank?.name === 'cic' ? 'CIC' : 
-                       transaction.bank?.name ? transaction.bank.name.toUpperCase() : 'MANUEL'}
+                      {transaction.bank?.name ? getBankDisplayName(transaction.bank.name) : 'MANUEL'}
                     </span>
                     
                     {/* Description et informations */}
@@ -621,7 +675,14 @@ export default function TransactionsScreen() {
                         <select
                           autoFocus
                           value={transaction.category_id || 'uncategorized'}
-                          onChange={(e) => handleCategoryChange(transaction.id, e.target.value)}
+                          onChange={(e) => {
+                            if (e.target.value === 'create_new') {
+                              setEditingCategoryId(null);
+                              openCategoryModal(transaction);
+                            } else {
+                              handleCategoryChange(transaction.id, e.target.value);
+                            }
+                          }}
                           onBlur={() => setEditingCategoryId(null)}
                           className="w-full px-2 py-1 text-xs border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
@@ -641,6 +702,9 @@ export default function TransactionsScreen() {
                                 </optgroup>
                               );
                             })}
+                          <option value="create_new" className="font-semibold text-blue-600">
+                            ➕ Nouvelle catégorie
+                          </option>
                         </select>
                       ) : (
                         <button
@@ -929,6 +993,136 @@ export default function TransactionsScreen() {
               >
                 <Sparkles size={16} />
                 Créer la règle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Création de Catégorie */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Tag size={24} className="text-blue-600" />
+                Nouvelle Catégorie
+              </h2>
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nom de la catégorie *
+                </label>
+                <input
+                  type="text"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Courses, Transport..."
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type
+                </label>
+                <select
+                  value={categoryForm.type}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="expense">Dépense</option>
+                  <option value="income">Revenu</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Catégorie parente (optionnel)
+                </label>
+                <select
+                  value={categoryForm.parent_id || ''}
+                  onChange={(e) => {
+                    const parentId = e.target.value || '';
+                    const parent = categories.find(c => c.id === parentId);
+                    setCategoryForm({ 
+                      ...categoryForm, 
+                      parent_id: parentId,
+                      color: parent ? parent.color : categoryForm.color,
+                      icon: parent ? parent.icon : categoryForm.icon
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Aucune (catégorie principale)</option>
+                  {categories
+                    .filter(c => !c.parent_id && c.type === categoryForm.type)
+                    .map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Couleur
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="color"
+                      value={categoryForm.color}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, color: e.target.value })}
+                      className="h-10 w-16 rounded border border-gray-300 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-600">{categoryForm.color}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Icône
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryForm.icon}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, icon: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl"
+                    placeholder="📦"
+                    maxLength={2}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  💡 La catégorie sera automatiquement assignée à la transaction en cours.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowCategoryModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreateCategory}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Plus size={16} />
+                Créer
               </button>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSettings, updateSettings } from '../services/settingsService';
-import { Save, Calendar, User, Mail, LogOut, Lock } from 'lucide-react';
+import { exportUserData, importUserData } from '../services/dataService';
+import { Save, Calendar, User, Mail, LogOut, Lock, Download, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../i18n';
 
@@ -64,6 +65,69 @@ export default function SettingsScreen() {
     if (window.confirm(t('settings.logoutConfirm'))) {
       logout();
       navigate('/login');
+    }
+  };
+
+  // Export des données
+  const handleExport = async () => {
+    try {
+      const data = await exportUserData();
+      
+      // Créer un blob et télécharger le fichier
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `budget-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      setMessage({ type: 'success', text: '✅ Export réussi ! Le fichier a été téléchargé.' });
+    } catch (error) {
+      console.error('Erreur lors de l\'export:', error);
+      setMessage({ type: 'error', text: '❌ Erreur lors de l\'export des données' });
+    }
+  };
+
+  // Import des données
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      if (!window.confirm(
+        '⚠️ ATTENTION !\n\n' +
+        'Cet import va ajouter les données du fichier à votre compte actuel.\n\n' +
+        `Le fichier contient :\n` +
+        `- ${data.categories?.length || 0} catégories\n` +
+        `- ${data.transactions?.length || 0} transactions\n` +
+        `- ${data.rules?.length || 0} règles\n` +
+        `- ${data.accounts?.length || 0} comptes\n` +
+        `- ${data.banks?.length || 0} banques\n\n` +
+        'Voulez-vous continuer ?'
+      )) {
+        return;
+      }
+
+      const result = await importUserData(data);
+      
+      setMessage({ 
+        type: 'success', 
+        text: `✅ Import réussi !\n${result.imported.categories} catégories, ${result.imported.transactions} transactions, ${result.imported.rules} règles importées.` 
+      });
+      
+      // Recharger la page après 2 secondes
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Erreur lors de l\'import:', error);
+      setMessage({ type: 'error', text: '❌ Erreur lors de l\'import : fichier invalide ou erreur serveur' });
     }
   };
 
@@ -233,6 +297,80 @@ export default function SettingsScreen() {
                 <li>{t('settings.howItWorksItems.0')}</li>
                 <li>{t('settings.howItWorksItems.1')}</li>
                 <li>{t('settings.howItWorksItems.2')}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Export / Import des données */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-center">
+              <Download className="h-5 w-5 text-gray-400 mr-2" />
+              <h2 className="text-xl font-semibold text-gray-900">Sauvegarde & Restauration</h2>
+            </div>
+            <p className="text-sm text-gray-600 mt-1">
+              Exportez vos données ou importez une sauvegarde
+            </p>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            {/* Export */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">📥 Exporter mes données</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Téléchargez un fichier JSON contenant toutes vos données (catégories, transactions, règles, comptes).
+                  </p>
+                  <button
+                    onClick={handleExport}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exporter
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Import */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">📤 Importer des données</h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Restaurez une sauvegarde précédente. Les données seront ajoutées à votre compte actuel.
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImport}
+                      className="hidden"
+                      id="import-file"
+                    />
+                    <label
+                      htmlFor="import-file"
+                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer inline-flex"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Choisir un fichier
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Avertissement */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-900">
+                <strong>⚠️ Important :</strong>
+              </p>
+              <ul className="text-sm text-yellow-800 mt-2 space-y-1 list-disc list-inside">
+                <li>L'export crée une copie de vos données sans informations personnelles</li>
+                <li>L'import ajoute les données (ne remplace pas)</li>
+                <li>Gardez vos exports en lieu sûr (sauvegarde régulière recommandée)</li>
               </ul>
             </div>
           </div>

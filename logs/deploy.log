@@ -1,39 +1,39 @@
-[2025-12-03 11:05:13] [deploy] === Démarrage du script deploy ===
-[2025-12-03 11:05:13] [deploy] Répertoire du projet: /home/lab-telegraf/code/budget
-[2025-12-03 11:05:13] [deploy] Fichier de log: /home/lab-telegraf/code/budget/logs/deploy.log
-[2025-12-03 11:05:13] [deploy] [DEBUG] ------- INFORMATIONS SYSTÈME -------
-[2025-12-03 11:05:13] [deploy] [DEBUG] OS: Linux lab-telegraf-VMware-Virtual-Platform 6.14.0-36-generic #36~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Oct 15 15:45:17 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
-[2025-12-03 11:05:13] [deploy] [DEBUG] Python: Python 3.12.3
-[2025-12-03 11:05:13] [deploy] [DEBUG] Node: v18.19.1
-[2025-12-03 11:05:14] [deploy] [DEBUG] NPM: 9.2.0
-[2025-12-03 11:05:14] [deploy] [DEBUG] MongoDB: db version v7.0.26
-[2025-12-03 11:05:14] [deploy] [DEBUG] MongoDB status: running
-[2025-12-03 11:05:14] [deploy] [DEBUG] Espace disque: /dev/sda2           30G     14G   15G  48% /
-[2025-12-03 11:05:14] [deploy] [DEBUG] Mémoire: Mem:           7,8Gi       2,8Gi       3,1Gi        35Mi       2,1Gi       4,9Gi
-[2025-12-03 11:05:14] [deploy] [DEBUG] ----------------------------------
-[2025-12-03 11:05:14] [deploy] Répertoire des scripts: /home/lab-telegraf/code/budget/scripts
-[2025-12-03 11:05:14] [deploy] Date et heure: mer. 03 déc. 2025 11:05:14 CET
-[2025-12-03 11:05:14] [deploy] Arrêt des services existants...
-[2025-12-03 11:05:14] [deploy] Aucun processus Backend uvicorn trouvé
-[2025-12-03 11:05:14] [deploy] Aucun processus Vite trouvé
-[2025-12-03 11:05:14] [deploy] Aucun processus Node frontend trouvé
-[2025-12-03 11:05:17] [deploy] Démarrage du backend...
-[2025-12-03 11:05:17] [deploy] Installation des dépendances Python...
-[2025-12-03 11:05:19] [deploy] Démarrage de l'application backend...
-[2025-12-03 11:05:19] [deploy] Attente du démarrage du backend...
-[0;32m[2025-12-03 11:05:20] [deploy] SUCCÈS: Backend prêt ![0m
-[2025-12-03 11:05:20] [deploy] Démarrage du frontend...
-[2025-12-03 11:05:20] [deploy] Démarrage de l'application frontend...
-[2025-12-03 11:05:20] [deploy] Attente du démarrage du frontend...
-[0;32m[2025-12-03 11:05:22] [deploy] SUCCÈS: Frontend prêt ![0m
-[2025-12-03 11:05:22] [deploy] URLs d'accès :
-[2025-12-03 11:05:22] [deploy]    - Frontend: http://localhost:19006
-[2025-12-03 11:05:22] [deploy]    - Backend API: http://localhost:8000
-[2025-12-03 11:05:22] [deploy]    - Documentation: http://localhost:8000/docs
-[2025-12-03 11:05:22] [deploy]    - Health check: http://localhost:8000/api/health
-[2025-12-03 11:05:22] [deploy] 
-[2025-12-03 11:05:22] [deploy] Pour arrêter l'application, exécutez: /home/lab-telegraf/code/budget/scripts/stop.sh
-[2025-12-03 11:05:22] [deploy] 
-[2025-12-03 11:05:22] [deploy] Consultez les fichiers de log pour plus d'informations:
-[2025-12-03 11:05:22] [deploy]    - Log de déploiement: 
-[0;32m[2025-12-03 11:05:22] [deploy] SUCCÈS: ✅ Déploiement terminé avec succès[0m
+[2025-12-03 14:43:21] [deploy] === Démarrage du script deploy ===
+[2025-12-03 14:43:21] [deploy] Répertoire du projet: /home/lab-telegraf/code/budget
+[2025-12-03 14:43:21] [deploy] Fichier de log: /home/lab-telegraf/code/budget/logs/deploy.log
+[2025-12-03 14:43:21] [deploy] [DEBUG] ------- INFORMATIONS SYSTÈME -------
+[2025-12-03 14:43:21] [deploy] [DEBUG] OS: Linux lab-telegraf-VMware-Virtual-Platform 6.14.0-36-generic #36~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Oct 15 15:45:17 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+[2025-12-03 14:43:21] [deploy] [DEBUG] Python: Python 3.12.3
+[2025-12-03 14:43:21] [deploy] [DEBUG] Node: v18.19.1
+[2025-12-03 14:43:22] [deploy] [DEBUG] NPM: 9.2.0
+[2025-12-03 14:43:22] [deploy] [DEBUG] MongoDB: db version v7.0.26
+[2025-12-03 14:43:22] [deploy] [DEBUG] MongoDB status: running
+[2025-12-03 14:43:22] [deploy] [DEBUG] Espace disque: /dev/sda2           30G     14G   15G  48% /
+[2025-12-03 14:43:22] [deploy] [DEBUG] Mémoire: Mem:           7,8Gi       5,8Gi       532Mi        36Mi       1,8Gi       2,0Gi
+[2025-12-03 14:43:22] [deploy] [DEBUG] ----------------------------------
+[2025-12-03 14:43:22] [deploy] Répertoire des scripts: /home/lab-telegraf/code/budget/scripts
+[2025-12-03 14:43:22] [deploy] Date et heure: mer. 03 déc. 2025 14:43:22 CET
+[2025-12-03 14:43:22] [deploy] Arrêt des services existants...
+[2025-12-03 14:43:22] [deploy] Aucun processus Backend uvicorn trouvé
+[2025-12-03 14:43:22] [deploy] Aucun processus Vite trouvé
+[2025-12-03 14:43:23] [deploy] Aucun processus Node frontend trouvé
+[2025-12-03 14:43:26] [deploy] Démarrage du backend...
+[2025-12-03 14:43:26] [deploy] Installation des dépendances Python...
+[2025-12-03 14:43:27] [deploy] Démarrage de l'application backend...
+[2025-12-03 14:43:27] [deploy] Attente du démarrage du backend...
+[0;32m[2025-12-03 14:43:29] [deploy] SUCCÈS: Backend prêt ![0m
+[2025-12-03 14:43:29] [deploy] Démarrage du frontend...
+[2025-12-03 14:43:29] [deploy] Démarrage de l'application frontend...
+[2025-12-03 14:43:29] [deploy] Attente du démarrage du frontend...
+[0;32m[2025-12-03 14:43:31] [deploy] SUCCÈS: Frontend prêt ![0m
+[2025-12-03 14:43:31] [deploy] URLs d'accès :
+[2025-12-03 14:43:31] [deploy]    - Frontend: http://localhost:19006
+[2025-12-03 14:43:31] [deploy]    - Backend API: http://localhost:8000
+[2025-12-03 14:43:31] [deploy]    - Documentation: http://localhost:8000/docs
+[2025-12-03 14:43:31] [deploy]    - Health check: http://localhost:8000/api/health
+[2025-12-03 14:43:31] [deploy] 
+[2025-12-03 14:43:31] [deploy] Pour arrêter l'application, exécutez: /home/lab-telegraf/code/budget/scripts/stop.sh
+[2025-12-03 14:43:31] [deploy] 
+[2025-12-03 14:43:31] [deploy] Consultez les fichiers de log pour plus d'informations:
+[2025-12-03 14:43:31] [deploy]    - Log de déploiement: 
+[0;32m[2025-12-03 14:43:31] [deploy] SUCCÈS: ✅ Déploiement terminé avec succès[0m

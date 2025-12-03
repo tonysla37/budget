@@ -74,7 +74,22 @@ const CategoriesScreen = () => {
         await loadCategories();
       } catch (error) {
         console.error('Erreur lors de la suppression:', error);
-        alert(t('categories.deleteError'));
+        
+        // Message d'erreur amélioré avec solutions
+        if (error.message && error.message.includes('utilisée dans des transactions')) {
+          alert(
+            '❌ Impossible de supprimer cette catégorie\n\n' +
+            '🔍 Cette catégorie est assignée à une ou plusieurs transactions.\n\n' +
+            '💡 Solutions possibles :\n' +
+            '1. Allez dans "Transactions"\n' +
+            '2. Recherchez les transactions avec cette catégorie\n' +
+            '3. Changez leur catégorie pour une autre\n' +
+            '4. Revenez ensuite supprimer cette catégorie\n\n' +
+            'ℹ️ Ou gardez cette catégorie si elle vous sert encore !'
+          );
+        } else {
+          alert(t('categories.deleteError'));
+        }
       }
     }
   };
