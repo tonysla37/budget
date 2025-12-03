@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getTransactions, deleteTransaction, updateTransaction } from '../services/transactionService';
 import { getCategories, createCategory } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
-import { createRule, applyRuleToAllTransactions } from '../services/ruleService';
+import { createRule, applyRuleToAllTransactions, applyRuleToTransaction, applyAllActiveRules } from '../services/ruleService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getBankStyles, getBankDisplayName } from '../utils/bankUtils';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X, Wallet, Sparkles } from 'lucide-react';
@@ -193,6 +193,49 @@ export default function TransactionsScreen() {
     } catch (error) {
       console.error('Erreur lors de la création de la règle:', error);
       alert('Erreur lors de la création de la règle');
+    }
+  };
+
+  const handleApplyRulesToTransaction = async (transactionId) => {
+    try {
+      const result = await applyRuleToTransaction(transactionId);
+      if (result.matched) {
+        alert(`✅ Règle "${result.rule_name}" appliquée !`);
+        await loadTransactions(); // Recharger pour voir le changement
+      } else {
+        alert('ℹ️ Aucune règle ne correspond à cette transaction');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'application des règles:', error);
+      alert('❌ Erreur lors de l\'application des règles');
+    }
+  };
+
+  const handleApplyAllRules = async () => {
+    const uncategorized = transactions.filter(t => !t.category_id);
+    
+    if (uncategorized.length === 0) {
+      alert('ℹ️ Toutes les transactions sont déjà catégorisées !');
+      return;
+    }
+    
+    if (!window.confirm(`Voulez-vous appliquer les règles actives aux ${uncategorized.length} transaction(s) non catégorisée(s) ?`)) {
+      return;
+    }
+    
+    try {
+      const result = await applyAllActiveRules();
+      
+      if (result.matched_count === 0) {
+        alert(`ℹ️ ${result.total_uncategorized} transaction(s) analysée(s), mais aucune règle ne correspond.\nVérifiez vos règles dans l'onglet Règles.`);
+      } else {
+        alert(`✅ ${result.matched_count} transaction(s) catégorisée(s) sur ${result.total_uncategorized} non catégorisée(s)`);
+      }
+      
+      await loadTransactions();
+    } catch (error) {
+      console.error('Erreur lors de l\'application des règles:', error);
+      alert('❌ Erreur lors de l\'application des règles');
     }
   };
 
@@ -421,13 +464,23 @@ export default function TransactionsScreen() {
                 )}
               </p>
             </div>
-            <button 
-              onClick={() => navigate('/add-transaction')}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t('transactions.add')}
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={handleApplyAllRules}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                title="Appliquer toutes les règles actives aux transactions non catégorisées"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Appliquer les règles
+              </button>
+              <button 
+                onClick={() => navigate('/add-transaction')}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t('transactions.add')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -41,3 +41,10 @@ export const applyRuleToAllTransactions = async (ruleId) => {
   });
   return response;
 };
+
+export const applyAllActiveRules = async () => {
+  const response = await apiCall('/api/rules/apply-all-rules', {
+    method: 'POST'
+  });
+  return response;
+};

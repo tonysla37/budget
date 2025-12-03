@@ -161,6 +161,46 @@ export default function RulesScreen() {
     }
   };
 
+  const handleApplyRule = async (ruleId, ruleName) => {
+    if (!window.confirm(`Voulez-vous appliquer la règle "${ruleName}" à toutes les transactions existantes ?`)) {
+      return;
+    }
+    
+    try {
+      const result = await applyRuleToAllTransactions(ruleId);
+      alert(`✅ ${result.message}`);
+    } catch (error) {
+      console.error('Erreur lors de l\'application de la règle:', error);
+      alert('❌ Erreur lors de l\'application de la règle');
+    }
+  };
+
+  const handleApplyAllRules = async () => {
+    const activeRules = rules.filter(r => r.is_active);
+    
+    if (activeRules.length === 0) {
+      alert('ℹ️ Aucune règle active à appliquer !');
+      return;
+    }
+    
+    if (!window.confirm(`Voulez-vous appliquer toutes les ${activeRules.length} règle(s) active(s) aux transactions existantes ?`)) {
+      return;
+    }
+    
+    let totalMatched = 0;
+    
+    for (const rule of activeRules) {
+      try {
+        const result = await applyRuleToAllTransactions(rule.id);
+        totalMatched += result.matched_count || 0;
+      } catch (error) {
+        console.error(`Erreur pour la règle ${rule.name}:`, error);
+      }
+    }
+    
+    alert(`✅ ${totalMatched} transaction(s) mise(s) à jour par les règles actives`);
+  };
+
   const getCategoryDisplayName = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
     if (!category) return '';
@@ -178,7 +218,7 @@ export default function RulesScreen() {
       contains: 'Contient',
       starts_with: 'Commence par',
       ends_with: 'Finit par',
-      exact: 'Exactement'
+      exact: 'Exactement'  
     };
     return labels[type] || type;
   };
@@ -195,13 +235,23 @@ export default function RulesScreen() {
                 Automatisez l'assignation des catégories pour vos transactions
               </p>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nouvelle règle
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleApplyAllRules}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                title="Appliquer toutes les règles actives aux transactions existantes"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Appliquer toutes les règles
+              </button>
+              <button
+                onClick={() => setShowModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nouvelle règle
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -241,29 +291,29 @@ export default function RulesScreen() {
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 table-fixed">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nom de la règle
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[200px]">
+                    Nom
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                     Motif
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[140px]">
                     Catégorie
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                     Période
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[100px]">
                     Statut
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                     Actions
                   </th>
                 </tr>
@@ -271,28 +321,28 @@ export default function RulesScreen() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {rules.map((rule) => (
                   <tr key={rule.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{rule.name}</div>
+                    <td className="px-4 py-4 w-[200px]">
+                      <div className="text-sm font-medium text-gray-900 truncate" title={rule.name}>{rule.name}</div>
                       {rule.exceptions && rule.exceptions.length > 0 && (
                         <div className="text-xs text-orange-600 mt-1">
                           {rule.exceptions.length} exception(s)
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <code className="px-2 py-1 text-xs bg-gray-100 rounded text-gray-800">
+                    <td className="px-4 py-4 w-[120px]">
+                      <code className="px-2 py-1 text-xs bg-gray-100 rounded text-gray-800 truncate block" title={rule.pattern}>
                         {rule.pattern}
                       </code>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-xs text-gray-600">
+                    <td className="px-4 py-4 w-[100px]">
+                      <span className="text-xs text-gray-600 truncate block" title={getMatchTypeLabel(rule.match_type)}>
                         {getMatchTypeLabel(rule.match_type)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{rule.category_name}</div>
+                    <td className="px-4 py-4 w-[140px]">
+                      <div className="text-sm text-gray-900 truncate" title={rule.category_name}>{rule.category_name}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 w-[120px]">
                       {rule.start_date || rule.end_date ? (
                         <div className="text-xs text-gray-600">
                           {rule.start_date && (
@@ -306,42 +356,46 @@ export default function RulesScreen() {
                         <span className="text-xs text-gray-400">Toujours</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 w-[100px]">
                       {rule.is_active ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Active
+                          Actif
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                          Inactive
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          Inactif
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => toggleRuleActive(rule)}
-                        className={`mr-3 ${
-                          rule.is_active 
-                            ? 'text-green-600 hover:text-green-900' 
-                            : 'text-gray-400 hover:text-gray-600'
-                        }`}
-                        title={rule.is_active ? 'Désactiver la règle' : 'Activer la règle'}
-                      >
-                        <Power className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEdit(rule)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(rule.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                    <td className="px-4 py-4 w-[120px] text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => toggleRuleActive(rule)}
+                          className={`${
+                            rule.is_active 
+                              ? 'text-green-600 hover:text-green-900' 
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                          title={rule.is_active ? 'Désactiver la règle' : 'Activer la règle'}
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(rule)}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Modifier la règle"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(rule.id)}
+                          className="text-red-600 hover:text-red-900"
+                          title="Supprimer la règle"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

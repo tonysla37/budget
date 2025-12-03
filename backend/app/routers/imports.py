@@ -175,6 +175,13 @@ async def import_csv_transactions(
     
     # Insère les transactions
     transactions_collection = await db.get_collection("transactions")
+    rules_collection = await db.get_collection("rules")
+    
+    # Récupérer toutes les règles actives une seule fois
+    active_rules = await rules_collection.find({
+        "user_id": user_id,
+        "is_active": True
+    }).to_list(length=None)
     
     inserted_count = 0
     skipped_count = 0
@@ -206,6 +213,52 @@ async def import_csv_transactions(
                 if existing:
                     skipped_count += 1
                     continue
+            
+            # Applique les règles AVANT l'insertion
+            description = trans_data.get('description', '').upper()
+            transaction_date = trans_data['date']
+            
+            for rule in active_rules:
+                pattern = rule['pattern'].upper()
+                match_type = rule['match_type']
+                
+                # Vérifier la période d'application
+                if rule.get('start_date'):
+                    start_date = rule['start_date'] if isinstance(rule['start_date'], datetime) else datetime.fromisoformat(rule['start_date'])
+                    if transaction_date < start_date:
+                        continue
+                
+                if rule.get('end_date'):
+                    end_date = rule['end_date'] if isinstance(rule['end_date'], datetime) else datetime.fromisoformat(rule['end_date'])
+                    if transaction_date > end_date:
+                        continue
+                
+                # Vérifier les exceptions
+                exceptions = rule.get('exceptions', [])
+                is_exception = False
+                for exception_pattern in exceptions:
+                    if exception_pattern.upper() in description:
+                        is_exception = True
+                        break
+                
+                if is_exception:
+                    continue
+                
+                # Vérifier le match
+                matched = False
+                if match_type == 'contains':
+                    matched = pattern in description
+                elif match_type == 'starts_with':
+                    matched = description.startswith(pattern)
+                elif match_type == 'ends_with':
+                    matched = description.endswith(pattern)
+                elif match_type == 'exact':
+                    matched = description == pattern
+                
+                if matched:
+                    # Appliquer la catégorie de la règle
+                    trans_data['category_id'] = rule['category_id']
+                    break  # Première règle qui match
             
             # Insère la transaction
             await transactions_collection.insert_one(trans_data)

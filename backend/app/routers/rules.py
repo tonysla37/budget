@@ -395,4 +395,93 @@ async def apply_rule_to_all_transactions(
         "message": f"{matched_count} transaction(s) mise(s) à jour"
     }
 
+@router.post("/apply-all-rules")
+async def apply_all_active_rules(
+    current_user: dict = Depends(get_current_user),
+    database = Depends(get_db)
+):
+    """Applique toutes les règles actives à toutes les transactions non catégorisées"""
+    transactions_collection = await database.get_collection("transactions")
+    rules_collection = await database.get_collection("rules")
+    
+    # Récupérer toutes les règles actives
+    active_rules = await rules_collection.find({
+        "user_id": current_user["_id"],
+        "is_active": True
+    }).to_list(length=None)
+    
+    if not active_rules:
+        return {
+            "matched_count": 0,
+            "message": "Aucune règle active"
+        }
+    
+    # Récupérer toutes les transactions non catégorisées
+    uncategorized_transactions = await transactions_collection.find({
+        "user_id": current_user["_id"],
+        "category_id": None
+    }).to_list(length=None)
+    
+    matched_count = 0
+    
+    for transaction in uncategorized_transactions:
+        description = transaction.get("description", "").upper()
+        transaction_date = transaction.get("date")
+        
+        # Chercher la première règle qui matche
+        for rule in active_rules:
+            pattern = rule["pattern"].upper()
+            match_type = rule["match_type"]
+            
+            # Vérifier la période d'application
+            if rule.get("start_date"):
+                start_date = datetime.fromisoformat(rule["start_date"]).date() if isinstance(rule["start_date"], str) else rule["start_date"]
+                trans_date = datetime.fromisoformat(transaction_date).date() if isinstance(transaction_date, str) else transaction_date.date() if isinstance(transaction_date, datetime) else transaction_date
+                if trans_date < start_date:
+                    continue
+            
+            if rule.get("end_date"):
+                end_date = datetime.fromisoformat(rule["end_date"]).date() if isinstance(rule["end_date"], str) else rule["end_date"]
+                trans_date = datetime.fromisoformat(transaction_date).date() if isinstance(transaction_date, str) else transaction_date.date() if isinstance(transaction_date, datetime) else transaction_date
+                if trans_date > end_date:
+                    continue
+            
+            # Vérifier les exceptions
+            exceptions = rule.get("exceptions", [])
+            is_exception = False
+            for exception_pattern in exceptions:
+                exception_upper = exception_pattern.upper()
+                if exception_upper in description:
+                    is_exception = True
+                    break
+            
+            if is_exception:
+                continue
+            
+            # Vérifier la correspondance
+            matched = False
+            if match_type == "contains":
+                matched = pattern in description
+            elif match_type == "starts_with":
+                matched = description.startswith(pattern)
+            elif match_type == "ends_with":
+                matched = description.endswith(pattern)
+            elif match_type == "exact":
+                matched = description == pattern
+            
+            if matched:
+                # Appliquer la catégorie (première règle qui matche)
+                await transactions_collection.update_one(
+                    {"_id": transaction["_id"]},
+                    {"$set": {"category_id": ObjectId(rule["category_id"])}}
+                )
+                matched_count += 1
+                break  # Première règle qui matche
+    
+    return {
+        "matched_count": matched_count,
+        "total_uncategorized": len(uncategorized_transactions),
+        "message": f"{matched_count} transaction(s) catégorisée(s) sur {len(uncategorized_transactions)} non catégorisée(s)"
+    }
+
 
