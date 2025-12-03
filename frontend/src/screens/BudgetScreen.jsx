@@ -230,58 +230,58 @@ export default function BudgetScreen() {
     return (
       <div className={`${isHierarchical ? '' : 'bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow'} ${isSubcategory && !isHierarchical ? 'border-l-4' : ''}`}
            style={isSubcategory && !isHierarchical ? { borderLeftColor: budget.category_color } : {}}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        <div className={`flex items-center justify-between ${isHierarchical ? 'mb-1.5' : 'mb-3'}`}>
+          <div className={`flex items-center ${isHierarchical ? 'gap-1' : 'gap-2'}`}>
             <div 
-              className="w-3 h-3 rounded-full" 
+              className={`${isHierarchical ? 'w-2.5 h-2.5' : 'w-3 h-3'} rounded-full`}
               style={{ backgroundColor: budget.category_color }}
             />
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-gray-900">{budget.category_name}</h3>
+              <div className={`flex items-center ${isHierarchical ? 'gap-1' : 'gap-2'}`}>
+                <h3 className={`${isHierarchical ? 'text-base' : 'text-base'} font-semibold text-gray-900`}>{budget.category_name}</h3>
                 {budget.is_recurring !== false ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded" title={t('budgets.recurring')}>
-                    <RefreshCw size={12} />
+                  <span className={`inline-flex items-center gap-1 ${isHierarchical ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-0.5 text-xs'} font-medium bg-blue-100 text-blue-700 rounded`} title={t('budgets.recurring')}>
+                    <RefreshCw size={isHierarchical ? 10 : 12} />
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">
-                    <Calendar size={12} />
+                  <span className={`inline-flex items-center gap-1 ${isHierarchical ? 'px-1.5 py-0.5 text-xs' : 'px-2 py-0.5 text-xs'} font-medium bg-purple-100 text-purple-700 rounded`}>
+                    <Calendar size={isHierarchical ? 10 : 12} />
                     {new Date(budget.year, budget.month - 1).toLocaleDateString(window.i18n?.language || 'fr', { month: 'short', year: 'numeric' })}
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center ${isHierarchical ? 'gap-1' : 'gap-2'}`}>
             <button
               onClick={() => handleEdit(budget)}
-              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className={`${isHierarchical ? 'p-1' : 'p-1.5'} text-blue-600 hover:bg-blue-50 rounded-lg transition-colors`}
             >
-              <Pencil size={16} />
+              <Pencil size={isHierarchical ? 14 : 16} />
             </button>
             <button
               onClick={() => handleDelete(budget.id)}
-              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className={`${isHierarchical ? 'p-1' : 'p-1.5'} text-red-600 hover:bg-red-50 rounded-lg transition-colors`}
             >
-              <Trash2 size={16} />
+              <Trash2 size={isHierarchical ? 14 : 16} />
             </button>
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
+        <div className={isHierarchical ? 'space-y-1' : 'space-y-2'}>
+          <div className={`flex justify-between ${isHierarchical ? 'text-sm' : 'text-sm'}`}>
             <span className="text-gray-600">{t('budgets.allocated')}</span>
             <span className="font-semibold text-gray-900">{formatCurrency(budget.amount)}</span>
           </div>
           
-          <div className="flex justify-between text-sm">
+          <div className={`flex justify-between ${isHierarchical ? 'text-sm' : 'text-sm'}`}>
             <span className="text-gray-600">{t('budgets.spent')}</span>
             <span className={`font-semibold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
               {formatCurrency(budget.spent)}
             </span>
           </div>
 
-          <div className="flex justify-between text-sm">
+          <div className={`flex justify-between ${isHierarchical ? 'text-sm' : 'text-sm'}`}>
             <span className="text-gray-600">{t('budgets.remaining')}</span>
             <span className={`font-semibold ${budget.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
               {budget.remaining < 0 ? '- ' : ''}{formatCurrency(Math.abs(budget.remaining))}
@@ -289,22 +289,22 @@ export default function BudgetScreen() {
           </div>
 
           {/* Barre de progression */}
-          <div className="mt-3">
-            <div className="flex justify-between items-center mb-1.5">
-              <div className="flex items-center gap-2">
+          <div className={isHierarchical ? 'mt-1.5' : 'mt-3'}>
+            <div className={`flex justify-between items-center ${isHierarchical ? 'mb-1' : 'mb-1.5'}`}>
+              <div className={`flex items-center ${isHierarchical ? 'gap-1' : 'gap-2'}`}>
                 <StatusIcon 
-                  size={14} 
+                  size={isHierarchical ? 12 : 14}
                   className={`text-${status.color}-600`}
                 />
-                <span className={`text-sm font-medium text-${status.color}-600`}>
+                <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-medium text-${status.color}-600`}>
                   {budget.percentage >= 100 ? `${t('budgets.exceeded')} ${budget.percentage.toFixed(1)}%` : status.text}
                 </span>
               </div>
-              <span className={`text-sm font-bold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
+              <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-bold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
                 {budget.percentage < 100 ? `${budget.percentage.toFixed(1)}%` : ''}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+            <div className={`w-full bg-gray-200 rounded-full ${isHierarchical ? 'h-2' : 'h-2.5'} overflow-hidden`}>
               <div 
                 className={`h-full rounded-full transition-all duration-500 ${
                   budget.percentage >= 100 ? 'bg-red-500' :
@@ -622,15 +622,15 @@ export default function BudgetScreen() {
                     return (
                       <div key={parentCat.id} className="bg-white rounded-lg shadow-sm border-2 border-gray-200 overflow-hidden">
                         {/* Header de la catégorie parente */}
-                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
-                          <div className="flex items-center gap-3">
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2 border-b border-gray-200">
+                          <div className="flex items-center gap-2">
                             <div 
-                              className="w-6 h-6 rounded-full shadow-sm" 
+                              className="w-4 h-4 rounded-full shadow-sm" 
                               style={{ backgroundColor: parentCat.color }}
                             />
                             <h3 className="text-base font-bold text-gray-900">{parentCat.name}</h3>
                             {(parentBudget || childBudgets.length > 0) && (
-                              <span className="ml-auto text-sm text-gray-500">
+                              <span className="ml-auto text-xs text-gray-500">
                                 {parentBudget ? '1' : '0'} principal · {childBudgets.length} sous-catégorie{childBudgets.length > 1 ? 's' : ''}
                               </span>
                             )}
@@ -638,10 +638,10 @@ export default function BudgetScreen() {
                         </div>
                         
                         {/* Contenu */}
-                        <div className="p-4 space-y-3">
+                        <div className="p-2 space-y-2">
                           {/* Budget parent si existe */}
                           {parentBudget && (
-                            <div className="pb-3 border-b border-gray-200">
+                            <div className="pb-2 border-b border-gray-200">
                               <BudgetCard budget={parentBudget} isHierarchical={true} />
                             </div>
                           )}
@@ -656,9 +656,9 @@ export default function BudgetScreen() {
                                   <div className="h-px bg-gray-300 flex-1"></div>
                                 </h4>
                               )}
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                 {childBudgets.map(budget => (
-                                  <div key={budget.id} className="bg-gray-50 rounded-lg p-3">
+                                  <div key={budget.id} className="bg-gray-50 rounded-lg p-1.5">
                                     <BudgetCard budget={budget} isSubcategory={true} isHierarchical={true} />
                                   </div>
                                 ))}
