@@ -219,6 +219,17 @@ async def update_category(
         update_data
     )
     
+    # Si le type a été modifié et que c'est une catégorie parente, mettre à jour toutes ses sous-catégories
+    if category_update.type is not None and existing_category.get("parent_id") is None:
+        collection = await db.get_collection("categories")
+        await collection.update_many(
+            {
+                "parent_id": category_id,
+                "user_id": current_user["_id"]
+            },
+            {"$set": {"type": category_update.type}}
+        )
+    
     # Récupérer la catégorie mise à jour
     updated_category = await db.find_one("categories", {"_id": ObjectId(category_id)})
     

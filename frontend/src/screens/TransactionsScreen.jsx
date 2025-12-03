@@ -3,9 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { getTransactions, deleteTransaction, updateTransaction } from '../services/transactionService';
 import { getCategories } from '../services/categoryService';
 import { getUserProfile } from '../services/authService';
+import { createRule, applyRuleToAllTransactions } from '../services/ruleService';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getBankStyles } from '../utils/bankUtils';
-import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X, Wallet } from 'lucide-react';
+import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X, Wallet, Sparkles } from 'lucide-react';
 import { useTranslation } from '../i18n';
 
 export default function TransactionsScreen() {
@@ -23,6 +24,15 @@ export default function TransactionsScreen() {
   const [selectedBank, setSelectedBank] = useState(() => localStorage.getItem('transactionsSelectedBank') || 'all'); // Filtre par banque
   const [billingCycleDay, setBillingCycleDay] = useState(1); // Jour de début du cycle
   const [editingCategoryId, setEditingCategoryId] = useState(null); // ID de la transaction en cours d'édition
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [ruleTransaction, setRuleTransaction] = useState(null);
+  const [ruleForm, setRuleForm] = useState({
+    name: '',
+    pattern: '',
+    match_type: 'contains',
+    category_id: '',
+    applyToExisting: true
+  });
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,6 +133,55 @@ export default function TransactionsScreen() {
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la catégorie:', error);
       alert('Erreur lors de la mise à jour de la catégorie');
+    }
+  };
+
+  const openRuleModal = (transaction) => {
+    // Extraire un mot-clé de la description (le premier mot significatif)
+    const words = transaction.description.split(' ').filter(w => w.length > 3);
+    const keyword = words[0] || transaction.description;
+    
+    setRuleTransaction(transaction);
+    setRuleForm({
+      name: `Règle auto - ${keyword}`,
+      pattern: keyword,
+      match_type: 'contains',
+      category_id: transaction.category_id || '',
+      applyToExisting: true
+    });
+    setShowRuleModal(true);
+  };
+
+  const handleCreateRule = async () => {
+    if (!ruleForm.pattern || !ruleForm.category_id) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    try {
+      const createdRule = await createRule({
+        name: ruleForm.name,
+        pattern: ruleForm.pattern,
+        match_type: ruleForm.match_type,
+        category_id: ruleForm.category_id,
+        is_active: true,
+        exceptions: []
+      });
+      
+      // Appliquer aux transactions existantes si demandé
+      if (ruleForm.applyToExisting && createdRule.id) {
+        const result = await applyRuleToAllTransactions(createdRule.id);
+        alert(`Règle créée avec succès !\n${result.message}`);
+        // Recharger les transactions pour voir les changements
+        await loadTransactions();
+      } else {
+        alert('Règle créée avec succès !');
+      }
+      
+      setShowRuleModal(false);
+    } catch (error) {
+      console.error('Erreur lors de la création de la règle:', error);
+      alert('Erreur lors de la création de la règle');
     }
   };
 
@@ -620,6 +679,13 @@ export default function TransactionsScreen() {
                     {/* Actions */}
                     <div className="flex-shrink-0 flex gap-1">
                       <button
+                        onClick={() => openRuleModal(transaction)}
+                        className="p-1.5 text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                        title="Créer une règle automatique"
+                      >
+                        <Sparkles size={14} />
+                      </button>
+                      <button
                         onClick={() => navigate('/edit-transaction', { state: { transaction } })}
                         className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                         title={t('transactions.editTitle')}
@@ -734,6 +800,140 @@ export default function TransactionsScreen() {
           )}
         </div>
       </div>
+
+      {/* Modal de création de règle */}
+      {showRuleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Sparkles className="text-purple-600" size={20} />
+                Créer une règle automatique
+              </h3>
+              <button
+                onClick={() => setShowRuleModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {ruleTransaction && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Transaction de référence :</p>
+                <p className="text-sm font-medium text-gray-900">{ruleTransaction.description}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nom de la règle
+                </label>
+                <input
+                  type="text"
+                  value={ruleForm.name}
+                  onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Ex: Règle auto - Amazon"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mot-clé à rechercher *
+                </label>
+                <input
+                  type="text"
+                  value={ruleForm.pattern}
+                  onChange={(e) => setRuleForm({ ...ruleForm, pattern: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Ex: AMAZON, CARREFOUR..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type de correspondance
+                </label>
+                <select
+                  value={ruleForm.match_type}
+                  onChange={(e) => setRuleForm({ ...ruleForm, match_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="contains">Contient le mot-clé</option>
+                  <option value="starts_with">Commence par</option>
+                  <option value="ends_with">Se termine par</option>
+                  <option value="exact">Correspondance exacte</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Catégorie à appliquer *
+                </label>
+                <select
+                  value={ruleForm.category_id}
+                  onChange={(e) => setRuleForm({ ...ruleForm, category_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="">Sélectionnez une catégorie</option>
+                  {categories
+                    .filter(c => !c.parent_id)
+                    .map(parentCat => {
+                      const childCategories = categories.filter(c => c.parent_id === parentCat.id);
+                      return (
+                        <optgroup key={parentCat.id} label={parentCat.name}>
+                          <option value={parentCat.id}>{parentCat.name}</option>
+                          {childCategories.map(childCat => (
+                            <option key={childCat.id} value={childCat.id}>
+                              &nbsp;&nbsp;› {childCat.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                </select>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  <strong>💡 Astuce :</strong> Cette règle s'appliquera automatiquement à toutes les futures transactions contenant le mot-clé "{ruleForm.pattern}".
+                </p>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="applyToExisting"
+                  checked={ruleForm.applyToExisting}
+                  onChange={(e) => setRuleForm({ ...ruleForm, applyToExisting: e.target.checked })}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                />
+                <label htmlFor="applyToExisting" className="ml-2 text-sm text-gray-700">
+                  Appliquer cette règle aux transactions existantes
+                </label>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowRuleModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleCreateRule}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Sparkles size={16} />
+                Créer la règle
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

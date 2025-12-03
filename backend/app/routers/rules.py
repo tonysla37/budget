@@ -160,9 +160,11 @@ async def update_rule(
     if update_data:
         update_data["updated_at"] = datetime.utcnow()
         await rules_collection.update_one(
-        {"_id": ObjectId(rule_id)},
-        update_data
-    )    # Récupérer la règle mise à jour
+            {"_id": ObjectId(rule_id)},
+            {"$set": update_data}
+        )
+    
+    # Récupérer la règle mise à jour
     updated_rule = await rules_collection.find_one({"_id": ObjectId(rule_id)})
     
     # Obtenir le nom de la catégorie
@@ -301,4 +303,96 @@ async def apply_rules_to_transaction(
         }
     
     return {"matched": False}
+
+@router.post("/apply-all/{rule_id}")
+async def apply_rule_to_all_transactions(
+    rule_id: str,
+    current_user: dict = Depends(get_current_user),
+    database = Depends(get_db)
+):
+    """Applique une règle spécifique à toutes les transactions correspondantes"""
+    transactions_collection = await database.get_collection("transactions")
+    rules_collection = await database.get_collection("rules")
+    
+    # Récupérer la règle
+    rule = await rules_collection.find_one({
+        "_id": ObjectId(rule_id),
+        "user_id": current_user["_id"]
+    })
+    
+    if not rule:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rule not found"
+        )
+    
+    # Récupérer toutes les transactions de l'utilisateur
+    transactions = await transactions_collection.find({
+        "user_id": current_user["_id"]
+    }).to_list(length=None)
+    
+    pattern = rule["pattern"].upper()
+    match_type = rule["match_type"]
+    matched_count = 0
+    
+    for transaction in transactions:
+        description = transaction.get("description", "").upper()
+        transaction_date = transaction.get("date")
+        
+        # Vérifier la période d'application
+        if rule.get("start_date"):
+            start_date = datetime.fromisoformat(rule["start_date"]).date() if isinstance(rule["start_date"], str) else rule["start_date"]
+            if isinstance(transaction_date, str):
+                transaction_date = datetime.fromisoformat(transaction_date).date()
+            elif isinstance(transaction_date, datetime):
+                transaction_date = transaction_date.date()
+            if transaction_date < start_date:
+                continue
+        
+        if rule.get("end_date"):
+            end_date = datetime.fromisoformat(rule["end_date"]).date() if isinstance(rule["end_date"], str) else rule["end_date"]
+            if isinstance(transaction_date, str):
+                transaction_date = datetime.fromisoformat(transaction_date).date()
+            elif isinstance(transaction_date, datetime):
+                transaction_date = transaction_date.date()
+            if transaction_date > end_date:
+                continue
+        
+        # Vérifier les exceptions
+        exceptions = rule.get("exceptions", [])
+        is_exception = False
+        for exception_pattern in exceptions:
+            exception_upper = exception_pattern.upper()
+            if exception_upper in description:
+                is_exception = True
+                break
+        
+        if is_exception:
+            continue
+        
+        # Vérifier la correspondance
+        matched = False
+        if match_type == "contains":
+            matched = pattern in description
+        elif match_type == "starts_with":
+            matched = description.startswith(pattern)
+        elif match_type == "ends_with":
+            matched = description.endswith(pattern)
+        elif match_type == "exact":
+            matched = description == pattern
+        
+        if matched:
+            # Appliquer la catégorie
+            await transactions_collection.update_one(
+                {"_id": transaction["_id"]},
+                {"$set": {"category_id": ObjectId(rule["category_id"])}}
+            )
+            matched_count += 1
+    
+    return {
+        "rule_name": rule["name"],
+        "matched_count": matched_count,
+        "message": f"{matched_count} transaction(s) mise(s) à jour"
+    }
+
 
