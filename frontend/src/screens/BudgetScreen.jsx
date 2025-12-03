@@ -294,9 +294,9 @@ export default function BudgetScreen() {
               <div className={`flex items-center ${isHierarchical ? 'gap-1' : 'gap-2'}`}>
                 <StatusIcon 
                   size={isHierarchical ? 12 : 14}
-                  className={`text-${status.color}-600`}
+                  className={status.color === 'red' ? 'text-red-600' : status.color === 'orange' ? 'text-orange-600' : 'text-green-600'}
                 />
-                <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-medium text-${status.color}-600`}>
+                <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-medium ${status.color === 'red' ? 'text-red-600' : status.color === 'orange' ? 'text-orange-600' : 'text-green-600'}`}>
                   {budget.percentage >= 100 ? `${t('budgets.exceeded')} ${budget.percentage.toFixed(1)}%` : status.text}
                 </span>
               </div>
@@ -514,6 +514,79 @@ export default function BudgetScreen() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Synthèse budgets vs revenus */}
+        {budgets.length > 0 && periodDates.start && periodDates.end && (() => {
+          // Ne compter que les budgets des catégories principales (sans parent)
+          const mainCategoryBudgets = budgets.filter(b => {
+            const cat = categories.find(c => c.id === b.category_id);
+            return cat && !cat.parent_id;
+          });
+          
+          // Calculer le total des budgets alloués (uniquement catégories principales)
+          const totalBudgetsAlloues = mainCategoryBudgets.reduce((sum, b) => sum + b.amount, 0);
+          
+          // Calculer le total des revenus pour la période
+          const startStr = periodDates.start.toISOString().split('T')[0];
+          const endStr = periodDates.end.toISOString().split('T')[0];
+          
+          const incomeTransactions = transactions.filter(t => 
+            !t.is_expense && 
+            t.date >= startStr && 
+            t.date < endStr
+          );
+          const totalRevenus = incomeTransactions.reduce((sum, t) => sum + t.amount, 0);
+          
+          // Calculer le total dépensé (uniquement catégories principales - déjà agrégé par le backend)
+          const totalDepense = mainCategoryBudgets.reduce((sum, b) => sum + b.spent, 0);
+          
+          // Calculer le reste disponible
+          const resteDisponible = totalRevenus - totalBudgetsAlloues;
+          const pourcentageAlloue = totalRevenus > 0 ? (totalBudgetsAlloues / totalRevenus * 100) : 0;
+          const pourcentageDepense = totalBudgetsAlloues > 0 ? (totalDepense / totalBudgetsAlloues * 100) : 0;
+          
+          return (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border-2 border-blue-200 p-6 mb-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-blue-600" />
+                Synthèse {periodType === 'monthly' ? 'mensuelle' : 'annuelle'}
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Revenus */}
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-1">Revenus</p>
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(totalRevenus)}</p>
+                </div>
+                
+                {/* Budgets alloués */}
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-1">Budgets alloués</p>
+                  <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalBudgetsAlloues)}</p>
+                  <p className="text-xs text-gray-500 mt-1">{pourcentageAlloue.toFixed(1)}% des revenus</p>
+                </div>
+                
+                {/* Dépenses réelles */}
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-1">Dépenses réelles</p>
+                  <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalDepense)}</p>
+                  <p className="text-xs text-gray-500 mt-1">{pourcentageDepense.toFixed(1)}% des budgets</p>
+                </div>
+                
+                {/* Reste disponible */}
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <p className="text-sm text-gray-600 mb-1">Reste disponible</p>
+                  <p className={`text-2xl font-bold ${resteDisponible >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(Math.abs(resteDisponible))}
+                  </p>
+                  {resteDisponible < 0 && (
+                    <p className="text-xs text-red-500 mt-1">⚠️ Sur-allocation</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+        
         {budgets.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
             <Wallet className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -619,10 +692,14 @@ export default function BudgetScreen() {
                     // N'afficher que si au moins un budget existe (parent ou enfant)
                     if (!parentBudget && childBudgets.length === 0) return null;
                     
+                    // Calculer si les sous-catégories dépassent le budget parent
+                    const totalChildBudgets = childBudgets.reduce((sum, b) => sum + b.amount, 0);
+                    const hasOverallocation = parentBudget && totalChildBudgets > parentBudget.amount;
+                    
                     return (
-                      <div key={parentCat.id} className="bg-white rounded-lg shadow-sm border-2 border-gray-200 overflow-hidden">
+                      <div key={parentCat.id} className={`bg-white rounded-lg shadow-sm border-2 ${hasOverallocation ? 'border-red-300' : 'border-gray-200'} overflow-hidden`}>
                         {/* Header de la catégorie parente */}
-                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2 border-b border-gray-200">
+                        <div className={`bg-gradient-to-r ${hasOverallocation ? 'from-red-50 to-orange-50' : 'from-gray-50 to-gray-100'} px-3 py-2 border-b ${hasOverallocation ? 'border-red-200' : 'border-gray-200'}`}>
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-4 h-4 rounded-full shadow-sm" 
@@ -634,7 +711,19 @@ export default function BudgetScreen() {
                                 {parentBudget ? '1' : '0'} principal · {childBudgets.length} sous-catégorie{childBudgets.length > 1 ? 's' : ''}
                               </span>
                             )}
+                            {hasOverallocation && (
+                              <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded">
+                                <AlertTriangle size={12} />
+                                Sur-allocation
+                              </span>
+                            )}
                           </div>
+                          {hasOverallocation && (
+                            <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                              <AlertTriangle size={12} />
+                              Sous-catégories : {formatCurrency(totalChildBudgets)} / Budget parent : {formatCurrency(parentBudget.amount)}
+                            </div>
+                          )}
                         </div>
                         
                         {/* Contenu */}
