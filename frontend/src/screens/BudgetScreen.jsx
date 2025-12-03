@@ -297,11 +297,11 @@ export default function BudgetScreen() {
                   className={status.color === 'red' ? 'text-red-600' : status.color === 'orange' ? 'text-orange-600' : 'text-green-600'}
                 />
                 <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-medium ${status.color === 'red' ? 'text-red-600' : status.color === 'orange' ? 'text-orange-600' : 'text-green-600'}`}>
-                  {budget.percentage >= 100 ? `${t('budgets.exceeded')} ${budget.percentage.toFixed(1)}%` : status.text}
+                  {budget.percentage > 100 ? `${t('budgets.exceeded')} ${budget.percentage.toFixed(1)}%` : budget.percentage === 100 ? `Atteint : 100%` : status.text}
                 </span>
               </div>
-              <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-bold ${budget.percentage >= 100 ? 'text-red-600' : 'text-gray-900'}`}>
-                {budget.percentage < 100 ? `${budget.percentage.toFixed(1)}%` : ''}
+              <span className={`${isHierarchical ? 'text-sm' : 'text-sm'} font-bold ${budget.percentage > 100 ? 'text-red-600' : 'text-gray-900'}`}>
+                {budget.percentage < 100 ? `${budget.percentage.toFixed(1)}%` : budget.percentage === 100 ? '' : ''}
               </span>
             </div>
             <div className={`w-full bg-gray-200 rounded-full ${isHierarchical ? 'h-2' : 'h-2.5'} overflow-hidden`}>
