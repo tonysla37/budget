@@ -2,16 +2,16 @@
 
 ##  Vue d'ensemble
 
-Le frontend de l'Application Budget est développé avec **React 18** et **Vite**, offrant une expérience utilisateur moderne et responsive sur le web.
+Le frontend de l'Application Budget est développé avec **React 18**, **Vite** et **Tailwind CSS**, offrant une expérience utilisateur moderne et responsive sur le web.
 
 ## 🛠️ Technologies utilisées
 
-- **React** : 18.2.0
-- **Vite** : 4.5.14 (build tool rapide)
-- **React Router DOM** : 6.x (navigation)
-- **Tailwind CSS** : Styling moderne
-- **Lucide React** : Bibliothèque d'icônes
-- **LocalStorage** : Stockage local pour l'authentification
+- **React** : 18.2.0 (bibliothèque UI)
+- **Vite** : 5.4.14 (build tool ultra-rapide avec HMR)
+- **React Router DOM** : 6.x (navigation SPA)
+- **Tailwind CSS** : 3.x (framework CSS utility-first)
+- **Lucide React** : Bibliothèque d'icônes modernes
+- **LocalStorage** : Stockage local pour l'authentification JWT
 
 ## 📁 Structure du code
 
@@ -284,19 +284,21 @@ formatCurrency(-500) // "-500,00 €"
 - Utilisation de React hooks (useState, useEffect, useContext)
 - Mise en cache des données de catégories
 - Rechargement conditionnel basé sur les dépendances
-- Lazy loading des composants lourds
+- Lazy loading avec React.lazy() et Suspense
+- Hot Module Replacement (HMR) de Vite pour le développement
 
 ### UX/UI
-- Feedback visuel immédiat (couleurs, icônes)
+- **Messages utilisateur** : Utilisation d'encarts intégrés (divs stylisées), PAS de `window.alert()` ou `window.confirm()`
+- Feedback visuel immédiat (couleurs, icônes, états de chargement)
 - Messages d'erreur clairs et contextuels
 - Loading states pendant les appels API
-- Confirmations pour les actions destructives
+- Toasts/notifications pour les actions de confirmation
 
 ### Code
 - Séparation des concerns (services/composants/screens)
 - Configuration centralisée (api.config.js)
 - Gestion d'erreur unifiée
-- Typage avec PropTypes (optionnel)
+- Composants fonctionnels avec hooks
 
 ## 🐛 Dépannage Frontend
 
@@ -328,29 +330,38 @@ formatCurrency(-500) // "-500,00 €"
 
 ### Commandes utiles
 ```bash
-# Démarrer le dev server
+# Démarrer le dev server (avec HMR)
 npm run dev
 
 # Build pour production
 npm run build
 
-# Preview du build
+# Preview du build de production
 npm run preview
 
 # Installer les dépendances
 npm install
+
+# Linter le code
+npm run lint
 ```
 
 ### Variables d'environnement
 Aucune variable d'environnement requise pour le moment. La configuration API est dans `src/config/api.config.js`.
 
 ### Hot Module Replacement (HMR)
-Vite supporte le HMR automatiquement. Les modifications sont visibles instantanément sans rechargement complet de la page.
+Vite supporte le HMR automatiquement grâce à son build natif ultra-rapide. Les modifications sont visibles instantanément sans rechargement complet de la page, préservant l'état de l'application.
+
+### Développement local
+- **URL de développement** : http://localhost:19006
+- **Port configurable** : `vite.config.js` → `server.port`
+- **Proxy API** : Configuré pour éviter les problèmes CORS en développement
 
 ---
 
-**Dernière mise à jour** : 27 novembre 2025
-**Version** : 1.0.0
+**Dernière mise à jour** : Décembre 2025  
+**Version** : 1.0.0  
+**Stack technique** : React 18 + Vite 5 + Tailwind CSS 3
 ```javascript
 // Éléments principaux
 - StatCard (cartes de statistiques)

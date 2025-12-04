@@ -16,7 +16,7 @@
 
 L'**Application Budget** est une solution complète de gestion de finances personnelles développée avec :
 - **Backend** : FastAPI (Python) + MongoDB
-- **Frontend** : React Native avec Expo
+- **Frontend** : React 18 + Vite + Tailwind CSS
 - **Base de données** : MongoDB
 - **Authentification** : JWT tokens
 
@@ -53,13 +53,16 @@ budget/
 │   ├── FRONTEND.md      # Documentation du frontend
 │   └── backend_troubleshooting_guide.md # Guide de dépannage
 │
-├── frontend/            # Code source du frontend (React Native)
+├── frontend/            # Code source du frontend (React + Vite)
 │   ├── src/             # Code source principal
+│   │   ├── components/  # Composants réutilisables
 │   │   ├── config/      # Configuration de l'API
+│   │   ├── contexts/    # Contextes React (Auth, etc.)
 │   │   ├── screens/     # Écrans de l'application
-│   │   └── services/    # Services pour les appels API
-│   ├── deploy.sh        # Script de déploiement pour le frontend
-│   └── stop_test.sh     # Script d'arrêt pour le frontend
+│   │   ├── services/    # Services pour les appels API
+│   │   └── utils/       # Utilitaires (formatters, etc.)
+│   ├── package.json     # Dépendances Node.js
+│   └── vite.config.js   # Configuration Vite
 │
 ├── logs/                # Fichiers de logs
 │   ├── test_database.log    # Logs des tests de base de données
@@ -148,8 +151,10 @@ cd frontend && npm run dev
 - **Health check** : http://localhost:8000/api/health
 - **Health check DB** : http://localhost:8000/api/health/db
 
-### Frontend (React + Vite)
-- **Application web** : http://localhost:19006
+### Frontend (React 18 + Vite)
+- **Application web** : http://localhost:19006 (Vite dev server)
+- **Build de production** : `npm run build` (génère dist/)
+- **Preview du build** : `npm run preview`
 
 ## Fonctionnalités principales
 

@@ -3,6 +3,7 @@ import { getCategories } from '../services/categoryService';
 import { getRules, createRule, updateRule, deleteRule, applyRuleToAllTransactions } from '../services/ruleService';
 import { Filter, Plus, Trash2, Edit, Save, X, CheckCircle, RotateCcw, Power } from 'lucide-react';
 import { useTranslation } from '../i18n';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function RulesScreen() {
   const { t } = useTranslation();
@@ -12,6 +13,11 @@ export default function RulesScreen() {
   const [editingRule, setEditingRule] = useState(null);
   const [exceptionInput, setExceptionInput] = useState('');
   const [applyToExisting, setApplyToExisting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, ruleId: null });
+  const [confirmApplyRule, setConfirmApplyRule] = useState({ isOpen: false, ruleId: null, ruleName: null });
+  const [confirmApplyAll, setConfirmApplyAll] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     pattern: '',
@@ -69,7 +75,9 @@ export default function RulesScreen() {
       // Appliquer aux transactions existantes si demandé
       if (applyToExisting && ruleId) {
         const result = await applyRuleToAllTransactions(ruleId);
-        alert(`Règle ${editingRule ? 'modifiée' : 'créée'} avec succès !\n${result.message}`);
+        setSuccessMessage(`Règle ${editingRule ? 'modifiée' : 'créée'} avec succès !\n${result.message}`);
+      } else {
+        setSuccessMessage(`Règle ${editingRule ? 'modifiée' : 'créée'} avec succès !`);
       }
       
       setShowModal(false);
@@ -77,19 +85,24 @@ export default function RulesScreen() {
       loadRules();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la règle:', error);
-      alert('Erreur lors de la sauvegarde de la règle');
+      setErrorMessage('Erreur lors de la sauvegarde de la règle');
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette règle ?')) {
-      try {
-        await deleteRule(id);
-        loadRules();
-      } catch (error) {
-        console.error('Erreur lors de la suppression de la règle:', error);
-        alert('Erreur lors de la suppression de la règle');
-      }
+    setConfirmDelete({ isOpen: true, ruleId: id });
+  };
+
+  const confirmDeleteRule = async () => {
+    try {
+      await deleteRule(confirmDelete.ruleId);
+      loadRules();
+      setConfirmDelete({ isOpen: false, ruleId: null });
+      setSuccessMessage('Règle supprimée avec succès');
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la règle:', error);
+      setConfirmDelete({ isOpen: false, ruleId: null });
+      setErrorMessage('Erreur lors de la suppression de la règle');
     }
   };
 
@@ -157,21 +170,23 @@ export default function RulesScreen() {
       loadRules();
     } catch (error) {
       console.error('Erreur lors de la modification du statut:', error);
-      alert('Erreur lors de la modification du statut');
+      setErrorMessage('Erreur lors de la modification du statut');
     }
   };
 
   const handleApplyRule = async (ruleId, ruleName) => {
-    if (!window.confirm(`Voulez-vous appliquer la règle "${ruleName}" à toutes les transactions existantes ?`)) {
-      return;
-    }
-    
+    setConfirmApplyRule({ isOpen: true, ruleId, ruleName });
+  };
+
+  const confirmApplyRuleAction = async () => {
     try {
-      const result = await applyRuleToAllTransactions(ruleId);
-      alert(`✅ ${result.message}`);
+      const result = await applyRuleToAllTransactions(confirmApplyRule.ruleId);
+      setConfirmApplyRule({ isOpen: false, ruleId: null, ruleName: null });
+      setSuccessMessage(result.message);
     } catch (error) {
       console.error('Erreur lors de l\'application de la règle:', error);
-      alert('❌ Erreur lors de l\'application de la règle');
+      setConfirmApplyRule({ isOpen: false, ruleId: null, ruleName: null });
+      setErrorMessage('Erreur lors de l\'application de la règle');
     }
   };
 
@@ -179,14 +194,15 @@ export default function RulesScreen() {
     const activeRules = rules.filter(r => r.is_active);
     
     if (activeRules.length === 0) {
-      alert('ℹ️ Aucune règle active à appliquer !');
+      setErrorMessage('Aucune règle active à appliquer !');
       return;
     }
     
-    if (!window.confirm(`Voulez-vous appliquer toutes les ${activeRules.length} règle(s) active(s) aux transactions existantes ?`)) {
-      return;
-    }
-    
+    setConfirmApplyAll(true);
+  };
+
+  const confirmApplyAllAction = async () => {
+    const activeRules = rules.filter(r => r.is_active);
     let totalMatched = 0;
     
     for (const rule of activeRules) {
@@ -198,7 +214,8 @@ export default function RulesScreen() {
       }
     }
     
-    alert(`✅ ${totalMatched} transaction(s) mise(s) à jour par les règles actives`);
+    setConfirmApplyAll(false);
+    setSuccessMessage(`${totalMatched} transaction(s) mise(s) à jour par les règles actives`);
   };
 
   const getCategoryDisplayName = (categoryId) => {
@@ -648,6 +665,80 @@ export default function RulesScreen() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        onClose={() => setConfirmDelete({ isOpen: false, ruleId: null })}
+        onConfirm={confirmDeleteRule}
+        title="Supprimer la règle"
+        message="Êtes-vous sûr de vouloir supprimer cette règle ? Cette action est irréversible."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={confirmApplyRule.isOpen}
+        onClose={() => setConfirmApplyRule({ isOpen: false, ruleId: null, ruleName: null })}
+        onConfirm={confirmApplyRuleAction}
+        title="Appliquer la règle"
+        message={`Voulez-vous appliquer la règle "${confirmApplyRule.ruleName}" à toutes les transactions existantes ?`}
+        confirmText="Appliquer"
+        cancelText="Annuler"
+        variant="info"
+      />
+
+      <ConfirmDialog
+        isOpen={confirmApplyAll}
+        onClose={() => setConfirmApplyAll(false)}
+        onConfirm={confirmApplyAllAction}
+        title="Appliquer toutes les règles"
+        message={`Voulez-vous appliquer toutes les ${rules.filter(r => r.is_active).length} règle(s) active(s) aux transactions existantes ?`}
+        confirmText="Appliquer tout"
+        cancelText="Annuler"
+        variant="info"
+      />
+
+      {/* Success Message */}
+      {successMessage && (
+        <div className="fixed bottom-4 right-4 max-w-md bg-green-50 border-2 border-green-200 rounded-lg p-4 shadow-lg z-50 animate-fadeIn">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm text-green-800 whitespace-pre-line">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="flex-shrink-0 text-green-400 hover:text-green-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="fixed bottom-4 right-4 max-w-md bg-red-50 border-2 border-red-200 rounded-lg p-4 shadow-lg z-50 animate-fadeIn">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-red-800">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="flex-shrink-0 text-red-400 hover:text-red-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}

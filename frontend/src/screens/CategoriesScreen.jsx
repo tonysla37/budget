@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../services/categoryService';
 import { useTranslation } from '../i18n';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const CategoriesScreen = () => {
   const { t } = useTranslation();
@@ -17,6 +18,8 @@ const CategoriesScreen = () => {
   });
   const [loading, setLoading] = useState(true);
   const [customColor, setCustomColor] = useState('#3b82f6');
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, categoryId: null });
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     loadCategories();
@@ -68,28 +71,25 @@ const CategoriesScreen = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t('categories.deleteConfirm'))) {
-      try {
-        await deleteCategory(id);
-        await loadCategories();
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-        
-        // Message d'erreur amélioré avec solutions
-        if (error.message && error.message.includes('utilisée dans des transactions')) {
-          alert(
-            '❌ Impossible de supprimer cette catégorie\n\n' +
-            '🔍 Cette catégorie est assignée à une ou plusieurs transactions.\n\n' +
-            '💡 Solutions possibles :\n' +
-            '1. Allez dans "Transactions"\n' +
-            '2. Recherchez les transactions avec cette catégorie\n' +
-            '3. Changez leur catégorie pour une autre\n' +
-            '4. Revenez ensuite supprimer cette catégorie\n\n' +
-            'ℹ️ Ou gardez cette catégorie si elle vous sert encore !'
-          );
-        } else {
-          alert(t('categories.deleteError'));
-        }
+    setConfirmDelete({ isOpen: true, categoryId: id });
+  };
+
+  const confirmDeleteCategory = async () => {
+    try {
+      await deleteCategory(confirmDelete.categoryId);
+      await loadCategories();
+      setConfirmDelete({ isOpen: false, categoryId: null });
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      setConfirmDelete({ isOpen: false, categoryId: null });
+      
+      // Message d'erreur amélioré avec solutions
+      if (error.message && error.message.includes('utilisée dans des transactions')) {
+        setErrorMessage(
+          'Cette catégorie est assignée à une ou plusieurs transactions. Veuillez d\'abord changer la catégorie de ces transactions avant de supprimer cette catégorie.'
+        );
+      } else {
+        setErrorMessage(t('categories.deleteError'));
       }
     }
   };
@@ -477,6 +477,42 @@ const CategoriesScreen = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        onClose={() => setConfirmDelete({ isOpen: false, categoryId: null })}
+        onConfirm={confirmDeleteCategory}
+        title={t('categories.deleteConfirm')}
+        message="Cette action est irréversible. Êtes-vous sûr de vouloir supprimer cette catégorie ?"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
+      />
+
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="fixed bottom-4 right-4 max-w-md bg-red-50 border-2 border-red-200 rounded-lg p-4 shadow-lg z-50">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-red-800">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="flex-shrink-0 text-red-400 hover:text-red-600"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
         </div>
       )}

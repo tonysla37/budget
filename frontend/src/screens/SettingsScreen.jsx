@@ -5,6 +5,7 @@ import { exportUserData, importUserData } from '../services/dataService';
 import { Save, Calendar, User, Mail, LogOut, Lock, Download, Upload } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../i18n';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -19,6 +20,8 @@ export default function SettingsScreen() {
     billing_cycle_day: 1
   });
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmImport, setConfirmImport] = useState({ isOpen: false, data: null, stats: null });
 
   useEffect(() => {
     loadProfile();
@@ -62,10 +65,12 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    if (window.confirm(t('settings.logoutConfirm'))) {
-      logout();
-      navigate('/login');
-    }
+    setConfirmLogout(true);
+  };
+
+  const confirmLogoutAction = () => {
+    logout();
+    navigate('/login');
   };
 
   // Export des données
@@ -100,26 +105,32 @@ export default function SettingsScreen() {
       const text = await file.text();
       const data = JSON.parse(text);
       
-      if (!window.confirm(
-        '⚠️ ATTENTION !\n\n' +
-        'Cet import va ajouter les données du fichier à votre compte actuel.\n\n' +
-        `Le fichier contient :\n` +
-        `- ${data.categories?.length || 0} catégories\n` +
-        `- ${data.transactions?.length || 0} transactions\n` +
-        `- ${data.rules?.length || 0} règles\n` +
-        `- ${data.accounts?.length || 0} comptes\n` +
-        `- ${data.banks?.length || 0} banques\n\n` +
-        'Voulez-vous continuer ?'
-      )) {
-        return;
-      }
+      const stats = {
+        categories: data.categories?.length || 0,
+        transactions: data.transactions?.length || 0,
+        rules: data.rules?.length || 0,
+        accounts: data.accounts?.length || 0,
+        banks: data.banks?.length || 0
+      };
+      
+      setConfirmImport({ isOpen: true, data, stats });
+    } catch (error) {
+      console.error('Erreur lors de la lecture du fichier:', error);
+      setMessage({ type: 'error', text: '❌ Fichier invalide ou corrompu' });
+    }
+  };
 
-      const result = await importUserData(data);
+  const confirmImportAction = async () => {
+    try {
+      const result = await importUserData(confirmImport.data);
       
       setMessage({ 
         type: 'success', 
         text: `✅ Import réussi !\n${result.imported.categories} catégories, ${result.imported.transactions} transactions, ${result.imported.rules} règles importées.` 
       });
+      
+      setConfirmImport({ isOpen: false, data: null, stats: null });
+      setConfirmImport({ isOpen: false, data: null, stats: null });
       
       // Recharger la page après 2 secondes
       setTimeout(() => {
@@ -404,6 +415,29 @@ export default function SettingsScreen() {
           </button>
         </div>
       </div>
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        isOpen={confirmLogout}
+        onClose={() => setConfirmLogout(false)}
+        onConfirm={confirmLogoutAction}
+        title={t('settings.logoutConfirm')}
+        message="Vous allez être déconnecté de votre session."
+        confirmText="Se déconnecter"
+        cancelText="Annuler"
+        variant="warning"
+      />
+
+      <ConfirmDialog
+        isOpen={confirmImport.isOpen}
+        onClose={() => setConfirmImport({ isOpen: false, data: null, stats: null })}
+        onConfirm={confirmImportAction}
+        title="Confirmer l'import"
+        message={confirmImport.stats ? `Cet import va ajouter les données du fichier à votre compte actuel.\n\nLe fichier contient :\n• ${confirmImport.stats.categories} catégories\n• ${confirmImport.stats.transactions} transactions\n• ${confirmImport.stats.rules} règles\n• ${confirmImport.stats.accounts} comptes\n• ${confirmImport.stats.banks} banques\n\nVoulez-vous continuer ?` : ''}
+        confirmText="Importer"
+        cancelText="Annuler"
+        variant="warning"
+      />
     </div>
   );
 }

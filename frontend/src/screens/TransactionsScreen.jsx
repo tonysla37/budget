@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '../utils/formatters';
 import { getBankStyles, getBankDisplayName } from '../utils/bankUtils';
 import { Plus, Filter, Edit, Trash2, Search, Calendar, Tag, X, Wallet, Sparkles } from 'lucide-react';
 import { useTranslation } from '../i18n';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function TransactionsScreen() {
   const { t } = useTranslation();
@@ -44,6 +45,12 @@ export default function TransactionsScreen() {
     icon: '📦'
   });
   const [creatingForTransaction, setCreatingForTransaction] = useState(null);
+  
+  // États pour les confirmations et messages
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null });
+  const [confirmApplyRules, setConfirmApplyRules] = useState({ isOpen: false, count: 0 });
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -122,15 +129,21 @@ export default function TransactionsScreen() {
     }
   };
 
-  const handleDeleteTransaction = async (id) => {
-    if (window.confirm(t('transactions.deleteConfirm'))) {
-      try {
-        await deleteTransaction(id);
-        loadTransactions();
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-        alert(t('transactions.deleteError'));
-      }
+  const handleDeleteTransaction = (id) => {
+    setConfirmDelete({ isOpen: true, id });
+  };
+  
+  const confirmDeleteTransaction = async () => {
+    try {
+      await deleteTransaction(confirmDelete.id);
+      setConfirmDelete({ isOpen: false, id: null });
+      setSuccessMessage(t('transactions.deleteSuccess') || 'Transaction supprimée avec succès');
+      setTimeout(() => setSuccessMessage(null), 5000);
+      loadTransactions();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      setConfirmDelete({ isOpen: false, id: null });
+      setErrorMessage(t('transactions.deleteError') || 'Erreur lors de la suppression');
     }
   };
 
@@ -143,7 +156,7 @@ export default function TransactionsScreen() {
       await loadTransactions();
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la catégorie:', error);
-      alert('Erreur lors de la mise à jour de la catégorie');
+      setErrorMessage('Erreur lors de la mise à jour de la catégorie');
     }
   };
 
@@ -165,7 +178,7 @@ export default function TransactionsScreen() {
 
   const handleCreateRule = async () => {
     if (!ruleForm.pattern || !ruleForm.category_id) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      setErrorMessage('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
@@ -182,17 +195,19 @@ export default function TransactionsScreen() {
       // Appliquer aux transactions existantes si demandé
       if (ruleForm.applyToExisting && createdRule.id) {
         const result = await applyRuleToAllTransactions(createdRule.id);
-        alert(`Règle créée avec succès !\n${result.message}`);
+        setSuccessMessage(`Règle créée avec succès ! ${result.message}`);
+        setTimeout(() => setSuccessMessage(null), 5000);
         // Recharger les transactions pour voir les changements
         await loadTransactions();
       } else {
-        alert('Règle créée avec succès !');
+        setSuccessMessage('Règle créée avec succès !');
+        setTimeout(() => setSuccessMessage(null), 5000);
       }
       
       setShowRuleModal(false);
     } catch (error) {
       console.error('Erreur lors de la création de la règle:', error);
-      alert('Erreur lors de la création de la règle');
+      setErrorMessage('Erreur lors de la création de la règle');
     }
   };
 
@@ -200,42 +215,46 @@ export default function TransactionsScreen() {
     try {
       const result = await applyRuleToTransaction(transactionId);
       if (result.matched) {
-        alert(`✅ Règle "${result.rule_name}" appliquée !`);
+        setSuccessMessage(`✅ Règle "${result.rule_name}" appliquée !`);
+        setTimeout(() => setSuccessMessage(null), 5000);
         await loadTransactions(); // Recharger pour voir le changement
       } else {
-        alert('ℹ️ Aucune règle ne correspond à cette transaction');
+        setErrorMessage('ℹ️ Aucune règle ne correspond à cette transaction');
       }
     } catch (error) {
       console.error('Erreur lors de l\'application des règles:', error);
-      alert('❌ Erreur lors de l\'application des règles');
+      setErrorMessage('❌ Erreur lors de l\'application des règles');
     }
   };
 
-  const handleApplyAllRules = async () => {
+  const handleApplyAllRules = () => {
     const uncategorized = transactions.filter(t => !t.category_id);
     
     if (uncategorized.length === 0) {
-      alert('ℹ️ Toutes les transactions sont déjà catégorisées !');
+      setErrorMessage('ℹ️ Toutes les transactions sont déjà catégorisées !');
       return;
     }
     
-    if (!window.confirm(`Voulez-vous appliquer les règles actives aux ${uncategorized.length} transaction(s) non catégorisée(s) ?`)) {
-      return;
-    }
+    setConfirmApplyRules({ isOpen: true, count: uncategorized.length });
+  };
+  
+  const confirmApplyAllRules = async () => {
+    setConfirmApplyRules({ isOpen: false, count: 0 });
     
     try {
       const result = await applyAllActiveRules();
       
       if (result.matched_count === 0) {
-        alert(`ℹ️ ${result.total_uncategorized} transaction(s) analysée(s), mais aucune règle ne correspond.\nVérifiez vos règles dans l'onglet Règles.`);
+        setErrorMessage(`ℹ️ ${result.total_uncategorized} transaction(s) analysée(s), mais aucune règle ne correspond. Vérifiez vos règles dans l'onglet Règles.`);
       } else {
-        alert(`✅ ${result.matched_count} transaction(s) catégorisée(s) sur ${result.total_uncategorized} non catégorisée(s)`);
+        setSuccessMessage(`✅ ${result.matched_count} transaction(s) catégorisée(s) sur ${result.total_uncategorized} non catégorisée(s)`);
+        setTimeout(() => setSuccessMessage(null), 5000);
       }
       
       await loadTransactions();
     } catch (error) {
       console.error('Erreur lors de l\'application des règles:', error);
-      alert('❌ Erreur lors de l\'application des règles');
+      setErrorMessage('❌ Erreur lors de l\'application des règles');
     }
   };
 
@@ -255,7 +274,7 @@ export default function TransactionsScreen() {
   // Fonction pour créer une catégorie
   const handleCreateCategory = async () => {
     if (!categoryForm.name) {
-      alert('Veuillez entrer un nom de catégorie');
+      setErrorMessage('Veuillez entrer un nom de catégorie');
       return;
     }
 
@@ -277,10 +296,11 @@ export default function TransactionsScreen() {
       }
       
       setShowCategoryModal(false);
-      alert('Catégorie créée avec succès !');
+      setSuccessMessage('Catégorie créée avec succès !');
+      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (error) {
       console.error('Erreur lors de la création de la catégorie:', error);
-      alert('Erreur lors de la création de la catégorie');
+      setErrorMessage('Erreur lors de la création de la catégorie');
     }
   };
 
@@ -1179,6 +1199,50 @@ export default function TransactionsScreen() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Dialogs de confirmation */}
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        onClose={() => setConfirmDelete({ isOpen: false, id: null })}
+        onConfirm={confirmDeleteTransaction}
+        title="Supprimer la transaction"
+        message="Êtes-vous sûr de vouloir supprimer cette transaction ? Cette action est irréversible."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={confirmApplyRules.isOpen}
+        onClose={() => setConfirmApplyRules({ isOpen: false, count: 0 })}
+        onConfirm={confirmApplyAllRules}
+        title="Appliquer les règles actives"
+        message={`Voulez-vous appliquer les règles actives aux ${confirmApplyRules.count} transaction(s) non catégorisée(s) ?`}
+        confirmText="Appliquer"
+        cancelText="Annuler"
+        variant="info"
+      />
+
+      {/* Messages de succès et d'erreur */}
+      {successMessage && (
+        <div className="fixed bottom-4 right-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fadeIn">
+          <span className="text-green-600">✓</span>
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="fixed bottom-4 right-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fadeIn">
+          <span className="text-red-600">⚠</span>
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="ml-2 text-red-600 hover:text-red-800 font-bold"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>
