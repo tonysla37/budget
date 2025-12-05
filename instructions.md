@@ -236,6 +236,102 @@ def serialize_objectid(obj):
 - Audit régulier des dépendances
 - Principe du moindre privilège
 
+### Gestion de l'Authentification et des Tokens
+
+**RÈGLE CRITIQUE** : Ne jamais déconnecter l'utilisateur sur une erreur réseau temporaire
+
+#### Comportement Requis pour AuthContext
+
+Lors de la vérification du token au chargement/refresh de la page :
+
+1. **Si token existe en localStorage** :
+   - Charger immédiatement les données utilisateur en cache (localStorage)
+   - Afficher l'interface avec les données en cache
+   - Tenter de valider le token avec le backend en arrière-plan
+
+2. **Si la validation backend réussit** :
+   - Mettre à jour les données utilisateur avec les données fraîches du backend
+   - Continuer la session normalement
+
+3. **Si la validation backend échoue** :
+   - **Erreur 401/Unauthorized** → Token invalide ou expiré
+     - Déconnecter l'utilisateur
+     - Supprimer token et données en cache
+     - Rediriger vers /login
+   
+   - **Autres erreurs** (réseau, timeout, 500, etc.) → Erreur temporaire
+     - **NE PAS déconnecter l'utilisateur**
+     - Garder les données en cache
+     - Afficher un message discret (optionnel) : "Mode hors ligne"
+     - Réessayer la validation au prochain chargement
+
+#### Pattern d'Implémentation
+
+```javascript
+// AuthContext.jsx - useEffect pour checkAuth
+try {
+  const token = getAuthToken();
+  if (!token) {
+    setLoading(false);
+    return;
+  }
+  
+  // Charger immédiatement les données en cache
+  const cachedUser = getUserData();
+  if (cachedUser) {
+    setUser(cachedUser);
+  }
+  
+  // Valider avec le backend
+  try {
+    const userData = await getCurrentUser();
+    if (userData) {
+      setUser(userData);
+    }
+  } catch (error) {
+    // Déconnecter UNIQUEMENT si erreur 401
+    if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+      setUser(null);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+    } else {
+      // Garder l'utilisateur connecté avec les données en cache
+      if (cachedUser) {
+        setUser(cachedUser);
+      }
+    }
+  }
+} finally {
+  setLoading(false);
+}
+```
+
+#### Protection des Routes
+
+- `ProtectedRoute` doit vérifier `isAuthenticated` (basé sur `!!user`)
+- **OBLIGATOIRE** : Vérifier `loading` AVANT de rediriger vers /login
+- Pendant `loading === true` : Afficher un spinner de chargement, PAS de redirection
+- Éviter les boucles de redirection infinies
+
+```javascript
+// App.jsx - ProtectedRoute
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  
+  // Pendant le chargement, afficher un spinner
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+  
+  // Une fois le chargement terminé, vérifier l'authentification
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+```
+
+**Raison** : Lors du refresh de la page, `user` est `null` pendant quelques millisecondes le temps de charger les données en cache. Sans vérifier `loading`, `ProtectedRoute` redirige immédiatement vers `/login`, ce qui cause des redirections intempestives même pour les utilisateurs connectés.
+
+**Raison** : Éviter de déconnecter l'utilisateur lors d'un refresh ou d'un problème réseau temporaire. L'application doit être résiliente aux erreurs réseau et utiliser les données en cache quand le backend est injoignable.
+
 ## INTÉGRATION AVEC GITHUB
 - Configure des GitHub Actions pour automatiser les workflows CI/CD spécifiques aux applications cross-plateforme
 - Suggère des modèles de PR (Pull Request) et d'issues adaptés au développement mobile

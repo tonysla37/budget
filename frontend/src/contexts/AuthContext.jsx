@@ -23,26 +23,46 @@ export const AuthProvider = ({ children }) => {
       try {
         // D'abord vérifier si on a un token dans localStorage
         const token = getAuthToken();
-        if (token) {
-          // Essayer de récupérer les données utilisateur depuis localStorage
-          const cachedUser = getUserData();
-          if (cachedUser) {
-            setUser(cachedUser);
-          }
-          
-          // Vérifier que le token est toujours valide avec le backend
-          const authenticated = await isAuthenticated();
-          if (authenticated) {
-            const userData = await getCurrentUser();
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+        
+        // Essayer de récupérer les données utilisateur depuis localStorage
+        const cachedUser = getUserData();
+        if (cachedUser) {
+          setUser(cachedUser);
+        }
+        
+        // Vérifier que le token est toujours valide avec le backend
+        try {
+          const userData = await getCurrentUser();
+          if (userData) {
             setUser(userData);
-          } else {
-            // Token invalide, nettoyer
+          }
+        } catch (error) {
+          // Si erreur 401 (token invalide), déconnecter
+          if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+            console.log('Token invalide, déconnexion...');
             setUser(null);
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userData');
+          } else {
+            // Pour toute autre erreur (réseau, etc.), garder l'utilisateur connecté avec les données en cache
+            console.log('Erreur temporaire, conservation de la session en cache:', error.message);
+            // Si on a des données en cache, les utiliser
+            if (cachedUser) {
+              setUser(cachedUser);
+            }
           }
         }
       } catch (error) {
         console.error('Erreur lors de la vérification de l\'authentification:', error);
-        setUser(null);
+        // En cas d'erreur critique, garder l'utilisateur connecté si on a des données en cache
+        const cachedUser = getUserData();
+        if (cachedUser) {
+          setUser(cachedUser);
+        }
       } finally {
         setLoading(false);
       }
