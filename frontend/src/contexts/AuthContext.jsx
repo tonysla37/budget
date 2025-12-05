@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loginUser, logoutUser, registerUser, getCurrentUser, isAuthenticated } from '../services/authService';
+import { getUserData, getAuthToken } from '../config/api.config';
 
 const AuthContext = createContext();
 
@@ -20,13 +21,28 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const authenticated = await isAuthenticated();
-        if (authenticated) {
-          const userData = await getCurrentUser();
-          setUser(userData);
+        // D'abord vérifier si on a un token dans localStorage
+        const token = getAuthToken();
+        if (token) {
+          // Essayer de récupérer les données utilisateur depuis localStorage
+          const cachedUser = getUserData();
+          if (cachedUser) {
+            setUser(cachedUser);
+          }
+          
+          // Vérifier que le token est toujours valide avec le backend
+          const authenticated = await isAuthenticated();
+          if (authenticated) {
+            const userData = await getCurrentUser();
+            setUser(userData);
+          } else {
+            // Token invalide, nettoyer
+            setUser(null);
+          }
         }
       } catch (error) {
         console.error('Erreur lors de la vérification de l\'authentification:', error);
+        setUser(null);
       } finally {
         setLoading(false);
       }

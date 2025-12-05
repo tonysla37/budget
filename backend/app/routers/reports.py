@@ -28,16 +28,12 @@ async def get_monthly_report(
     else:
         end_date = datetime(year, month + 1, 1)
     
-    # Convertir en strings pour MongoDB
-    start_date_str = start_date.strftime("%Y-%m-%d")
-    end_date_str = end_date.strftime("%Y-%m-%d")
-    
-    # Agréger les données mensuelles
+    # Agréger les données mensuelles (utiliser datetime objects directement)
     user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
             "user_id": user_id,
-            "date": {"$gte": start_date_str, "$lt": end_date_str}
+            "date": {"$gte": start_date, "$lt": end_date}
         }},
         {"$addFields": {
             "computed_is_expense": {
@@ -142,15 +138,13 @@ async def get_period_report(
     # Convertir date en datetime pour la comparaison puis en string pour MongoDB
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
-    start_date_str = start_datetime.strftime("%Y-%m-%d")
-    end_date_str = end_datetime.strftime("%Y-%m-%d")
     
-    # Agréger les données pour la période
+    # Agréger les données pour la période (utiliser datetime objects directement)
     user_id = ObjectId(current_user["_id"]) if isinstance(current_user["_id"], str) else current_user["_id"]
     pipeline = [
         {"$match": {
             "user_id": user_id,
-            "date": {"$gte": start_date_str, "$lte": end_date_str}
+            "date": {"$gte": start_datetime, "$lte": end_datetime}
         }},
         {"$addFields": {
             "computed_is_expense": {
@@ -248,14 +242,12 @@ async def get_trends_report(
     start_date = datetime(end_date.year, end_date.month - months + 1, 1)
     
     # Convertir en strings pour MongoDB
-    start_date_str = start_date.strftime("%Y-%m-%d")
-    end_date_str = end_date.strftime("%Y-%m-%d")
     
-    # Agréger les données par mois
+    # Agréger les données par mois (utiliser datetime objects directement)
     pipeline = [
         {"$match": {
             "user_id": current_user["_id"],
-            "date": {"$gte": start_date_str, "$lte": end_date_str}
+            "date": {"$gte": start_date, "$lte": end_date}
         }},
         {"$group": {
             "_id": {

@@ -144,8 +144,8 @@ try:
     with open("'$TEST_DATA_DIR'/transactions.yaml", "r") as file:
         test_data.update(yaml.safe_load(file))
     
-    # Écrire les données dans un fichier JSON
-    with open("'$BACKEND_DIR'/test_data.json", "w") as file:
+    # Écrire les données dans un fichier JSON dans scripts/test_data/
+    with open("'$TEST_DATA_DIR'/test_data.json", "w") as file:
         json.dump(test_data, file, indent=2)
     
     print("Données YAML converties avec succès en JSON.")

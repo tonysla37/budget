@@ -75,14 +75,14 @@ async def get_transactions(
     # Construire le filtre MongoDB
     filter_query = {"user_id": current_user["_id"]}
     
-    # Appliquer les filtres si fournis
+    # Appliquer les filtres si fournis (utiliser datetime objects directement)
     if start_date:
-        filter_query["date"] = {"$gte": start_date.strftime("%Y-%m-%d")}
+        filter_query["date"] = {"$gte": datetime.combine(start_date, datetime.min.time())}
     if end_date:
         if "date" in filter_query:
-            filter_query["date"]["$lte"] = end_date.strftime("%Y-%m-%d")
+            filter_query["date"]["$lte"] = datetime.combine(end_date, datetime.max.time())
         else:
-            filter_query["date"] = {"$lte": end_date.strftime("%Y-%m-%d")}
+            filter_query["date"] = {"$lte": datetime.combine(end_date, datetime.max.time())}
     
     # Filtre par mois et année
     if year and month:
@@ -92,7 +92,7 @@ async def get_transactions(
         else:
             end_of_month = datetime(year, month + 1, 1)
         
-        filter_query["date"] = {"$gte": start_of_month.strftime("%Y-%m-%d"), "$lt": end_of_month.strftime("%Y-%m-%d")}
+        filter_query["date"] = {"$gte": start_of_month, "$lt": end_of_month}
     
     if category_id:
         filter_query["category_id"] = ObjectId(category_id)

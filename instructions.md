@@ -38,6 +38,35 @@ Password : test
 - Pour chaque concept, je veux que tu me génères le schéma as code (type drawio)
 - Pour chaque appel à des composants, les informations de connexions soient variabilisées (serveur, port, database, etc...)
 
+### Ports de Services
+
+**RÈGLE OBLIGATOIRE** : Le backend et le frontend doivent TOUJOURS écouter sur les mêmes ports.
+
+- **Backend** : Port **8000** uniquement
+  - Configuration dans `backend/app/main.py` : `uvicorn.run(app, host="0.0.0.0", port=8000)`
+  - Ne jamais utiliser de port dynamique ou aléatoire
+  - Si le port 8000 est occupé, arrêter le processus existant avec `pkill -f uvicorn`
+
+- **Frontend** : Port **19006** uniquement
+  - Configuration dans `frontend/package.json` : `"dev": "vite --host 0.0.0.0 --port 19006"`
+  - Ne jamais laisser Vite choisir un port automatiquement ("Port 19006 is in use, trying another one...")
+  - Si le port 19006 est occupé, arrêter le processus existant avec `pkill -f vite`
+
+- **MongoDB** : Port **27017** (défaut MongoDB)
+
+**Scripts de démarrage** :
+```bash
+# Backend
+pkill -f uvicorn  # Arrêter les instances existantes
+cd backend && ../venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Frontend
+pkill -f vite  # Arrêter les instances existantes
+cd frontend && npm run dev  # Utilise le port 19006 configuré dans package.json
+```
+
+**Raison** : Éviter la confusion des URLs, faciliter les scripts de test, garantir la cohérence entre développement et production.
+
 ## 🚨 TESTS DE NON-RÉGRESSION OBLIGATOIRES
 
 **RÈGLE ABSOLUE** : Avant de déclarer qu'une modification est terminée, tu DOIS :
@@ -734,6 +763,46 @@ Je veux que tu pilotes le backend et le frontend via un même script.
             }
     ```
   - Banques supportées : BoursoBank, CIC (extensible)
+  - **Détection de doublons** :
+    - Connexions bancaires : Doublon si même `bank` + `user_id` (ou même `nickname` si présent)
+    - Pattern :
+      ```python
+      existing = await bank_connections_collection.find_one({
+          "user_id": user_id,
+          "bank": connection.get("bank"),
+          "nickname": connection.get("nickname")  # Si présent
+      })
+      ```
+
+- **Budgets** :
+  - **Détection de doublons** : Un budget est un doublon si même `user_id` + `category_id` + `period`
+  - Pattern :
+    ```python
+    category_id = budget.get("category_id")
+    if isinstance(category_id, str):
+        category_id = ObjectId(category_id)
+    
+    existing = await budgets_collection.find_one({
+        "user_id": user_id,
+        "category_id": category_id,
+        "period": budget.get("period")
+    })
+    ```
+  - **Import** : Lors de l'import, ignorer les budgets en doublon (ne pas écraser)
+  - **Raison** : Éviter la duplication des budgets pour la même catégorie et période
+
+- **Règles de Catégorisation** :
+  - **Détection de doublons** : Une règle est un doublon si même `user_id` + `pattern` + `field`
+  - Pattern :
+    ```python
+    existing = await rules_collection.find_one({
+        "user_id": user_id,
+        "pattern": rule.get("pattern"),
+        "field": rule.get("field")
+    })
+    ```
+  - **Import** : Lors de l'import, ignorer les règles en doublon (ne pas écraser)
+  - **Raison** : Éviter la duplication des règles avec le même pattern sur le même champ
 
 ## OBSERVABILITÉ
 

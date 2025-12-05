@@ -5,7 +5,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 19006,
-    host: true
+    host: true,
+    strictPort: true  // Ne pas changer de port automatiquement si 19006 est occupé
   },
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx']

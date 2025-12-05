@@ -64,7 +64,11 @@ export default function ConfirmDialog({
 
         {/* Body */}
         <div className={`p-6 ${styles.bg}`}>
-          <p className="text-gray-700">{message}</p>
+          {typeof message === 'string' ? (
+            <p className="text-gray-700">{message}</p>
+          ) : (
+            <div className="text-gray-700">{message}</div>
+          )}
         </div>
 
         {/* Footer */}

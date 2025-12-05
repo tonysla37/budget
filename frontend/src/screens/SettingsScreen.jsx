@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSettings, updateSettings } from '../services/settingsService';
-import { exportUserData, importUserData } from '../services/dataService';
-import { Save, Calendar, User, Mail, LogOut, Lock, Download, Upload } from 'lucide-react';
+import { exportUserData, importUserData, purgeUserData, previewImportData } from '../services/dataService';
+import { Save, Calendar, User, Mail, LogOut, Lock, Download, Upload, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../i18n';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -21,6 +21,7 @@ export default function SettingsScreen() {
   });
   const [message, setMessage] = useState({ type: '', text: '' });
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmPurge, setConfirmPurge] = useState(false);
   const [confirmImport, setConfirmImport] = useState({ isOpen: false, data: null, stats: null });
 
   useEffect(() => {
@@ -73,6 +74,25 @@ export default function SettingsScreen() {
     navigate('/login');
   };
 
+  const handlePurge = () => {
+    setConfirmPurge(true);
+  };
+
+  const confirmPurgeAction = async () => {
+    try {
+      const result = await purgeUserData();
+      setMessage({ 
+        type: 'success', 
+        text: `✅ ${result.total_deleted} éléments supprimés avec succès !` 
+      });
+      setConfirmPurge(false);
+    } catch (error) {
+      console.error('Erreur lors de la purge:', error);
+      setMessage({ type: 'error', text: '❌ Erreur lors de la purge des données' });
+      setConfirmPurge(false);
+    }
+  };
+
   // Export des données
   const handleExport = async () => {
     try {
@@ -105,18 +125,14 @@ export default function SettingsScreen() {
       const text = await file.text();
       const data = JSON.parse(text);
       
-      const stats = {
-        categories: data.categories?.length || 0,
-        transactions: data.transactions?.length || 0,
-        rules: data.rules?.length || 0,
-        accounts: data.accounts?.length || 0,
-        banks: data.banks?.length || 0
-      };
+      // Appeler l'endpoint de prévisualisation
+      setMessage({ type: 'info', text: '⏳ Analyse du fichier en cours...' });
+      const preview = await previewImportData(data);
       
-      setConfirmImport({ isOpen: true, data, stats });
+      setConfirmImport({ isOpen: true, data, preview });
     } catch (error) {
       console.error('Erreur lors de la lecture du fichier:', error);
-      setMessage({ type: 'error', text: '❌ Fichier invalide ou corrompu' });
+      setMessage({ type: 'error', text: '❌ Fichier invalide ou erreur lors de l\'analyse' });
     }
   };
 
@@ -129,8 +145,7 @@ export default function SettingsScreen() {
         text: `✅ Import réussi !\n${result.imported.categories} catégories, ${result.imported.transactions} transactions, ${result.imported.rules} règles importées.` 
       });
       
-      setConfirmImport({ isOpen: false, data: null, stats: null });
-      setConfirmImport({ isOpen: false, data: null, stats: null });
+      setConfirmImport({ isOpen: false, data: null, preview: null });
       
       // Recharger la page après 2 secondes
       setTimeout(() => {
@@ -413,6 +428,14 @@ export default function SettingsScreen() {
             <LogOut className="h-5 w-5 mr-2" />
             {t('settings.logout')}
           </button>
+
+          <button
+            onClick={handlePurge}
+            className="flex items-center justify-center px-6 py-3 bg-red-800 text-white rounded-lg hover:bg-red-900 font-medium"
+          >
+            <Trash2 className="h-5 w-5 mr-2" />
+            Purger
+          </button>
         </div>
       </div>
 
@@ -429,11 +452,104 @@ export default function SettingsScreen() {
       />
 
       <ConfirmDialog
+        isOpen={confirmPurge}
+        onClose={() => setConfirmPurge(false)}
+        onConfirm={confirmPurgeAction}
+        title="Purger toutes les données ?"
+        message="⚠️ ATTENTION : Cette action supprimera définitivement TOUTES vos données (catégories, transactions, règles, budgets, comptes). Cette action est IRRÉVERSIBLE !"
+        confirmText="Oui, tout supprimer"
+        cancelText="Annuler"
+        variant="danger"
+      />
+
+      <ConfirmDialog
         isOpen={confirmImport.isOpen}
-        onClose={() => setConfirmImport({ isOpen: false, data: null, stats: null })}
+        onClose={() => setConfirmImport({ isOpen: false, data: null, preview: null })}
         onConfirm={confirmImportAction}
         title="Confirmer l'import"
-        message={confirmImport.stats ? `Cet import va ajouter les données du fichier à votre compte actuel.\n\nLe fichier contient :\n• ${confirmImport.stats.categories} catégories\n• ${confirmImport.stats.transactions} transactions\n• ${confirmImport.stats.rules} règles\n• ${confirmImport.stats.accounts} comptes\n• ${confirmImport.stats.banks} banques\n\nVoulez-vous continuer ?` : ''}
+        message={confirmImport.preview ? (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              <p className="mb-2">Fichier exporté le: <strong>{new Date(confirmImport.preview.file_info.export_date).toLocaleString('fr-FR')}</strong></p>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-2">📊 Aperçu des modifications</h4>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Catégories:</span>
+                  <span className="font-medium">
+                    {confirmImport.preview.import_summary.categories.current} → {confirmImport.preview.import_summary.categories.after_import}
+                    <span className="text-green-600 ml-2">(+{confirmImport.preview.import_summary.categories.new})</span>
+                    {confirmImport.preview.import_summary.categories.duplicates > 0 && (
+                      <span className="text-orange-600 ml-2">({confirmImport.preview.import_summary.categories.duplicates} ignorés)</span>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Transactions:</span>
+                  <span className="font-medium">
+                    {confirmImport.preview.import_summary.transactions.current} → {confirmImport.preview.import_summary.transactions.after_import}
+                    <span className="text-green-600 ml-2">(+{confirmImport.preview.import_summary.transactions.new})</span>
+                    {confirmImport.preview.import_summary.transactions.duplicates > 0 && (
+                      <span className="text-orange-600 ml-2">({confirmImport.preview.import_summary.transactions.duplicates} ignorés)</span>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Règles:</span>
+                  <span className="font-medium">
+                    {confirmImport.preview.import_summary.rules.current} → {confirmImport.preview.import_summary.rules.after_import}
+                    <span className="text-green-600 ml-2">(+{confirmImport.preview.import_summary.rules.new})</span>
+                    {confirmImport.preview.import_summary.rules.duplicates > 0 && (
+                      <span className="text-orange-600 ml-2">({confirmImport.preview.import_summary.rules.duplicates} ignorés)</span>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Budgets:</span>
+                  <span className="font-medium">
+                    {confirmImport.preview.import_summary.budgets.current} → {confirmImport.preview.import_summary.budgets.after_import}
+                    <span className="text-green-600 ml-2">(+{confirmImport.preview.import_summary.budgets.new})</span>
+                    {confirmImport.preview.import_summary.budgets.duplicates > 0 && (
+                      <span className="text-orange-600 ml-2">({confirmImport.preview.import_summary.budgets.duplicates} ignorés)</span>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Connexions bancaires:</span>
+                  <span className="font-medium">
+                    {confirmImport.preview.import_summary.bank_connections.current} → {confirmImport.preview.import_summary.bank_connections.after_import}
+                    <span className="text-green-600 ml-2">(+{confirmImport.preview.import_summary.bank_connections.new})</span>
+                    {confirmImport.preview.import_summary.bank_connections.duplicates > 0 && (
+                      <span className="text-orange-600 ml-2">({confirmImport.preview.import_summary.bank_connections.duplicates} ignorés)</span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {confirmImport.preview.warnings.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-semibold text-yellow-900 mb-2">⚠️ Avertissements</h4>
+                <ul className="list-disc list-inside text-sm text-yellow-800 space-y-1">
+                  {confirmImport.preview.warnings.map((warning, index) => (
+                    <li key={index}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <p className="text-sm text-gray-600 mt-4">
+              Voulez-vous continuer avec cet import ?
+            </p>
+          </div>
+        ) : ''}
         confirmText="Importer"
         cancelText="Annuler"
         variant="warning"

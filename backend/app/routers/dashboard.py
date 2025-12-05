@@ -70,10 +70,6 @@ async def get_dashboard_data(
                 start_datetime = datetime(now.year, 1, 1)
                 end_datetime = datetime(now.year + 1, 1, 1)
 
-        # Convertir les datetime en strings pour MongoDB (les dates sont stockées en string)
-        start_date_str = start_datetime.strftime("%Y-%m-%d")
-        end_date_str = end_datetime.strftime("%Y-%m-%d")
-
         # Récupérer les transactions de la période
         collection = await db.get_collection("transactions")
         
@@ -81,7 +77,7 @@ async def get_dashboard_data(
         stats_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date_str, "$lt": end_date_str}
+                "date": {"$gte": start_datetime, "$lt": end_datetime}
             }},
             {"$addFields": {
                 "computed_is_expense": {
@@ -121,7 +117,7 @@ async def get_dashboard_data(
         category_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date_str, "$lt": end_date_str}
+                "date": {"$gte": start_datetime, "$lt": end_datetime}
             }},
             {"$addFields": {
                 "computed_is_expense": {
@@ -149,7 +145,7 @@ async def get_dashboard_data(
         income_category_pipeline = [
             {"$match": {
                 "user_id": current_user["_id"],
-                "date": {"$gte": start_date_str, "$lt": end_date_str}
+                "date": {"$gte": start_datetime, "$lt": end_datetime}
             }},
             {"$addFields": {
                 "computed_is_expense": {
@@ -193,7 +189,7 @@ async def get_dashboard_data(
                 category_data.update({
                     "name": cat["name"],
                     "color": cat.get("color", "#6b7280"),
-                    "parent_id": cat.get("parent_id")
+                    "parent_id": str(cat["parent_id"]) if cat.get("parent_id") else None
                 })
                 # Ajouter le nom du parent si c'est une sous-catégorie
                 if cat.get("parent_id"):
@@ -224,7 +220,7 @@ async def get_dashboard_data(
                 category_data.update({
                     "name": cat["name"],
                     "color": cat.get("color", "#6b7280"),
-                    "parent_id": cat.get("parent_id")
+                    "parent_id": str(cat["parent_id"]) if cat.get("parent_id") else None
                 })
                 # Ajouter le nom du parent si c'est une sous-catégorie
                 if cat.get("parent_id"):
@@ -242,7 +238,7 @@ async def get_dashboard_data(
         # Récupérer les transactions récentes de la période
         recent_transactions = await collection.find({
             "user_id": current_user["_id"],
-            "date": {"$gte": start_date_str, "$lt": end_date_str}
+            "date": {"$gte": start_datetime, "$lt": end_datetime}
         }).sort("date", -1).limit(100).to_list(length=100)
         
         # Récupérer la collection des connexions bancaires pour ajouter les infos bank
@@ -310,7 +306,7 @@ async def get_dashboard_data(
                     transaction_data["category"] = {
                         "id": str(category["_id"]),
                         "name": category["name"],
-                        "parent_id": category.get("parent_id")
+                        "parent_id": str(category["parent_id"]) if category.get("parent_id") else None
                     }
                     # Ajouter le nom du parent si c'est une sous-catégorie
                     if category.get("parent_id"):

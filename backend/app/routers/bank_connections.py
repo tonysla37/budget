@@ -200,7 +200,10 @@ async def delete_bank_connection(
 ):
     """Supprime une connexion bancaire"""
     try:
-        user_id = str(current_user["_id"])
+        user_id = current_user["_id"]
+        # Convertir en ObjectId si c'est une string
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
         
         # Vérifier que la connexion appartient à l'utilisateur
         collection = await db.get_collection("bank_connections")
@@ -218,7 +221,7 @@ async def delete_bank_connection(
         # Supprimer également les comptes associés
         accounts_collection = await db.get_collection("bank_accounts")
         await accounts_collection.delete_many({
-            "connection_id": connection_id,
+            "connection_id": ObjectId(connection_id),
             "user_id": user_id
         })
         

@@ -10,6 +10,19 @@ export const exportUserData = async () => {
   }
 };
 
+// Prévisualiser l'import de données
+export const previewImportData = async (data) => {
+  try {
+    return await apiCall('/api/users/me/import/preview', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Erreur lors de la prévisualisation:', error);
+    throw error;
+  }
+};
+
 // Importer des données pour l'utilisateur
 export const importUserData = async (data) => {
   try {
@@ -19,6 +32,18 @@ export const importUserData = async (data) => {
     });
   } catch (error) {
     console.error('Erreur lors de l\'import:', error);
+    throw error;
+  }
+};
+
+// Purger toutes les données de l'utilisateur
+export const purgeUserData = async () => {
+  try {
+    return await apiCall('/api/users/me/purge', {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Erreur lors de la purge:', error);
     throw error;
   }
 };

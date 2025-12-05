@@ -49,10 +49,6 @@ async def get_budgets(
     # Calculer les dates de la période
     start_date, end_date = get_period_dates(period_type, billing_cycle_day)
     
-    # Convertir les dates en strings pour MongoDB
-    start_date_str = start_date.strftime("%Y-%m-%d")
-    end_date_str = end_date.strftime("%Y-%m-%d")
-    
     # Récupérer les collections
     budgets_collection = await database.get_collection("budgets")
     categories_collection = await database.get_collection("categories")
@@ -76,23 +72,23 @@ async def get_budgets(
         # Récupérer les IDs des sous-catégories si c'est une catégorie parente
         category_ids = [budget["category_id"]]
         
-        # Chercher les sous-catégories
+        # Chercher les sous-catégories (parent_id est ObjectId en base)
         subcategories = await categories_collection.find({
-            "parent_id": str(budget["category_id"])
+            "parent_id": budget["category_id"]
         }).to_list(length=None)
         
         # Ajouter les IDs des sous-catégories
         for subcat in subcategories:
             category_ids.append(subcat["_id"])
         
-        # Calculer les dépenses pour cette catégorie ET ses sous-catégories dans la période
+        # Calculer les dépenses pour cette catégorie ET ses sous-catégories dans la période (utiliser datetime directement)
         pipeline = [
             {
                 "$match": {
                     "user_id": current_user["_id"],
                     "category_id": {"$in": category_ids},
                     "is_expense": True,
-                    "date": {"$gte": start_date_str, "$lt": end_date_str}
+                    "date": {"$gte": start_date, "$lt": end_date}
                 }
             },
             {
@@ -203,17 +199,14 @@ async def create_budget(
     billing_cycle_day = current_user.get("billing_cycle_day", 1)
     start_date, end_date = get_period_dates(budget_data.period_type, billing_cycle_day)
     
-    # Convertir les dates en strings pour MongoDB
-    start_date_str = start_date.strftime("%Y-%m-%d")
-    end_date_str = end_date.strftime("%Y-%m-%d")
-    
+    # Calculer le montant dépensé (utiliser datetime objects directement)
     pipeline = [
         {
             "$match": {
                 "user_id": current_user["_id"],
                 "category_id": ObjectId(budget_data.category_id),
                 "is_expense": True,
-                "date": {"$gte": start_date_str, "$lt": end_date_str}
+                "date": {"$gte": start_date, "$lt": end_date}
             }
         },
         {
@@ -299,16 +292,15 @@ async def update_budget(
     start_date, end_date = get_period_dates(updated_budget["period_type"], billing_cycle_day)
     
     # Convertir les dates en strings pour MongoDB
-    start_date_str = start_date.strftime("%Y-%m-%d")
-    end_date_str = end_date.strftime("%Y-%m-%d")
     
+    # Calculer le montant dépensé (utiliser datetime objects directement)
     pipeline = [
         {
             "$match": {
                 "user_id": current_user["_id"],
                 "category_id": updated_budget["category_id"],
                 "is_expense": True,
-                "date": {"$gte": start_date_str, "$lt": end_date_str}
+                "date": {"$gte": start_date, "$lt": end_date}
             }
         },
         {
