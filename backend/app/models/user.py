@@ -36,6 +36,7 @@ class User(BaseModel):
     last_name: Optional[str] = None
     is_active: bool = True
     is_superuser: bool = False
+    role: str = "user"  # "user" ou "admin"
     
     # Préférences utilisateur
     preferences: Optional[Dict[str, Any]] = {}

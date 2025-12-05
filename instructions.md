@@ -42,12 +42,39 @@ Password : test
 
 **RÈGLE OBLIGATOIRE** : Le backend et le frontend doivent TOUJOURS écouter sur les mêmes ports.
 
-- **Backend** : Port **8000** uniquement
-  - Configuration dans `backend/app/main.py` : `uvicorn.run(app, host="0.0.0.0", port=8000)`
+- **Backend** : Port **8000** uniquement (HTTPS)
+  - Configuration dans `backend/app/main.py` : `uvicorn.run(app, host="0.0.0.0", port=8000, ssl_keyfile="certs/key.pem", ssl_certfile="certs/cert.pem")`
   - Ne jamais utiliser de port dynamique ou aléatoire
   - Si le port 8000 est occupé, arrêter le processus existant avec `pkill -f uvicorn`
+  - **HTTPS activé par défaut** avec certificats auto-signés
 
-- **Frontend** : Port **19006** uniquement
+- **Frontend** : Port **19006** uniquement (HTTPS)
+  - Configuration dans `frontend/vite.config.js` : HTTPS auto-détecté si certificats présents
+  - Si le port 19006 est occupé, arrêter le processus existant avec `pkill -f vite`
+  - **HTTPS activé automatiquement** si `/certs/cert.pem` et `/certs/key.pem` existent
+
+- **MongoDB** : Port **27017** (défaut MongoDB)
+
+**Scripts de démarrage** :
+```bash
+# Backend HTTPS
+./scripts/start_backend_https.sh
+
+# Frontend (HTTPS auto-détecté)
+cd frontend && npm run dev
+
+# Ou via le script de déploiement
+./scripts/deploy.sh
+```
+
+**Gestion des Certificats SSL** :
+- Génération automatique au premier démarrage : `./scripts/generate_ssl_certs.sh`
+- Certificats stockés dans `/certs/` (exclu du git via `.gitignore`)
+- Validité : 365 jours (certificats auto-signés)
+- Renouvellement : Via interface admin ou réexécution du script
+- **Accès admin requis** pour gérer les certificats via l'API
+
+**Raison** : Éviter la confusion des URLs, faciliter les scripts de test, garantir la cohérence entre développement et production, sécuriser les communications avec HTTPS.
   - Configuration dans `frontend/package.json` : `"dev": "vite --host 0.0.0.0 --port 19006"`
   - Ne jamais laisser Vite choisir un port automatiquement ("Port 19006 is in use, trying another one...")
   - Si le port 19006 est occupé, arrêter le processus existant avec `pkill -f vite`
@@ -231,10 +258,53 @@ def serialize_objectid(obj):
 
 ## SÉCURITÉ
 - Rappelle régulièrement les bonnes pratiques de sécurité pour la gestion des données persistantes
-- Chiffrement en transit (TLS 1.3+)
+- Chiffrement en transit (TLS 1.3+) : **HTTPS activé par défaut**
 - Chiffrement au repos pour les données sensibles
 - Audit régulier des dépendances
 - Principe du moindre privilège
+
+### Gestion des Rôles et Permissions
+
+**Système de rôles implémenté** :
+
+1. **Rôle `user`** (par défaut) :
+   - Accès à toutes les fonctionnalités de gestion budgétaire
+   - Gestion de ses propres données (transactions, catégories, budgets, etc.)
+   - Modification de son profil et paramètres
+   - **PAS d'accès** aux fonctions d'administration
+
+2. **Rôle `admin`** :
+   - Tous les droits du rôle `user`
+   - **Gestion des certificats SSL** via `/api/admin/ssl/*`
+   - Upload/téléchargement/régénération des certificats
+   - Accès aux endpoints d'administration
+   - Possibilité future : gestion des utilisateurs, logs système, etc.
+
+**Middleware de vérification** :
+```python
+from app.core.permissions import require_admin
+
+@router.get("/admin/resource")
+async def admin_endpoint(current_user: Dict = Depends(require_admin)):
+    # Seuls les admins peuvent accéder
+    pass
+```
+
+**Attribution du rôle admin** :
+```python
+# Via script MongoDB
+db.users.update_one(
+    {'email': 'admin@example.com'},
+    {'$set': {'role': 'admin'}}
+)
+```
+
+**Utilisateur de test** :
+- Email : `test@example.com`
+- Mot de passe : `test`
+- **Rôle : `admin`** (pour tester les fonctionnalités d'administration)
+
+**Note** : Les nouveaux utilisateurs créés via `/api/auth/register` reçoivent automatiquement le rôle `user`.
 
 ### Gestion de l'Authentification et des Tokens
 

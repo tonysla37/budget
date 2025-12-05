@@ -1,6 +1,6 @@
 // Configuration de l'API
 export const API_CONFIG = {
-  BASE_URL: 'http://10.37.16.90:8000',
+  BASE_URL: 'https://10.37.16.90:8000',  // HTTPS activé
   TIMEOUT: 10000, // 10 secondes
   RETRY_ATTEMPTS: 3,
 };

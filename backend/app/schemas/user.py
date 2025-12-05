@@ -27,6 +27,7 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     is_active: bool = True
+    role: str = "user"  # "user" ou "admin"
     billing_cycle_day: int = 1  # Jour de début du cycle de facturation (1-28)
 
 

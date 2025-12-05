@@ -111,6 +111,17 @@ const Navigation = () => {
               {t('nav.settings')}
             </Link>
           </li>
+          {user?.role === 'admin' && (
+            <li>
+              <Link 
+                to="/admin" 
+                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                onClick={closeMenu}
+              >
+                👑 Administration
+              </Link>
+            </li>
+          )}
         </ul>
 
         <div className="nav-user">

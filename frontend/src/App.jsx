@@ -15,6 +15,7 @@ import BankConnectionsScreenDebug from './screens/BankConnectionsScreenDebug';
 import ReportsScreen from './screens/ReportsScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import ChangePasswordScreen from './screens/ChangePasswordScreen';
+import AdminScreen from './screens/AdminScreen';
 import Navigation from './components/Navigation';
 import './App.css';
 
@@ -141,6 +142,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <ChangePasswordScreen />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminScreen />
               </ProtectedRoute>
             } 
           />
