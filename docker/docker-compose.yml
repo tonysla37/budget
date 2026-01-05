@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: budget-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/backend.Dockerfile
+    container_name: budget-backend
+    restart: unless-stopped
+    volumes:
+      - ../certs:/app/certs:ro
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+      - MONGODB_DB_NAME=budget_db
+      - ENVIRONMENT=production
+      - DEBUG=False
+    depends_on:
+      - mongo
+    ports:
+      - "8000:8000"
+    command: [
+      "uvicorn", "app.main:app",
+      "--host", "0.0.0.0",
+      "--port", "8000",
+      "--ssl-keyfile", "/app/certs/key.pem",
+      "--ssl-certfile", "/app/certs/cert.pem"
+    ]
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/frontend.Dockerfile
+    container_name: budget-frontend
+    restart: unless-stopped
+    volumes:
+      - ../certs:/app/certs:ro
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
+    depends_on:
+      - backend
+    ports:
+      - "19006:19006"
+
+volumes:
+  mongo_data:

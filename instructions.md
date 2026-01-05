@@ -191,8 +191,38 @@ Si tu modifies des `user_id`, `category_id`, ou tout autre référence :
    - Backend : Relancer le serveur et vérifier les logs
 
 3. **Ne JAMAIS dire "tout est ok" sans avoir vérifié** :
-   - ❌ Modification sans validation = risque d'écran blanc silencieux
-   - ✅ Toujours tester la compilation après chaque modification
+  - ❌ Modification sans validation = risque d'écran blanc silencieux
+  - ✅ Toujours tester la compilation après chaque modification
+
+## DÉPLOIEMENT DOCKER / NAS SYNOLOGY
+
+- Tous les fichiers liés à Docker et au NAS sont regroupés dans le dossier `docker/` à la racine du projet.
+- Pour un déploiement sur NAS Synology (ou tout environnement Docker), **ne pas** utiliser les scripts shell `deploy.sh` / `restart.sh` mais le `docker-compose` dédié.
+
+### Fichiers de déploiement
+
+- `docker/backend.Dockerfile` : image du backend FastAPI (port 8000)
+- `docker/frontend.Dockerfile` : image du frontend React (port 19006)
+- `docker/docker-compose.yml` : orchestre MongoDB + backend + frontend
+
+### Commandes de base (exécutées depuis le dossier `docker/`)
+
+```bash
+cd /chemin/vers/budget/docker
+
+# Construire et lancer les conteneurs
+docker compose up -d --build
+
+# Arrêter les services
+docker compose down
+```
+
+### Documentation détaillée NAS Synology
+
+- Voir `docs/SYNOLOGY_DOCKER.md` pour :
+  - la configuration de `VITE_API_URL`
+  - l'utilisation d'un MongoDB externe
+  - l'intégration avec le proxy inverse Synology
 
 4. **En cas d'erreur de syntaxe** :
    - Localiser précisément la ligne problématique
